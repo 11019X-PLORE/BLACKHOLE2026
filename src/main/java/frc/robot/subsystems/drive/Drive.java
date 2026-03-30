@@ -18,7 +18,10 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
@@ -42,14 +45,17 @@ import frc.robot.Constants.Mode;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.vision.VisionConstants;
 import frc.robot.util.LocalADStarAK;
+import frc.robot.util.PhysicalJoint;
 import frc.robot.util.TrenchHelper;
 import frc.robot.util.geometry.AllianceFlipUtil;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import org.ejml.simple.SimpleMatrix;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
-public class Drive extends SubsystemBase {
+public class Drive extends SubsystemBase implements PhysicalJoint{
   // TunerConstants doesn't include these constants, so they are declared locally
   static final double ODOMETRY_FREQUENCY = TunerConstants.kCANBus.isNetworkFD() ? 250.0 : 100.0;
   public static final double DRIVE_BASE_RADIUS =
@@ -102,6 +108,9 @@ public class Drive extends SubsystemBase {
   // 预分配对象以减少GC压力 (优化点)
   private final SwerveModulePosition[] currentModulePositions = new SwerveModulePosition[4];
   private final SwerveModulePosition[] currentModuleDeltas = new SwerveModulePosition[4];
+
+  private final PhysicalJoint.kinematics kinematicsData = new PhysicalJoint.kinematics();
+  private PhysicalJoint base = PhysicalJoint.ground; // Base joint for kinematics calculations
 
   private SwerveDrivePoseEstimator poseEstimator =
       new SwerveDrivePoseEstimator(
@@ -261,6 +270,8 @@ public class Drive extends SubsystemBase {
     // Update gyro alert
     gyroDisconnectedAlert.set(!gyroInputs.connected && Constants.currentMode != Mode.SIM);
     field.setRobotPose(getPose());
+
+    updateKinematics();
   }
 
   /**
@@ -335,8 +346,8 @@ public class Drive extends SubsystemBase {
   /** Returns the module states (turn angles and drive velocities) for all of the modules. */
   @AutoLogOutput(key = "SwerveStates/Measured")
   private SwerveModuleState[] getModuleStates() {
-    SwerveModuleState[] states = new SwerveModuleState[4];
-    for (int i = 0; i < 4; i++) {
+    SwerveModuleState[] states = new SwerveModuleState[modules.length];
+    for (int i = 0; i < modules.length; i++) {
       states[i] = modules[i].getState();
     }
     return states;
@@ -344,9 +355,18 @@ public class Drive extends SubsystemBase {
 
   /** Returns the module positions (turn angles and drive positions) for all of the modules. */
   private SwerveModulePosition[] getModulePositions() {
-    SwerveModulePosition[] states = new SwerveModulePosition[4];
-    for (int i = 0; i < 4; i++) {
+    SwerveModulePosition[] states = new SwerveModulePosition[modules.length];
+    for (int i = 0; i < modules.length; i++) {
       states[i] = modules[i].getPosition();
+    }
+    return states;
+  }
+
+  private SwerveModuleState[] getModuleForces() {
+    SwerveModuleState[] states = new SwerveModuleState[modules.length];
+    for (int i = 0; i < modules.length; i++) {
+      states[i] = modules[i].getForceState();
+      states[i].speedMetersPerSecond *= modules.length; // 将力转换为等效速度，方便后续使用运动学计算合力
     }
     return states;
   }
@@ -360,6 +380,19 @@ public class Drive extends SubsystemBase {
   // @AutoLogOutput(key = "SwerveFieldSpeeds/Measured")
   public ChassisSpeeds getFieldVelocity() {
     return ChassisSpeeds.fromRobotRelativeSpeeds(getChassisSpeeds(), getRotation());
+  }
+
+  public ChassisSpeeds getChassisForces(){
+    return ChassisSpeeds.fromRobotRelativeSpeeds(kinematics.toChassisSpeeds(getModuleForces()), getRotation());
+  }
+
+  public ChassisSpeeds getFieldAcceleration(){
+    ChassisSpeeds currentForces = getChassisForces();
+    return new ChassisSpeeds(
+      currentForces.vxMetersPerSecond/ROBOT_MASS_KG, 
+      currentForces.vyMetersPerSecond/ROBOT_MASS_KG, 
+      currentForces.omegaRadiansPerSecond/ROBOT_MOI
+    );
   }
 
   /** Returns the position of each module in radians. */
@@ -440,4 +473,54 @@ public class Drive extends SubsystemBase {
       new Translation2d(TunerConstants.BackRight.LocationX, TunerConstants.BackRight.LocationY)
     };
   }
+
+
+  @Override
+  public void updateKinematics(){
+    Pose2d currentPose = getPose();
+    kinematicsData.forwardKinematic = new Transform3d(
+      new Translation3d(currentPose.getTranslation().getX(), currentPose.getTranslation().getY(), 0), 
+      new Rotation3d(0, 0, currentPose.getRotation().getRadians()));
+
+    ChassisSpeeds currentSpeeds = getFieldVelocity();
+    kinematicsData.localVelocity = new SimpleMatrix(new double[]{
+      currentSpeeds.vxMetersPerSecond, 
+      currentSpeeds.vyMetersPerSecond, 
+      0, 
+      0, 
+      0,
+      currentSpeeds.omegaRadiansPerSecond,
+    });
+
+    ChassisSpeeds currentAcceleration = getFieldAcceleration();
+    kinematicsData.localAcceleration = new SimpleMatrix(new double[]{
+      currentAcceleration.vxMetersPerSecond, 
+      currentAcceleration.vyMetersPerSecond, 
+      0, 
+      0, 
+      0,
+      currentAcceleration.omegaRadiansPerSecond,
+    });
+  };
+
+  @Override
+  public PhysicalJoint getParentJoint() {
+    return base;
+  }
+
+  @Override
+  public Transform3d getForwardKinematic() {
+    return kinematicsData.forwardKinematic;
+  }
+
+  @Override
+  public SimpleMatrix getLocalVelocity() {
+    return kinematicsData.localVelocity;
+  }
+
+  @Override
+  public SimpleMatrix getLocalAcceleration() {
+    return kinematicsData.localAcceleration;
+  }
+
 }
