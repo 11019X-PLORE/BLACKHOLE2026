@@ -1,4 +1,4 @@
-package frc.robot.subsystems.shooter.hood;
+package frc.robot.subsystems.extension;
 
 import static edu.wpi.first.units.Units.Amps;
 import static frc.robot.util.PhoenixUtil.tryUntilOk;
@@ -7,14 +7,15 @@ import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.SoftwareLimitSwitchConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
 import com.ctre.phoenix6.controls.NeutralOut;
-import com.ctre.phoenix6.controls.PositionTorqueCurrentFOC;
-import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.StaticBrake;
+import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
@@ -25,7 +26,7 @@ import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Temperature;
 import edu.wpi.first.units.measure.Voltage;
 
-public class HoodIOReal implements HoodIO {
+public class ExtensionIOReal implements ExtensionIO {
   private final TalonFX talon;
 
   // 状态信号（用于高效读取）
@@ -37,28 +38,29 @@ public class HoodIOReal implements HoodIO {
   private final StatusSignal<Temperature> temp;
 
   // 控制请求
-  private final PositionVoltage positionControl = new PositionVoltage(0);
-  private final PositionTorqueCurrentFOC torqueControl = new PositionTorqueCurrentFOC(0.0);
   private final NeutralOut coastControl = new NeutralOut();
+  private final MotionMagicExpoVoltage motionMagicVoltage = new MotionMagicExpoVoltage(0.0);
   private final StaticBrake brakeControl = new StaticBrake();
+  private final VoltageOut voltageControl = new VoltageOut(0);
 
-  public HoodIOReal(int id, boolean isclockwice_Positive) {
-    talon = new TalonFX(HoodConstants.kHoodId);
+  public ExtensionIOReal(int id, boolean isclockwice_Positive) {
+    talon = new TalonFX(id);
 
     final TalonFXConfiguration config =
         new TalonFXConfiguration()
             .withMotorOutput(
                 new MotorOutputConfigs()
-                    .withNeutralMode(NeutralModeValue.Brake)
+                    .withNeutralMode(NeutralModeValue.Coast)
                     .withInverted(
                         isclockwice_Positive
                             ? InvertedValue.Clockwise_Positive
                             : InvertedValue.CounterClockwise_Positive))
             .withFeedback(
-                new FeedbackConfigs().withSensorToMechanismRatio(HoodConstants.hoodGearRatio))
+                new FeedbackConfigs()
+                    .withSensorToMechanismRatio(ExtensionConstants.kExtensionGearRatio))
             .withCurrentLimits(
                 new CurrentLimitsConfigs()
-                    .withStatorCurrentLimit(Amps.of(120))
+                    .withStatorCurrentLimit(Amps.of(80))
                     .withStatorCurrentLimitEnable(true)
                     .withSupplyCurrentLimit(Amps.of(40))
                     .withSupplyCurrentLimitEnable(true))
@@ -66,14 +68,22 @@ public class HoodIOReal implements HoodIO {
                 new SoftwareLimitSwitchConfigs()
                     .withForwardSoftLimitEnable(true)
                     .withForwardSoftLimitThreshold(
-                        Units.radiansToRotations(HoodConstants.kHoodMaxAngle))
+                        Units.radiansToRotations(
+                            ExtensionConstants.kExtensionMaxAngle)) // radian转圈数  电机
                     .withReverseSoftLimitEnable(true)
                     .withReverseSoftLimitThreshold(
-                        Units.radiansToRotations(HoodConstants.kHoodMinAngle)));
+                        Units.radiansToRotations(ExtensionConstants.kExtensionMinAngle)))
+            .withMotionMagic(
+                new MotionMagicConfigs()
+                    .withMotionMagicCruiseVelocity(
+                        Units.radiansToRotations(ExtensionConstants.kVelocityRadPerSec))
+                    .withMotionMagicAcceleration(
+                        Units.radiansToRotations(ExtensionConstants.kAccelerationRadPerSecSq)));
+    ;
 
     talon.getConfigurator().apply(config);
 
-    resetAngle(0);
+    resetPosition(ExtensionConstants.kExtensionInitialAngle);
 
     // 初始化信号
     position = talon.getPosition();
@@ -89,7 +99,7 @@ public class HoodIOReal implements HoodIO {
   }
 
   @Override
-  public void updateInputs(HoodIOInputs inputs) {
+  public void updateInputs(ExtensionIOInputs inputs) {
     // 刷新所有信号
     inputs.motorConnected =
         BaseStatusSignal.refreshAll(
@@ -106,23 +116,18 @@ public class HoodIOReal implements HoodIO {
   }
 
   @Override
-  public void applyOutputs(HoodIOOutputs outputs) {
+  public void applyOutputs(ExtensionIOOutputs outputs) {
     switch (outputs.mode) {
       case BRAKE -> talon.setControl(brakeControl);
       case COAST -> talon.setControl(coastControl);
       case CLOSED_LOOP -> {
         talon.setControl(
-            positionControl
-                .withEnableFOC(true)
+            motionMagicVoltage
                 .withPosition(Units.radiansToRotations(outputs.positionRads))
-                .withVelocity(Units.radiansToRotations(outputs.velocityRadsPerSec)));
+                .withEnableFOC(true));
       }
-      case POSITION_FOC -> {
-        talon.setControl(
-            torqueControl
-                .withPosition(Units.radiansToRotations(outputs.positionRads))
-                .withVelocity(Units.radiansToRotations(outputs.velocityRadsPerSec))
-                .withFeedForward(outputs.feedforwardAmps));
+      case VOLTAGE -> {
+        talon.setControl(voltageControl.withOutput(outputs.appliedVolts));
       }
     }
   }
@@ -137,11 +142,12 @@ public class HoodIOReal implements HoodIO {
     cfg.kV = kV; // velocity feedforward voltage
     cfg.kA = kA; // acceleration feedforward voltage
     cfg.kG = kG; // gravity feedforward voltage
+    // cfg.GravityType = GravityTypeValue.Arm_Cosine;
     tryUntilOk(5, () -> talon.getConfigurator().apply(cfg));
   }
 
-  // @Override
-  public void resetAngle(double Radius) {
+  @Override
+  public void resetPosition(double Radius) {
     talon.getConfigurator().setPosition(Units.radiansToRotations(Radius));
   }
 }

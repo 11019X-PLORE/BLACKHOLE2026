@@ -6,11 +6,11 @@ import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Robot;
 import frc.robot.subsystems.shooter.ShotCalculator;
 import frc.robot.subsystems.shooter.hood.HoodIO.HoodIOOutputMode;
 import frc.robot.subsystems.shooter.hood.HoodIO.HoodIOOutputs;
+import frc.robot.util.FullSubsystem;
 import frc.robot.util.LoggedTunableNumber;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,7 +18,7 @@ import lombok.experimental.Accessors;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
-public class Hood extends SubsystemBase {
+public class Hood extends FullSubsystem {
 
   // --- Tunables ---
   private static final LoggedTunableNumber kP = new LoggedTunableNumber("Hood/kP");
@@ -69,6 +69,7 @@ public class Hood extends SubsystemBase {
     TEST, // 测试模式 (读取 kFixAngle)
     ZEROING, // 归零状态
     PASSING, // 传球角度
+    POSITION_FOC
   }
 
   @Getter @Setter @AutoLogOutput private HoodGoal goal = HoodGoal.IDLE;
@@ -103,9 +104,10 @@ public class Hood extends SubsystemBase {
     // 2. 更新硬件报警与 Tunables
     motorDisconnectedAlert.set(!motorConnectedDebouncer.calculate(inputs.motorConnected));
     updateTunables();
+  }
 
-    // 3. 核心控制循环 (状态机)
-    // 如果系统被禁用或未归零，强制刹车
+  @Override
+  public void periodicAfterScheduler() {
     if (DriverStation.isDisabled() || !hoodZeroed) {
       outputs.mode = HoodIOOutputMode.BRAKE;
       outputs.velocityRadsPerSec = 0.0;
@@ -134,6 +136,9 @@ public class Hood extends SubsystemBase {
         case PASSING -> {
           runPositionLogic(HoodConstants.kHoodPassingAngle, HoodConstants.kFixVelocity);
         }
+        case POSITION_FOC -> {
+          runPositionFOCLogic(0.0, 0.0, 0.0, 0.0);
+        }
       }
     }
     // 4. 应用输出
@@ -148,8 +153,30 @@ public class Hood extends SubsystemBase {
         MathUtil.clamp(targetAngleRads, HoodConstants.kHoodMinAngle, HoodConstants.kHoodMaxAngle);
 
     outputs.mode = HoodIOOutputMode.CLOSED_LOOP;
-    outputs.positionRad = clampedAngle;
+    outputs.positionRads = clampedAngle;
     outputs.velocityRadsPerSec = targetVelocityRadsPerSec;
+
+    // 计算是否到位
+    atGoal = Math.abs(inputs.positionRads - clampedAngle) <= toleranceDeg.get();
+
+    // Log 目标值
+    Logger.recordOutput("Hood/Profile/GoalPositionRad", clampedAngle);
+    Logger.recordOutput("Hood/Profile/GoalVelocityRadPerSec", targetVelocityRadsPerSec);
+  }
+
+  private void runPositionFOCLogic(
+      double targetAngleRads,
+      double targetVelocityRadsPerSec,
+      double targetAccelation,
+      double feedforwardAmps) {
+    double clampedAngle =
+        MathUtil.clamp(targetAngleRads, HoodConstants.kHoodMinAngle, HoodConstants.kHoodMaxAngle);
+
+    outputs.mode = HoodIOOutputMode.POSITION_FOC;
+    outputs.positionRads = clampedAngle;
+    outputs.velocityRadsPerSec = targetVelocityRadsPerSec;
+    outputs.acelerationRadPerSec2 = targetAccelation;
+    outputs.feedforwardAmps = feedforwardAmps;
 
     // 计算是否到位
     atGoal = Math.abs(inputs.positionRads - clampedAngle) <= toleranceDeg.get();

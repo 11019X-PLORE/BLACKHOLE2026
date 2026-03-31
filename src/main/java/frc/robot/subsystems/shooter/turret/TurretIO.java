@@ -20,15 +20,18 @@ public interface TurretIO {
   public static enum TurretIOOutputMode {
     BRAKE,
     COAST,
-    CLOSED_LOOP
+    CLOSED_LOOP,
+    POSITION_FOC
   }
 
   public static class TurretIOOutputs {
 
     public TurretIOOutputMode mode = TurretIOOutputMode.BRAKE;
     // Closed loop control
-    public double position = 0.0;
-    public double velocity = 0.0;
+    public double positionRads = 0.0;
+    public double velocityRadsPerSec = 0.0;
+    public double accelerationRadPerSec2 = 0.0;
+    public double feedforwardAmps = 0.0;
   }
 
   default void updateInputs(TurretIOInputs inputs) {}

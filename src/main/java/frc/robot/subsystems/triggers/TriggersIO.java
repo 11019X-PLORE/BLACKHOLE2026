@@ -1,10 +1,10 @@
-package frc.robot.subsystems.shooter.flywheel;
+package frc.robot.subsystems.triggers;
 
 import org.littletonrobotics.junction.AutoLog;
 
-public interface FlywheelIO {
+public interface TriggersIO {
   @AutoLog
-  public static class FlywheelIOInputs {
+  public static class TriggersIOInputs {
     public boolean connected;
     public double positionRads;
     public double velocityRadsPerSec;
@@ -22,24 +22,21 @@ public interface FlywheelIO {
     public double secondtempCelsius;
   }
 
-  public static enum FlywheelIOOutputMode {
+  public static enum TriggersIOOutputMode {
     COAST,
     VELOCITY,
-    VOLTAGE,
-    VELOCITY_FOC
+    VOLTAGE
   }
 
-  public static class FlywheelIOOutputs {
-    public FlywheelIOOutputMode mode = FlywheelIOOutputMode.VELOCITY;
+  public static class TriggersIOOutputs {
+    public TriggersIOOutputMode mode = TriggersIOOutputMode.VELOCITY;
     public double velocityRadsPerSec = 0.0;
-    public double acelerationRadPerSec2 = 0.0;
-    public double feedforwardAmps = 0.0;
     public double volts = 0.0;
   }
 
-  default void updateInputs(FlywheelIOInputs inputs) {}
+  default void updateInputs(TriggersIOInputs inputs) {}
 
-  default void applyOutputs(FlywheelIOOutputs outputs) {}
+  default void applyOutputs(TriggersIOOutputs outputs) {}
 
   /** Configure turret PID */
   public default void setPID(

@@ -1,4 +1,4 @@
-package frc.robot.subsystems.shooter.flywheel;
+package frc.robot.subsystems.triggers;
 
 import static edu.wpi.first.units.Units.Amps;
 import static frc.robot.util.PhoenixUtil.tryUntilOk;
@@ -25,7 +25,7 @@ import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Temperature;
 import edu.wpi.first.units.measure.Voltage;
 
-public class FlywheelIOReal implements FlywheelIO {
+public class TriggersIOTest implements TriggersIO {
   private final TalonFX talon;
   private final TalonFX secondTalon;
   // 状态信号以便通过 IO 层读取
@@ -48,9 +48,9 @@ public class FlywheelIOReal implements FlywheelIO {
   private final VoltageOut voltageControl = new VoltageOut(0);
   private final NeutralOut coastControl = new NeutralOut();
 
-  public FlywheelIOReal(int id, boolean isclockwice_Positive) {
-    talon = new TalonFX(FlywheelConstants.kFlywheelId);
-    secondTalon = new TalonFX(FlywheelConstants.kSecondFlywheel);
+  public TriggersIOTest(int id, boolean isclockwice_Positive) {
+    talon = new TalonFX(id);
+    secondTalon = new TalonFX(TriggersConstants.kSecondTriggers);
     final TalonFXConfiguration config =
         new TalonFXConfiguration()
             .withMotorOutput(
@@ -62,7 +62,7 @@ public class FlywheelIOReal implements FlywheelIO {
                             : InvertedValue.CounterClockwise_Positive))
             .withFeedback(
                 new FeedbackConfigs()
-                    .withSensorToMechanismRatio(FlywheelConstants.kFlywheelGearRatio))
+                    .withSensorToMechanismRatio(TriggersConstants.kTriggersGearRatio))
             .withCurrentLimits(
                 new CurrentLimitsConfigs()
                     .withStatorCurrentLimit(Amps.of(120.0))
@@ -108,7 +108,7 @@ public class FlywheelIOReal implements FlywheelIO {
   }
 
   @Override
-  public void updateInputs(FlywheelIOInputs inputs) {
+  public void updateInputs(TriggersIOInputs inputs) {
     // 刷新所有信号
     BaseStatusSignal.refreshAll(
         position,
@@ -153,7 +153,7 @@ public class FlywheelIOReal implements FlywheelIO {
   }
 
   @Override
-  public void applyOutputs(FlywheelIOOutputs outputs) {
+  public void applyOutputs(TriggersIOOutputs outputs) {
     switch (outputs.mode) {
       case COAST -> talon.setControl(coastControl);
       case VELOCITY -> {
@@ -162,12 +162,6 @@ public class FlywheelIOReal implements FlywheelIO {
       }
       case VOLTAGE -> {
         talon.setControl(voltageControl.withOutput(outputs.volts));
-      }
-      case VELOCITY_FOC -> {
-        talon.setControl(
-            velocityControl
-                .withVelocity(Units.radiansToRotations(outputs.velocityRadsPerSec))
-                .withFeedForward(outputs.feedforwardAmps));
       }
     }
   }

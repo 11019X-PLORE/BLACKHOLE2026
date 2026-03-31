@@ -7,7 +7,6 @@ import static frc.robot.subsystems.vision.VisionConstants.*;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -33,21 +32,24 @@ import frc.robot.subsystems.drive.GyroIOPigeon2;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOTalonFX;
+import frc.robot.subsystems.extension.Extension;
+import frc.robot.subsystems.extension.ExtensionConstants;
+import frc.robot.subsystems.extension.ExtensionIOReal;
+import frc.robot.subsystems.extension.ExtensionIOSim;
 import frc.robot.subsystems.hanger.Hanger;
 import frc.robot.subsystems.hanger.Hanger.HangerGoal;
 import frc.robot.subsystems.hanger.HangerConstants;
 import frc.robot.subsystems.hanger.HangerIOReal;
 import frc.robot.subsystems.hanger.HangerIOSim;
 import frc.robot.subsystems.indexer.Indexer;
+import frc.robot.subsystems.indexer.IndexerConstants;
+import frc.robot.subsystems.indexer.IndexerIOReal;
+import frc.robot.subsystems.indexer.IndexerIOSim;
 import frc.robot.subsystems.intake.Intake;
-import frc.robot.subsystems.intakearm.Intakearm;
-import frc.robot.subsystems.intakearm.IntakearmConstants;
-import frc.robot.subsystems.intakearm.IntakearmIOReal;
-import frc.robot.subsystems.intakearm.IntakearmIOSim;
+import frc.robot.subsystems.intake.IntakeConstants;
+import frc.robot.subsystems.intake.IntakeIOReal;
+import frc.robot.subsystems.intake.IntakeIOSim;
 import frc.robot.subsystems.led.LED;
-import frc.robot.subsystems.rollers.RollerSystemIOReal;
-import frc.robot.subsystems.rollers.RollerSystemIOSim;
-import frc.robot.subsystems.rotator.Rotator;
 import frc.robot.subsystems.shooter.ShotCalculator;
 import frc.robot.subsystems.shooter.flywheel.Flywheel;
 import frc.robot.subsystems.shooter.flywheel.FlywheelConstants;
@@ -63,6 +65,10 @@ import frc.robot.subsystems.shooter.turret.TurretIOSim;
 import frc.robot.subsystems.shooter.turret.TurretIOreal;
 import frc.robot.subsystems.superstructure.Superstructure;
 import frc.robot.subsystems.superstructure.Superstructure.SuperstructureState;
+import frc.robot.subsystems.triggers.Triggers;
+import frc.robot.subsystems.triggers.TriggersConstants;
+import frc.robot.subsystems.triggers.TriggersIOSim;
+import frc.robot.subsystems.triggers.TriggersIOTest;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOLimelight;
@@ -81,8 +87,8 @@ public class RobotContainer {
   // Subsystems
   public final Drive drive;
   public final Intake intake;
-  public final Intakearm intakearm;
-  public final Rotator rotator;
+  public final Extension extension;
+  public final Triggers triggers;
   public final Indexer indexer;
   public final Turret turret;
   public final Flywheel flywheel;
@@ -135,13 +141,20 @@ public class RobotContainer {
                 new ModuleIOTalonFX(TunerConstants.BackLeft),
                 new ModuleIOTalonFX(TunerConstants.BackRight));
 
-        intake = new Intake(new RollerSystemIOReal(Ports.kIntakeRollers, false, 3));
-        rotator = new Rotator(new RollerSystemIOReal(Ports.kRotatorRollers, false, 10));
-        indexer = new Indexer(new RollerSystemIOReal(Ports.kIndexerRollers, true, 1.5));
-        intakearm =
-            new Intakearm(
-                new IntakearmIOReal(
-                    IntakearmConstants.kIntakearmId, IntakearmConstants.kIntakearmInverted));
+        intake =
+            new Intake(
+                new IntakeIOReal(IntakeConstants.kIntakeId, IntakeConstants.kIntakeInverted));
+        triggers =
+            new Triggers(
+                new TriggersIOTest(
+                    TriggersConstants.kTriggersId, TriggersConstants.kTriggersInverted));
+        indexer =
+            new Indexer(
+                new IndexerIOReal(IndexerConstants.kIndexerId, IndexerConstants.kIndexerInverted));
+        extension =
+            new Extension(
+                new ExtensionIOReal(
+                    ExtensionConstants.kExtensionId, ExtensionConstants.kExtensionInverted));
         turret =
             new Turret(
                 new TurretIOreal(TurretConstants.kTurretID, TurretConstants.kTurretInverted),
@@ -178,8 +191,8 @@ public class RobotContainer {
                 hood,
                 flywheel,
                 intake,
-                intakearm,
-                rotator,
+                extension,
+                triggers,
                 indexer,
                 hanger,
                 led,
@@ -201,10 +214,10 @@ public class RobotContainer {
                 drive::addVisionMeasurement,
                 new VisionIOPhotonVisionSim(camera0Name, robotToCamera0, drive::getPose),
                 new VisionIOPhotonVisionSim(camera1Name, robotToCamera1, drive::getPose));
-        intake = new Intake(new RollerSystemIOSim(DCMotor.getKrakenX60Foc(1), 2, 1));
-        rotator = new Rotator(new RollerSystemIOSim(DCMotor.getKrakenX60Foc(1), 10, 1));
-        indexer = new Indexer(new RollerSystemIOSim(DCMotor.getKrakenX60Foc(1), 1.5, 1));
-        intakearm = new Intakearm(new IntakearmIOSim());
+        intake = new Intake(new IntakeIOSim());
+        triggers = new Triggers(new TriggersIOSim());
+        indexer = new Indexer(new IndexerIOSim());
+        extension = new Extension(new ExtensionIOSim());
         turret =
             new Turret(
                 new TurretIOSim(fuelSim),
@@ -224,8 +237,8 @@ public class RobotContainer {
                 hood,
                 flywheel,
                 intake,
-                intakearm,
-                rotator,
+                extension,
+                triggers,
                 indexer,
                 hanger,
                 led,
@@ -263,10 +276,10 @@ public class RobotContainer {
                 drive::addVisionMeasurement,
                 new VisionIO() {},
                 new VisionIO() {});
-        intake = new Intake(new RollerSystemIOSim(DCMotor.getKrakenX60Foc(1), 2, 1));
-        rotator = new Rotator(new RollerSystemIOSim(DCMotor.getKrakenX60Foc(1), 10, 1));
-        indexer = new Indexer(new RollerSystemIOSim(DCMotor.getKrakenX60Foc(1), 1.5, 1));
-        intakearm = new Intakearm(new IntakearmIOSim());
+        intake = new Intake(new IntakeIOSim());
+        triggers = new Triggers(new TriggersIOSim());
+        indexer = new Indexer(new IndexerIOSim());
+        extension = new Extension(new ExtensionIOSim());
         turret =
             new Turret(
                 new TurretIOSim(fuelSim),
@@ -286,8 +299,8 @@ public class RobotContainer {
                 hood,
                 flywheel,
                 intake,
-                intakearm,
-                rotator,
+                extension,
+                triggers,
                 indexer,
                 hanger,
                 led,
@@ -300,17 +313,19 @@ public class RobotContainer {
     // Set up auto routines
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
     autoChooser.addOption(
-        "LEFT", new LeftAuto(superstructure, turret, hood, intakearm, hanger, drive));
+        "LEFT", new LeftAuto(superstructure, intake, turret, hood, extension, hanger, drive));
     autoChooser.addOption(
-        "MID", new MidAuto(superstructure, turret, hood, intakearm, hanger, drive));
+        "MID", new MidAuto(superstructure, intake, turret, hood, extension, hanger, drive));
     autoChooser.addOption(
-        "MIDSHORT", new MidAutoShort(superstructure, turret, hood, intakearm, hanger, drive));
+        "MIDSHORT",
+        new MidAutoShort(superstructure, intake, turret, hood, extension, hanger, drive));
     autoChooser.addOption(
-        "RIGHT", new RightAuto(superstructure, turret, hood, intakearm, hanger, drive));
+        "RIGHT", new RightAuto(superstructure, intake, turret, hood, extension, hanger, drive));
     autoChooser.addOption(
-        "RIGHTCYCLE", new RightCycleAuto(superstructure, turret, hood, intakearm, hanger, drive));
+        "RIGHTCYCLE",
+        new RightCycleAuto(superstructure, intake, turret, hood, extension, hanger, drive));
     autoChooser.addDefaultOption(
-        "LEFT", new LeftAuto(superstructure, turret, hood, intakearm, hanger, drive));
+        "LEFT", new LeftAuto(superstructure, intake, turret, hood, extension, hanger, drive));
     // Set up SysId routines
     // autoChooser.addOption(
     //     "Drive Wheel Radius Characterization", DriveCommands.wheelRadiusCharacterization(drive));
@@ -368,7 +383,7 @@ public class RobotContainer {
     zeroSuperstructurePosition.onTrue(
         (Commands.parallel(
             hood.zeroCommand(),
-            intakearm.zeroCommand(),
+            extension.zeroCommand(),
             turret.zeroCommand(),
             hanger.zeroCommand())));
 
@@ -393,18 +408,43 @@ public class RobotContainer {
         .onFalse(superstructure.setGoal(SuperstructureState.ACTIVESHOOTING));
 
     intakeTrigger
-        .onTrue(superstructure.setGoal(SuperstructureState.INTAKE))
-        .onFalse(superstructure.setGoal(SuperstructureState.INTAKESTOP));
+        .onTrue(
+            Commands.parallel(
+                intake.setGoalCommand(Intake.IntakeGoal.INTAKE),
+                extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED),
+                superstructure.setGoal(SuperstructureState.INTAKE)))
+        .onFalse(
+            Commands.parallel(
+                intake.setGoalCommand(Intake.IntakeGoal.STOP),
+                extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED),
+                superstructure.setGoal(SuperstructureState.SPITSTOP)));
 
     outtakeTrigger
-        .onTrue(superstructure.setGoal(SuperstructureState.SPIT))
-        .onFalse(superstructure.setGoal(SuperstructureState.SPITSTOP));
+        .onTrue(
+            Commands.parallel(
+                intake.setGoalCommand(Intake.IntakeGoal.OUTTAKE),
+                extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED),
+                superstructure.setGoal(SuperstructureState.SPIT)))
+        .onFalse(
+            Commands.parallel(
+                intake.setGoalCommand(Intake.IntakeGoal.STOP),
+                extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED),
+                superstructure.setGoal(SuperstructureState.SPITSTOP)));
 
     shakeStowTrigger
-        .onTrue(superstructure.setGoal(SuperstructureState.SHAKE))
-        .onFalse(superstructure.setGoal(SuperstructureState.STOW));
+        .onTrue(
+            Commands.parallel(
+                intake.setGoalCommand(Intake.IntakeGoal.STOW),
+                extension.setGoalCommand(Extension.ExtensionGoal.SHAKE)))
+        .onFalse(
+            Commands.parallel(
+                intake.setGoalCommand(Intake.IntakeGoal.STOP),
+                extension.setGoalCommand(Extension.ExtensionGoal.STOWED)));
 
-    stowTrigger.onTrue(superstructure.setGoal(SuperstructureState.STOW));
+    stowTrigger.onTrue(
+        Commands.parallel(
+            intake.setGoalCommand(Intake.IntakeGoal.STOP),
+            extension.setGoalCommand(Extension.ExtensionGoal.STOWED)));
 
     shootouttakTrigger
         .onTrue(superstructure.setGoal(SuperstructureState.SHOOTSPIT))

@@ -6,11 +6,11 @@ import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Robot;
 import frc.robot.subsystems.shooter.ShotCalculator;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO.FlywheelIOOutputMode;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO.FlywheelIOOutputs;
+import frc.robot.util.FullSubsystem;
 import frc.robot.util.LoggedTunableNumber;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,7 +18,7 @@ import lombok.experimental.Accessors;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
-public class Flywheel extends SubsystemBase {
+public class Flywheel extends FullSubsystem {
   // --- Tunable Numbers ---
   private static final LoggedTunableNumber kP = new LoggedTunableNumber("Flywheel/kP");
   private static final LoggedTunableNumber kI = new LoggedTunableNumber("Flywheel/kI");
@@ -72,7 +72,8 @@ public class Flywheel extends SubsystemBase {
     TEST, // 测试模式 (读取 TunableNumber)
     PASSING,
     OUTTAKE,
-    ACTIVE // 传球速度
+    ACTIVE,
+    VELOCITY_FOC // 供未来使用的速度闭环模式（带加速度控制）
   }
 
   @Getter @Setter @AutoLogOutput private FlywheelGoal goal = FlywheelGoal.IDLE;
@@ -108,7 +109,10 @@ public class Flywheel extends SubsystemBase {
     // 2. 更新 Tunables 和 硬件报警
     updateTunables();
     disconnected.set(!motorConnectedDebouncer.calculate(inputs.connected));
+  }
 
+  @Override
+  public void periodicAfterScheduler() {
     // 3. 核心状态机逻辑
     if (DriverStation.isDisabled()) {
       outputs.mode = FlywheelIOOutputMode.COAST;
@@ -143,17 +147,41 @@ public class Flywheel extends SubsystemBase {
         case OUTTAKE -> {
           runVelocityLogic(FlywheelConstants.kOutTakeVelocity);
         }
+        case VELOCITY_FOC -> {
+          runVelocityFOCLogic(0.0, 0.0, 0.0);
+        }
       }
+      Logger.recordOutput("Flywheel/Mode", outputs.mode);
+      Logger.recordOutput("Flywheel/Setpoint", outputs.velocityRadsPerSec);
+      io.applyOutputs(outputs);
     }
-    Logger.recordOutput("Flywheel/Mode", outputs.mode);
-    Logger.recordOutput("Flywheel/Setpoint", outputs.velocityRadsPerSec);
-    io.applyOutputs(outputs);
   }
 
   /** 内部速度闭环辅助方法：负责设定 output 并计算 atGoal */
   private void runVelocityLogic(double velocityRadsPerSec) {
     outputs.mode = FlywheelIOOutputMode.VELOCITY;
     outputs.velocityRadsPerSec = velocityRadsPerSec;
+    outputs.volts = 0.0; // 清零电压，防止干扰闭环
+
+    // 计算是否到达目标
+    boolean inTolerance =
+        Math.abs(inputs.velocityRadsPerSec - velocityRadsPerSec) <= velocityTolerance.get();
+
+    // 如果设定值过低，强制认为未就绪
+    if (Math.abs(velocityRadsPerSec) < 1.0) {
+      inTolerance = false;
+    }
+
+    atGoal = atGoalDebouncer.calculate(inTolerance);
+  }
+
+  private void runVelocityFOCLogic(
+      double velocityRadsPerSec, double acelerationRadPerSec2, double feedforwardAmps) {
+    outputs.mode = FlywheelIOOutputMode.VELOCITY_FOC;
+    outputs.velocityRadsPerSec = velocityRadsPerSec;
+    outputs.acelerationRadPerSec2 = acelerationRadPerSec2;
+    outputs.feedforwardAmps = feedforwardAmps; // 这里直接用电压作为前馈，具体实现时可能需要转换为电流
+
     outputs.volts = 0.0; // 清零电压，防止干扰闭环
 
     // 计算是否到达目标
