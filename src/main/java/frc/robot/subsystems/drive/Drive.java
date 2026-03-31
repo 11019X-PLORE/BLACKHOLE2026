@@ -50,12 +50,11 @@ import frc.robot.util.TrenchHelper;
 import frc.robot.util.geometry.AllianceFlipUtil;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
 import org.ejml.simple.SimpleMatrix;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
-public class Drive extends SubsystemBase implements PhysicalJoint{
+public class Drive extends SubsystemBase implements PhysicalJoint {
   // TunerConstants doesn't include these constants, so they are declared locally
   static final double ODOMETRY_FREQUENCY = TunerConstants.kCANBus.isNetworkFD() ? 250.0 : 100.0;
   public static final double DRIVE_BASE_RADIUS =
@@ -382,17 +381,17 @@ public class Drive extends SubsystemBase implements PhysicalJoint{
     return ChassisSpeeds.fromRobotRelativeSpeeds(getChassisSpeeds(), getRotation());
   }
 
-  public ChassisSpeeds getChassisForces(){
-    return ChassisSpeeds.fromRobotRelativeSpeeds(kinematics.toChassisSpeeds(getModuleForces()), getRotation());
+  public ChassisSpeeds getChassisForces() {
+    return ChassisSpeeds.fromRobotRelativeSpeeds(
+        kinematics.toChassisSpeeds(getModuleForces()), getRotation());
   }
 
-  public ChassisSpeeds getFieldAcceleration(){
+  public ChassisSpeeds getFieldAcceleration() {
     ChassisSpeeds currentForces = getChassisForces();
     return new ChassisSpeeds(
-      currentForces.vxMetersPerSecond/ROBOT_MASS_KG, 
-      currentForces.vyMetersPerSecond/ROBOT_MASS_KG, 
-      currentForces.omegaRadiansPerSecond/ROBOT_MOI
-    );
+        currentForces.vxMetersPerSecond / ROBOT_MASS_KG,
+        currentForces.vyMetersPerSecond / ROBOT_MASS_KG,
+        currentForces.omegaRadiansPerSecond / ROBOT_MOI);
   }
 
   /** Returns the position of each module in radians. */
@@ -474,34 +473,40 @@ public class Drive extends SubsystemBase implements PhysicalJoint{
     };
   }
 
-
   @Override
-  public void updateKinematics(){
+  public void updateKinematics() {
     Pose2d currentPose = getPose();
-    kinematicsData.forwardKinematic = new Transform3d(
-      new Translation3d(currentPose.getTranslation().getX(), currentPose.getTranslation().getY(), 0), 
-      new Rotation3d(0, 0, currentPose.getRotation().getRadians()));
+    kinematicsData.forwardKinematic =
+        new Transform3d(
+            new Translation3d(
+                currentPose.getTranslation().getX(), currentPose.getTranslation().getY(), 0),
+            new Rotation3d(0, 0, currentPose.getRotation().getRadians()));
 
     ChassisSpeeds currentSpeeds = getFieldVelocity();
-    kinematicsData.localVelocity = new SimpleMatrix(new double[]{
-      currentSpeeds.vxMetersPerSecond, 
-      currentSpeeds.vyMetersPerSecond, 
-      0, 
-      0, 
-      0,
-      currentSpeeds.omegaRadiansPerSecond,
-    });
+    kinematicsData.localVelocity =
+        new SimpleMatrix(
+            new double[] {
+              currentSpeeds.vxMetersPerSecond,
+              currentSpeeds.vyMetersPerSecond,
+              0,
+              0,
+              0,
+              currentSpeeds.omegaRadiansPerSecond,
+            });
 
     ChassisSpeeds currentAcceleration = getFieldAcceleration();
-    kinematicsData.localAcceleration = new SimpleMatrix(new double[]{
-      currentAcceleration.vxMetersPerSecond, 
-      currentAcceleration.vyMetersPerSecond, 
-      0, 
-      0, 
-      0,
-      currentAcceleration.omegaRadiansPerSecond,
-    });
-  };
+    kinematicsData.localAcceleration =
+        new SimpleMatrix(
+            new double[] {
+              currentAcceleration.vxMetersPerSecond,
+              currentAcceleration.vyMetersPerSecond,
+              0,
+              0,
+              0,
+              currentAcceleration.omegaRadiansPerSecond,
+            });
+  }
+  ;
 
   @Override
   public PhysicalJoint getParentJoint() {
@@ -522,5 +527,4 @@ public class Drive extends SubsystemBase implements PhysicalJoint{
   public SimpleMatrix getLocalAcceleration() {
     return kinematicsData.localAcceleration;
   }
-
 }

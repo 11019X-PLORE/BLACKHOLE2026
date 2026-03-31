@@ -32,7 +32,6 @@ import java.util.function.Supplier;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
-
 import org.ejml.simple.SimpleMatrix;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
@@ -403,19 +402,22 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
     io.launchFuel();
   }
 
-  //TODO call this in robot container after creating turret and drive, to set up the kinematics chain
+  // TODO call this in robot container after creating turret and drive, to set up the kinematics
+  // chain
   public void setBase(PhysicalJoint base) {
     this.base = base;
   }
 
   @Override
-  public void updateKinematics(){
-    kinematicsData.forwardKinematic = TurretConstants.swerve2TurretOffset.plus(
-      new Transform3d(new Translation3d(), new Rotation3d(0, 0, getPosition())));
+  public void updateKinematics() {
+    kinematicsData.forwardKinematic =
+        TurretConstants.swerve2TurretOffset.plus(
+            new Transform3d(new Translation3d(), new Rotation3d(0, 0, getPosition())));
 
-    kinematicsData.localVelocity = new SimpleMatrix(6, 1);//TODO
-    kinematicsData.localAcceleration = new SimpleMatrix(6, 1);//TODO
-  };
+    kinematicsData.localVelocity = new SimpleMatrix(6, 1); // TODO
+    kinematicsData.localAcceleration = new SimpleMatrix(6, 1); // TODO
+  }
+  ;
 
   @Override
   public PhysicalJoint getParentJoint() {
