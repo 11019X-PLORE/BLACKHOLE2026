@@ -65,6 +65,7 @@ public interface PhysicalJoint {
         }
     }
 
+    //TODO the rotation logic might be wrong since we are using the child rotation to rotate the local velocity instead of the parent rotation, but it seems to work in testing so maybe its correct? I need to do more testing to confirm
     default SimpleMatrix getGlobalVelocity() {
         PhysicalJoint parent = getParentJoint();
         if (parent == null) return getLocalVelocity();

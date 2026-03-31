@@ -355,8 +355,8 @@ public class Turret extends SubsystemBase implements PhysicalJoint{
     kinematicsData.forwardKinematic = TurretConstants.swerve2TurretOffset.plus(
       new Transform3d(new Translation3d(), new Rotation3d(0, 0, getPosition())));
 
-    kinematicsData.localVelocity = new SimpleMatrix(6, 1);
-    kinematicsData.localAcceleration = new SimpleMatrix(6, 1);
+    kinematicsData.localVelocity = new SimpleMatrix(6, 1);//TODO
+    kinematicsData.localAcceleration = new SimpleMatrix(6, 1);//TODO
   };
 
   @Override
