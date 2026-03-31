@@ -18,12 +18,13 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Robot;
 import frc.robot.subsystems.shooter.ShotCalculator;
+import frc.robot.subsystems.shooter.turret.Turret.TurretGoal;
 import frc.robot.subsystems.shooter.turret.TurretIO.TurretIOOutputMode;
 import frc.robot.subsystems.shooter.turret.TurretIO.TurretIOOutputs;
 import frc.robot.util.EqualsUtil;
+import frc.robot.util.FullSubsystem;
 import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.PhysicalJoint;
 import frc.robot.util.geometry.AllianceFlipUtil;
@@ -36,7 +37,7 @@ import org.ejml.simple.SimpleMatrix;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
-public class Turret extends SubsystemBase implements PhysicalJoint{
+public class Turret extends FullSubsystem implements PhysicalJoint {
   private static final double trackOverlapMargin = Units.degreesToRadians(10);
   private static final double trackMinAngle = TurretConstants.kTurretMinAngle - trackOverlapMargin;
   private static final double trackMaxAngle = TurretConstants.kTurretMaxAngle + trackOverlapMargin;
@@ -93,14 +94,14 @@ public class Turret extends SubsystemBase implements PhysicalJoint{
     FIXED_ANGLE,
     PASSING,
     ZEROING,
-    TEST
+    TEST,
+    POSITION_FOC
   }
 
   @Getter @Setter @AutoLogOutput private TurretGoal goal = TurretGoal.IDLE;
 
   private double lastGoalAngle = 0.0;
   private double currentSetpoint = 0.0; // 平滑后的目标位置
-  private double wrapTargetAngle = 0.0; // 记录回环的最终目的地
   private boolean isWrapping = false; // 是否处于回环锁定状态
 
   private final Debouncer motorConnectedDebouncer = new Debouncer(0.5, DebounceType.kFalling);
@@ -141,11 +142,14 @@ public class Turret extends SubsystemBase implements PhysicalJoint{
     disconnected.set(!motorConnectedDebouncer.calculate(inputs.turretMotorConnected));
     updateTunables();
     calculateTurretPose();
-    updateKinematics();
+  }
+
+  @Override
+  public void periodicAfterScheduler() {
 
     if (DriverStation.isDisabled() || !turretZeroed) {
       outputs.mode = TurretIOOutputMode.COAST;
-      outputs.velocity = 0.0;
+      outputs.velocityRadsPerSec = 0.0;
       atGoal = false;
       // 禁用时强制同步位置，防止下次启用时猛跳
       lastGoalAngle = inputs.positionRads;
@@ -155,7 +159,7 @@ public class Turret extends SubsystemBase implements PhysicalJoint{
       switch (goal) {
         case IDLE -> {
           outputs.mode = TurretIOOutputMode.COAST;
-          outputs.velocity = 0.0;
+          outputs.velocityRadsPerSec = 0.0;
           atGoal = true;
           currentSetpoint = inputs.positionRads;
         }
@@ -188,8 +192,11 @@ public class Turret extends SubsystemBase implements PhysicalJoint{
                   TurretConstants.kTurretMinAngle,
                   TurretConstants.kTurretMaxAngle);
           outputs.mode = TurretIOOutputMode.CLOSED_LOOP;
-          outputs.position = targetRelativeRads; // 直接给电机相对位置
-          outputs.velocity = testVelocity.get();
+          outputs.positionRads = targetRelativeRads; // 直接给电机相对位置
+          outputs.velocityRadsPerSec = testVelocity.get();
+        }
+        case POSITION_FOC -> {
+          runPositionFOCLogic(new Rotation2d(0.0), 0.0, 0.0, 0.0);
         }
       }
     }
@@ -233,8 +240,59 @@ public class Turret extends SubsystemBase implements PhysicalJoint{
     lastGoalAngle = bestAngle;
 
     outputs.mode = TurretIOOutputMode.CLOSED_LOOP;
-    outputs.position = bestAngle;
-    outputs.velocity = goalVelocity;
+    outputs.positionRads = bestAngle;
+    outputs.velocityRadsPerSec = goalVelocity;
+
+    double goalStateAngle =
+        MathUtil.clamp(bestAngle, TurretConstants.kTurretMinAngle, TurretConstants.kTurretMaxAngle);
+
+    atGoal = EqualsUtil.epsilonEquals(bestAngle, inputs.positionRads, toleranceDeg.get());
+
+    Logger.recordOutput("turret/turret" + name + "/GoalPositionRad", bestAngle);
+    Logger.recordOutput("turret/turret" + name + "/SetpointPositionRad", goalStateAngle);
+  }
+
+  private void runPositionFOCLogic(
+      Rotation2d goalAngleFieldRelative,
+      double goalVelocity,
+      double goalAccelation,
+      double goalFeedForward) {
+    // 1. 获取当前底盘朝向
+    Rotation2d robotAngle = poseSupplier.get().getRotation();
+    // 计算目标相对于车身的“原始”角度
+    double targetRads = goalAngleFieldRelative.minus(robotAngle).getRadians();
+
+    // 2. 寻找最近的合法角度 (保持搜索逻辑)
+    // 这步确保炮塔在 [-270, 90] 的物理墙内找到离当前位置最近的等效点
+    boolean hasBestAngle = false;
+    double bestAngle = 0;
+    for (int i = -2; i < 3; i++) {
+      double potentialSetpoint = targetRads + (i * 2.0 * Math.PI);
+      if (potentialSetpoint >= TurretConstants.kTurretMinAngle
+          && potentialSetpoint <= TurretConstants.kTurretMaxAngle) {
+        if (!hasBestAngle
+            || Math.abs(lastGoalAngle - potentialSetpoint) < Math.abs(lastGoalAngle - bestAngle)) {
+          bestAngle = potentialSetpoint;
+          hasBestAngle = true;
+        }
+      }
+    }
+
+    // 强制 Clamp 到物理边界
+    if (!hasBestAngle) {
+      bestAngle =
+          MathUtil.clamp(
+              targetRads, TurretConstants.kTurretMinAngle, TurretConstants.kTurretMaxAngle);
+    }
+
+    // 更新上一次的目标点，确保搜索逻辑的连续性
+    lastGoalAngle = bestAngle;
+
+    outputs.mode = TurretIOOutputMode.POSITION_FOC;
+    outputs.positionRads = bestAngle;
+    outputs.velocityRadsPerSec = goalVelocity;
+    outputs.accelerationRadPerSec2 = goalAccelation;
+    outputs.feedforwardAmps = goalFeedForward;
 
     double goalStateAngle =
         MathUtil.clamp(bestAngle, TurretConstants.kTurretMinAngle, TurretConstants.kTurretMaxAngle);

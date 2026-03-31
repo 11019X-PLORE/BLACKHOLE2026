@@ -203,7 +203,7 @@ public class Hanger extends SubsystemBase {
 
   // --- Commands (直接供 RobotContainer 调用) ---
   public Command setGoalCommand(HangerGoal newGoal) {
-    return Commands.runOnce(() -> this.goal = newGoal);
+    return Commands.runOnce(() -> this.goal = newGoal, this);
   }
 
   public Command runFixedAngleCommand(double targetRads) {

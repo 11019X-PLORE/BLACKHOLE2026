@@ -1,10 +1,10 @@
 {
   "hubs": [
     {
-      "x": 217,
-      "y": 106,
-      "width": 1105,
-      "height": 654,
+      "x": -8,
+      "y": -8,
+      "width": 1552,
+      "height": 832,
       "state": {
         "sidebar": {
           "width": 328,
@@ -129,11 +129,15 @@
             "/AdvantageKit/Vision/Camera1",
             "/AdvantageKit/Rotator",
             "/AdvantageKit/Rotator/Roller",
-            "/AdvantageKit/RealOutputs/LED"
+            "/AdvantageKit/RealOutputs/LED",
+            "/AdvantageKit/Extension",
+            "/AdvantageKit/Triggers",
+            "/AdvantageKit/RealOutputs/Triggers",
+            "/AdvantageKit/RealOutputs/Extension"
           ]
         },
         "tabs": {
-          "selected": 1,
+          "selected": 2,
           "tabs": [
             {
               "type": 0,
@@ -253,17 +257,17 @@
                 "cameraIndex": -1,
                 "orbitFov": 50,
                 "cameraPosition": [
-                  8.482965585943049,
-                  13.055412031576827,
-                  -6.665228491078718
+                  -10.120636788179988,
+                  11.579544131101072,
+                  -5.045613486873613
                 ],
                 "cameraTarget": [
-                  -2.186148195206262,
-                  -0.705429324828414,
-                  -4.833649320613966
+                  -2.185293361600478,
+                  -0.6894162456024838,
+                  -4.85346787177696
                 ]
               },
-              "controlsHeight": 252
+              "controlsHeight": 244
             },
             {
               "type": 1,
@@ -310,20 +314,20 @@
                   },
                   {
                     "type": "stripes",
+                    "logKey": "NT:/AdvantageKit/RealOutputs/Triggers/Goal",
+                    "logType": "String",
+                    "visible": true,
+                    "options": {
+                      "color": "#3b875a"
+                    }
+                  },
+                  {
+                    "type": "stripes",
                     "logKey": "NT:/AdvantageKit/RealOutputs/Indexer/Goal",
                     "logType": "String",
                     "visible": true,
                     "options": {
                       "color": "#858584"
-                    }
-                  },
-                  {
-                    "type": "stripes",
-                    "logKey": "NT:/AdvantageKit/RealOutputs/Rotator/Goal",
-                    "logType": "String",
-                    "visible": true,
-                    "options": {
-                      "color": "#3b875a"
                     }
                   },
                   {
@@ -337,7 +341,7 @@
                   },
                   {
                     "type": "stripes",
-                    "logKey": "NT:/AdvantageKit/RealOutputs/Intakearm/Goal",
+                    "logKey": "NT:/AdvantageKit/RealOutputs/Extension/Goal",
                     "logType": "String",
                     "visible": true,
                     "options": {
@@ -903,21 +907,11 @@
                 "leftSources": [
                   {
                     "type": "stepped",
-                    "logKey": "NT:/AdvantageKit/RealOutputs/Indexer/RollerVolts",
+                    "logKey": "NT:/AdvantageKit/Indexer/TorqueCurrentAmps",
                     "logType": "Number",
                     "visible": true,
                     "options": {
-                      "color": "#e5b31b",
-                      "size": "normal"
-                    }
-                  },
-                  {
-                    "type": "stepped",
-                    "logKey": "NT:/AdvantageKit/Indexer/Roller/AppliedVoltage",
-                    "logType": "Number",
-                    "visible": true,
-                    "options": {
-                      "color": "#af2437",
+                      "color": "#e48b32",
                       "size": "normal"
                     }
                   }
@@ -925,7 +919,17 @@
                 "rightSources": [
                   {
                     "type": "stepped",
-                    "logKey": "NT:/AdvantageKit/Indexer/Roller/VelocityRadsPerSec",
+                    "logKey": "NT:/AdvantageKit/RealOutputs/Indexer/Setpoint",
+                    "logType": "Number",
+                    "visible": true,
+                    "options": {
+                      "color": "#af2437",
+                      "size": "normal"
+                    }
+                  },
+                  {
+                    "type": "stepped",
+                    "logKey": "NT:/AdvantageKit/Indexer/VelocityRadsPerSec",
                     "logType": "Number",
                     "visible": true,
                     "options": {
@@ -937,11 +941,29 @@
                 "discreteSources": [
                   {
                     "type": "stripes",
+                    "logKey": "NT:/AdvantageKit/Indexer/Connected",
+                    "logType": "Boolean",
+                    "visible": true,
+                    "options": {
+                      "color": "#c0b487"
+                    }
+                  },
+                  {
+                    "type": "stripes",
                     "logKey": "NT:/AdvantageKit/RealOutputs/Indexer/Goal",
                     "logType": "String",
                     "visible": true,
                     "options": {
                       "color": "#2b66a2"
+                    }
+                  },
+                  {
+                    "type": "stripes",
+                    "logKey": "NT:/AdvantageKit/RealOutputs/Indexer/Mode",
+                    "logType": "String",
+                    "visible": true,
+                    "options": {
+                      "color": "#e5b31b"
                     }
                   }
                 ],
@@ -964,24 +986,24 @@
             },
             {
               "type": 1,
-              "title": "Rotator",
+              "title": "Triggers",
               "controller": {
                 "leftSources": [
                   {
                     "type": "stepped",
-                    "logKey": "NT:/AdvantageKit/Rotator/Roller/AppliedVoltage",
+                    "logKey": "NT:/AdvantageKit/Triggers/TorqueCurrentAmps",
                     "logType": "Number",
-                    "visible": true,
+                    "visible": false,
                     "options": {
-                      "color": "#2b66a2",
+                      "color": "#e5b31b",
                       "size": "normal"
                     }
                   },
                   {
                     "type": "stepped",
-                    "logKey": "NT:/AdvantageKit/RealOutputs/Rotator/RollerVolts",
+                    "logKey": "NT:/AdvantageKit/Triggers/AppliedVoltage",
                     "logType": "Number",
-                    "visible": true,
+                    "visible": false,
                     "options": {
                       "color": "#e48b32",
                       "size": "normal"
@@ -991,11 +1013,21 @@
                 "rightSources": [
                   {
                     "type": "stepped",
-                    "logKey": "NT:/AdvantageKit/Rotator/Roller/VelocityRadsPerSec",
+                    "logKey": "NT:/AdvantageKit/RealOutputs/Triggers/Setpoint",
                     "logType": "Number",
                     "visible": true,
                     "options": {
-                      "color": "#e5b31b",
+                      "color": "#af2437",
+                      "size": "normal"
+                    }
+                  },
+                  {
+                    "type": "stepped",
+                    "logKey": "NT:/AdvantageKit/Triggers/VelocityRadsPerSec",
+                    "logType": "Number",
+                    "visible": true,
+                    "options": {
+                      "color": "#2b66a2",
                       "size": "normal"
                     }
                   }
@@ -1003,7 +1035,7 @@
                 "discreteSources": [
                   {
                     "type": "stripes",
-                    "logKey": "NT:/AdvantageKit/Rotator/Roller/Connected",
+                    "logKey": "NT:/AdvantageKit/Triggers/Connected",
                     "logType": "Boolean",
                     "visible": true,
                     "options": {
@@ -1012,11 +1044,20 @@
                   },
                   {
                     "type": "stripes",
-                    "logKey": "NT:/AdvantageKit/RealOutputs/Rotator/Goal",
+                    "logKey": "NT:/AdvantageKit/RealOutputs/Triggers/Goal",
                     "logType": "String",
                     "visible": true,
                     "options": {
                       "color": "#80588e"
+                    }
+                  },
+                  {
+                    "type": "stripes",
+                    "logKey": "NT:/AdvantageKit/RealOutputs/Triggers/Mode",
+                    "logType": "String",
+                    "visible": true,
+                    "options": {
+                      "color": "#c0b487"
                     }
                   }
                 ],
@@ -1039,7 +1080,7 @@
             },
             {
               "type": 1,
-              "title": "IntakeArm",
+              "title": "Extension",
               "controller": {
                 "leftSources": [
                   {

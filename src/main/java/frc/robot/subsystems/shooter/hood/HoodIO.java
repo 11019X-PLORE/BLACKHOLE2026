@@ -19,17 +19,18 @@ public interface HoodIO {
   public static enum HoodIOOutputMode {
     BRAKE,
     COAST,
-    CLOSED_LOOP
+    CLOSED_LOOP,
+    POSITION_FOC
   }
 
   public static class HoodIOOutputs {
 
     public HoodIOOutputMode mode = HoodIOOutputMode.CLOSED_LOOP;
     // Closed loop control
-    public double positionRad = 0.0;
+    public double positionRads = 0.0;
     public double velocityRadsPerSec = 0.0;
-    public double kP = 0.0;
-    public double kD = 0.0;
+    public double acelerationRadPerSec2 = 0.0;
+    public double feedforwardAmps = 0.0;
   }
 
   public default void updateInputs(HoodIOInputs inputs) {}

@@ -77,7 +77,11 @@ public class TurretIOSim implements TurretIO {
       }
       case CLOSED_LOOP -> {
         currentControl = true;
-        currentOutput = controller.calculate(sim.getAngularPositionRad(), outputs.position);
+        currentOutput = controller.calculate(sim.getAngularPositionRad(), outputs.positionRads);
+      }
+      case POSITION_FOC -> {
+        currentControl = true;
+        currentOutput = controller.calculate(sim.getAngularPositionRad(), outputs.positionRads);
       }
     }
   }

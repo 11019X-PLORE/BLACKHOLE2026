@@ -1,4 +1,4 @@
-package frc.robot.subsystems.intake;
+package frc.robot.subsystems.triggers;
 
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
@@ -7,8 +7,8 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Robot;
-import frc.robot.subsystems.intake.IntakeIO.IntakeIOOutputMode;
-import frc.robot.subsystems.intake.IntakeIO.IntakeIOOutputs;
+import frc.robot.subsystems.triggers.TriggersIO.TriggersIOOutputMode;
+import frc.robot.subsystems.triggers.TriggersIO.TriggersIOOutputs;
 import frc.robot.util.FullSubsystem;
 import frc.robot.util.LoggedTunableNumber;
 import lombok.Getter;
@@ -17,28 +17,26 @@ import lombok.experimental.Accessors;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
-public class Intake extends FullSubsystem {
+public class Triggers extends FullSubsystem {
   // --- Tunable Numbers ---
-  private static final LoggedTunableNumber kP = new LoggedTunableNumber("Intake/kP");
-  private static final LoggedTunableNumber kI = new LoggedTunableNumber("Intake/kI");
-  private static final LoggedTunableNumber kD = new LoggedTunableNumber("Intake/kD");
-  private static final LoggedTunableNumber kS = new LoggedTunableNumber("Intake/kS");
-  private static final LoggedTunableNumber kV = new LoggedTunableNumber("Intake/kV");
-  private static final LoggedTunableNumber kA = new LoggedTunableNumber("Intake/kA");
-  private static final LoggedTunableNumber kG = new LoggedTunableNumber("Intake/kG");
+  private static final LoggedTunableNumber kP = new LoggedTunableNumber("Triggers/kP");
+  private static final LoggedTunableNumber kI = new LoggedTunableNumber("Triggers/kI");
+  private static final LoggedTunableNumber kD = new LoggedTunableNumber("Triggers/kD");
+  private static final LoggedTunableNumber kS = new LoggedTunableNumber("Triggers/kS");
+  private static final LoggedTunableNumber kV = new LoggedTunableNumber("Triggers/kV");
+  private static final LoggedTunableNumber kA = new LoggedTunableNumber("Triggers/kA");
+  private static final LoggedTunableNumber kG = new LoggedTunableNumber("Triggers/kG");
 
   private static final LoggedTunableNumber kIntakeVelocity =
-      new LoggedTunableNumber("Intake/kIntakeVelocity");
+      new LoggedTunableNumber("Triggers/kIntakeVelocity");
   private static final LoggedTunableNumber kOuttakeVelocity =
-      new LoggedTunableNumber("Intake/kOuttakeVelocity");
-  private static final LoggedTunableNumber kStowVelocity =
-      new LoggedTunableNumber("Intake/kStowVelocity");
+      new LoggedTunableNumber("Triggers/kOuttakeVelocity");
   private static final LoggedTunableNumber kShootVelocity =
-      new LoggedTunableNumber("Intake/kShootVelocity");
+      new LoggedTunableNumber("Triggers/kShootVelocity");
   private static final LoggedTunableNumber velocityTolerance =
-      new LoggedTunableNumber("Intake/VelocityTolerance"); // rad/s
+      new LoggedTunableNumber("Triggers/VelocityTolerance"); // rad/s
   private static final LoggedTunableNumber atGoalDebounce =
-      new LoggedTunableNumber("Intake/AtGoalDebounce", 0.2);
+      new LoggedTunableNumber("Triggers/AtGoalDebounce", 0.2);
 
   static {
     if (Robot.isSimulation()) {
@@ -52,38 +50,35 @@ public class Intake extends FullSubsystem {
       velocityTolerance.initDefault(10.0);
       kIntakeVelocity.initDefault(100.0);
       kOuttakeVelocity.initDefault(-100.0);
-      kStowVelocity.initDefault(100.0);
       kShootVelocity.initDefault(100.0);
     } else {
-      kP.initDefault(IntakeConstants.kP);
-      kI.initDefault(IntakeConstants.kI);
-      kD.initDefault(IntakeConstants.kD);
-      kS.initDefault(IntakeConstants.kS);
-      kV.initDefault(IntakeConstants.kV);
-      kA.initDefault(IntakeConstants.kA);
-      kG.initDefault(IntakeConstants.kG);
-      velocityTolerance.initDefault(IntakeConstants.kVelocityTolerance);
-      kIntakeVelocity.initDefault(IntakeConstants.kIntakeVelocity);
-      kOuttakeVelocity.initDefault(IntakeConstants.kOuttakeVelocity);
-      kStowVelocity.initDefault(IntakeConstants.kStowVelocity);
-      kShootVelocity.initDefault(IntakeConstants.kShootVelocity);
+      kP.initDefault(TriggersConstants.kP);
+      kI.initDefault(TriggersConstants.kI);
+      kD.initDefault(TriggersConstants.kD);
+      kS.initDefault(TriggersConstants.kS);
+      kV.initDefault(TriggersConstants.kV);
+      kA.initDefault(TriggersConstants.kA);
+      kG.initDefault(TriggersConstants.kG);
+      velocityTolerance.initDefault(TriggersConstants.kVelocityTolerance);
+      kIntakeVelocity.initDefault(TriggersConstants.kIntakeVelocity);
+      kOuttakeVelocity.initDefault(TriggersConstants.kOuttakeVelocity);
+      kShootVelocity.initDefault(TriggersConstants.kShootVelocity);
     }
   }
 
   // --- IO & Inputs ---
-  private final IntakeIO io;
-  private final IntakeIOInputsAutoLogged inputs = new IntakeIOInputsAutoLogged();
-  private final IntakeIOOutputs outputs = new IntakeIOOutputs();
+  private final TriggersIO io;
+  private final TriggersIOInputsAutoLogged inputs = new TriggersIOInputsAutoLogged();
+  private final TriggersIOOutputs outputs = new TriggersIOOutputs();
 
-  public enum IntakeGoal {
+  public enum TriggersGoal {
     INTAKE,
     SHOOT,
     OUTTAKE,
-    STOW,
     STOP
   }
 
-  @Getter @Setter @AutoLogOutput private IntakeGoal goal = IntakeGoal.STOP;
+  @Getter @Setter @AutoLogOutput private TriggersGoal goal = TriggersGoal.STOP;
 
   @Getter
   @Accessors(fluent = true)
@@ -95,9 +90,9 @@ public class Intake extends FullSubsystem {
   private final Alert disconnected;
   private Debouncer atGoalDebouncer = new Debouncer(atGoalDebounce.get(), DebounceType.kFalling);
 
-  public Intake(IntakeIO io) {
+  public Triggers(TriggersIO io) {
     this.io = io;
-    disconnected = new Alert("Intake motor disconnected!", Alert.AlertType.kWarning);
+    disconnected = new Alert("Triggers motor disconnected!", Alert.AlertType.kWarning);
 
     io.setPID(kP.get(), kI.get(), kD.get(), kS.get(), kV.get(), kA.get(), kG.get());
   }
@@ -106,7 +101,7 @@ public class Intake extends FullSubsystem {
   public void periodic() {
     // 1. 读取输入
     io.updateInputs(inputs);
-    Logger.processInputs("Intake", inputs);
+    Logger.processInputs("Triggers", inputs);
 
     // 2. 更新 Tunables 和 硬件报警
     updateTunables();
@@ -116,14 +111,14 @@ public class Intake extends FullSubsystem {
   @Override
   public void periodicAfterScheduler() {
     if (DriverStation.isDisabled()) {
-      outputs.mode = IntakeIOOutputMode.COAST;
+      outputs.mode = TriggersIOOutputMode.COAST;
       outputs.velocityRadsPerSec = 0.0;
       outputs.volts = 0.0;
       atGoal = false;
     } else {
       switch (goal) {
         case STOP -> {
-          outputs.mode = IntakeIOOutputMode.COAST;
+          outputs.mode = TriggersIOOutputMode.COAST;
           outputs.velocityRadsPerSec = 0.0;
           outputs.volts = 0.0;
           atGoal = false;
@@ -137,19 +132,16 @@ public class Intake extends FullSubsystem {
         case SHOOT -> {
           runVelocityLogic(kShootVelocity.get());
         }
-        case STOW -> {
-          runVelocityLogic(kStowVelocity.get());
-        }
       }
     }
-    Logger.recordOutput("Intake/Mode", outputs.mode);
-    Logger.recordOutput("Intake/Setpoint", outputs.velocityRadsPerSec);
+    Logger.recordOutput("Triggers/Mode", outputs.mode);
+    Logger.recordOutput("Triggers/Setpoint", outputs.velocityRadsPerSec);
     io.applyOutputs(outputs);
   }
 
   /** 内部速度闭环辅助方法：负责设定 output 并计算 atGoal */
   private void runVelocityLogic(double velocityRadsPerSec) {
-    outputs.mode = IntakeIOOutputMode.VELOCITY;
+    outputs.mode = TriggersIOOutputMode.VELOCITY;
     outputs.velocityRadsPerSec = velocityRadsPerSec;
     outputs.volts = 0.0; // 清零电压，防止干扰闭环
 
@@ -186,7 +178,7 @@ public class Intake extends FullSubsystem {
   }
 
   // --- Commands (供 Superstructure 调用) ---
-  public Command setGoalCommand(IntakeGoal newGoal) {
+  public Command setGoalCommand(TriggersGoal newGoal) {
     return Commands.runOnce(() -> this.goal = newGoal, this);
   }
 }

@@ -1,4 +1,4 @@
-package frc.robot.subsystems.intakearm;
+package frc.robot.subsystems.intake;
 
 import static edu.wpi.first.units.Units.Amps;
 import static frc.robot.util.PhoenixUtil.tryUntilOk;
@@ -7,14 +7,11 @@ import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
-import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
-import com.ctre.phoenix6.configs.SoftwareLimitSwitchConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.NeutralOut;
-import com.ctre.phoenix6.controls.StaticBrake;
+import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
@@ -26,10 +23,9 @@ import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Temperature;
 import edu.wpi.first.units.measure.Voltage;
 
-public class IntakearmIOReal implements IntakearmIO {
+public class IntakeIOReal implements IntakeIO {
   private final TalonFX talon;
-
-  // 状态信号（用于高效读取）
+  // 状态信号以便通过 IO 层读取
   private final StatusSignal<Angle> position;
   private final StatusSignal<AngularVelocity> velocity;
   private final StatusSignal<Voltage> appliedVolts;
@@ -38,15 +34,12 @@ public class IntakearmIOReal implements IntakearmIO {
   private final StatusSignal<Temperature> temp;
 
   // 控制请求
-  private final NeutralOut coastControl = new NeutralOut();
-  private final MotionMagicVoltage motionMagicVoltage = new MotionMagicVoltage(0.0);
-  private final StaticBrake brakeControl = new StaticBrake();
+  private final VelocityTorqueCurrentFOC velocityControl = new VelocityTorqueCurrentFOC(0.0);
   private final VoltageOut voltageControl = new VoltageOut(0);
+  private final NeutralOut coastControl = new NeutralOut();
 
-  public IntakearmIOReal(int id, boolean isclockwice_Positive) {
-    // 假设 Intakearm 电机 ID 为 15，位于 CANivore ("rio" 或你的 CANbus 名称)
-    talon = new TalonFX(IntakearmConstants.kIntakearmId);
-
+  public IntakeIOReal(int id, boolean isclockwice_Positive) {
+    talon = new TalonFX(id);
     final TalonFXConfiguration config =
         new TalonFXConfiguration()
             .withMotorOutput(
@@ -57,34 +50,18 @@ public class IntakearmIOReal implements IntakearmIO {
                             ? InvertedValue.Clockwise_Positive
                             : InvertedValue.CounterClockwise_Positive))
             .withFeedback(
-                new FeedbackConfigs()
-                    .withSensorToMechanismRatio(IntakearmConstants.kIntakearmGearRatio))
+                new FeedbackConfigs().withSensorToMechanismRatio(IntakeConstants.kIntakeGearRatio))
             .withCurrentLimits(
                 new CurrentLimitsConfigs()
-                    .withStatorCurrentLimit(Amps.of(80))
+                    .withStatorCurrentLimit(Amps.of(120.0))
                     .withStatorCurrentLimitEnable(true)
                     .withSupplyCurrentLimit(Amps.of(40))
-                    .withSupplyCurrentLimitEnable(true))
-            .withSoftwareLimitSwitch(
-                new SoftwareLimitSwitchConfigs()
-                    .withForwardSoftLimitEnable(true)
-                    .withForwardSoftLimitThreshold(
-                        Units.radiansToRotations(
-                            IntakearmConstants.kIntakearmMaxAngle)) // radian转圈数  电机
-                    .withReverseSoftLimitEnable(true)
-                    .withReverseSoftLimitThreshold(
-                        Units.radiansToRotations(IntakearmConstants.kIntakearmMinAngle)))
-            .withMotionMagic(
-                new MotionMagicConfigs()
-                    .withMotionMagicCruiseVelocity(
-                        Units.radiansToRotations(IntakearmConstants.kVelocityRadPerSec))
-                    .withMotionMagicAcceleration(
-                        Units.radiansToRotations(IntakearmConstants.kAccelerationRadPerSecSq)));
-    ;
+                    .withSupplyCurrentLimitEnable(true)
+                    .withSupplyCurrentLowerLimit(Amps.of(60)) // 允许短时间更高电流
+                    .withSupplyCurrentLowerTime(0.1)
+                    .withSupplyCurrentLimitEnable(true));
 
-    talon.getConfigurator().apply(config);
-
-    resetPosition(IntakearmConstants.kIntakearmInitialAngle);
+    tryUntilOk(5, () -> talon.getConfigurator().apply(config));
 
     // 初始化信号
     position = talon.getPosition();
@@ -100,37 +77,18 @@ public class IntakearmIOReal implements IntakearmIO {
   }
 
   @Override
-  public void updateInputs(IntakearmIOInputs inputs) {
+  public void updateInputs(IntakeIOInputs inputs) {
     // 刷新所有信号
-    inputs.motorConnected =
-        BaseStatusSignal.refreshAll(
-                position, velocity, appliedVolts, supplyCurrent, torqueCurrent, temp)
-            .isOK();
+    BaseStatusSignal.refreshAll(
+        position, velocity, appliedVolts, supplyCurrent, torqueCurrent, temp);
 
-    // Phoenix 6 默认单位是 Rotations，需要转为 Rads
+    inputs.connected = true;
     inputs.positionRads = Units.rotationsToRadians(position.getValueAsDouble());
     inputs.velocityRadsPerSec = Units.rotationsToRadians(velocity.getValueAsDouble());
-    inputs.appliedVolts = appliedVolts.getValueAsDouble();
+    inputs.appliedVoltage = appliedVolts.getValueAsDouble();
     inputs.supplyCurrentAmps = supplyCurrent.getValueAsDouble();
     inputs.torqueCurrentAmps = torqueCurrent.getValueAsDouble();
     inputs.tempCelsius = temp.getValueAsDouble();
-  }
-
-  @Override
-  public void applyOutputs(IntakearmIOOutputs outputs) {
-    switch (outputs.mode) {
-      case BRAKE -> talon.setControl(brakeControl);
-      case COAST -> talon.setControl(coastControl);
-      case CLOSED_LOOP -> {
-        talon.setControl(
-            motionMagicVoltage
-                .withPosition(outputs.positionRad / (2 * Math.PI))
-                .withEnableFOC(true));
-      }
-      case VOLTAGE -> {
-        talon.setControl(voltageControl.withOutput(outputs.appliedVolts));
-      }
-    }
   }
 
   @Override
@@ -142,13 +100,20 @@ public class IntakearmIOReal implements IntakearmIO {
     cfg.kS = kS; // static feedforward voltage
     cfg.kV = kV; // velocity feedforward voltage
     cfg.kA = kA; // acceleration feedforward voltage
-    cfg.kG = kG; // gravity feedforward voltage
-    // cfg.GravityType = GravityTypeValue.Arm_Cosine;
     tryUntilOk(5, () -> talon.getConfigurator().apply(cfg));
   }
 
   @Override
-  public void resetPosition(double Radius) {
-    talon.getConfigurator().setPosition(Units.radiansToRotations(Radius));
+  public void applyOutputs(IntakeIOOutputs outputs) {
+    switch (outputs.mode) {
+      case COAST -> talon.setControl(coastControl);
+      case VELOCITY -> {
+        talon.setControl(
+            velocityControl.withVelocity(Units.radiansToRotations(outputs.velocityRadsPerSec)));
+      }
+      case VOLTAGE -> {
+        talon.setControl(voltageControl.withOutput(outputs.volts));
+      }
+    }
   }
 }

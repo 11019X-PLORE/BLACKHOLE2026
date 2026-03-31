@@ -15,7 +15,7 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
 import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
 import com.ctre.phoenix6.controls.NeutralOut;
-import com.ctre.phoenix6.controls.PositionVoltage;
+import com.ctre.phoenix6.controls.PositionTorqueCurrentFOC;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
@@ -42,8 +42,8 @@ public class TurretIOreal implements TurretIO {
 
   // Control
   private final NeutralOut neutralControl = new NeutralOut();
-  private final PositionVoltage positionVoltageControl = new PositionVoltage(0.0);
   private final MotionMagicExpoVoltage mmExpoControl = new MotionMagicExpoVoltage(0.0);
+  private final PositionTorqueCurrentFOC positionControl = new PositionTorqueCurrentFOC(0.0);
   private double currentKv = 0.0;
   private double currentKs = 0.0;
 
@@ -166,18 +166,23 @@ public class TurretIOreal implements TurretIO {
       }
       case CLOSED_LOOP -> {
         double feedForwardAmps =
-            (Math.signum(outputs.velocity / (2 * Math.PI)) * currentKs)
-                + (outputs.velocity / (2 * Math.PI) * currentKv);
+            (Math.signum(outputs.velocityRadsPerSec / (2 * Math.PI)) * currentKs)
+                + (outputs.velocityRadsPerSec / (2 * Math.PI) * currentKv);
         talon.setControl(
-            // positionVoltageControl
-            //     .withEnableFOC(true)
-            //     .withPosition(outputs.position / (2 * Math.PI))
-            //     .withVelocity(outputs.velocity / (2 * Math.PI))
             mmExpoControl
-                .withPosition(outputs.position / (2 * Math.PI)) // 目标位置 (Rotations)
+                .withPosition(Units.radiansToRotations(outputs.positionRads))
                 .withFeedForward(feedForwardAmps)
                 .withEnableFOC(true) // 注入前馈电流 (Amps)
             );
+      }
+      case POSITION_FOC -> {
+        talon.setControl(
+            positionControl
+                .withPosition(Units.radiansToRotations(outputs.positionRads)) // 目标位置 (Rotations)
+                .withVelocity(
+                    Units.radiansToRotations(
+                        outputs.velocityRadsPerSec)) // 目标速度 (Rotations per second)
+                .withFeedForward(outputs.feedforwardAmps)); // 前馈电流 (Amps)
       }
     }
   }

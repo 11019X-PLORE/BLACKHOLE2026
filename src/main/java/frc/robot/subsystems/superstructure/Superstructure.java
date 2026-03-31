@@ -4,22 +4,20 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.subsystems.extension.Extension;
 import frc.robot.subsystems.hanger.Hanger;
 import frc.robot.subsystems.indexer.Indexer;
 import frc.robot.subsystems.indexer.Indexer.IndexerGoal;
 import frc.robot.subsystems.intake.Intake;
-import frc.robot.subsystems.intake.Intake.IntakeGoal;
-import frc.robot.subsystems.intakearm.Intakearm;
-import frc.robot.subsystems.intakearm.Intakearm.IntakearmGoal;
 import frc.robot.subsystems.led.LED;
-import frc.robot.subsystems.rotator.Rotator;
-import frc.robot.subsystems.rotator.Rotator.RotatorGoal;
 import frc.robot.subsystems.shooter.flywheel.Flywheel;
 import frc.robot.subsystems.shooter.flywheel.Flywheel.FlywheelGoal;
 import frc.robot.subsystems.shooter.hood.Hood;
 import frc.robot.subsystems.shooter.hood.Hood.HoodGoal;
 import frc.robot.subsystems.shooter.turret.Turret;
 import frc.robot.subsystems.shooter.turret.Turret.TurretGoal;
+import frc.robot.subsystems.triggers.Triggers;
+import frc.robot.subsystems.triggers.Triggers.TriggersGoal;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
@@ -33,8 +31,8 @@ public class Superstructure extends SubsystemBase {
   private final Hood hood;
   private final Flywheel flywheel;
   private final Intake intake;
-  private final Intakearm intakearm;
-  private final Rotator rotator;
+  private final Extension extension;
+  private final Triggers triggers;
   private final Indexer indexer;
   private final Hanger hanger;
   private final LED led;
@@ -44,8 +42,6 @@ public class Superstructure extends SubsystemBase {
     INTAKE,
     SPIT,
     SHOOTSPIT,
-    STOW,
-    INTAKESTOP,
     SPITSTOP,
     ACTIVESHOOTING,
     SHOOTING,
@@ -53,7 +49,6 @@ public class Superstructure extends SubsystemBase {
     PASSING,
     TRENCH,
     TEST,
-    SHAKE,
   }
 
   @Getter @AutoLogOutput private SuperstructureState currentState = SuperstructureState.IDLE;
@@ -67,8 +62,8 @@ public class Superstructure extends SubsystemBase {
       Hood hood,
       Flywheel flywheel,
       Intake intake,
-      Intakearm intakearm,
-      Rotator rotator,
+      Extension extension,
+      Triggers triggers,
       Indexer indexer,
       Hanger hanger,
       LED led,
@@ -77,8 +72,8 @@ public class Superstructure extends SubsystemBase {
     this.hood = hood;
     this.flywheel = flywheel;
     this.intake = intake;
-    this.intakearm = intakearm;
-    this.rotator = rotator;
+    this.extension = extension;
+    this.triggers = triggers;
     this.indexer = indexer;
     this.hanger = hanger;
     this.led = led;
@@ -93,46 +88,40 @@ public class Superstructure extends SubsystemBase {
                         turret.setGoalCommand(TurretGoal.IDLE),
                         hood.setGoalCommand(HoodGoal.IDLE),
                         flywheel.setGoalCommand(FlywheelGoal.IDLE),
-                        intakearm.setGoalCommand(IntakearmGoal.IDLE),
-                        intake.setGoalCommand(IntakeGoal.STOP),
+                        triggers.setGoalCommand(TriggersGoal.STOP),
+                        indexer.setGoalCommand(IndexerGoal.STOP))),
+            Map.entry(
+                SuperstructureState.SPIT,
+                () ->
+                    Commands.parallel(
                         Commands.runOnce(
                             () -> {
-                              rotator.setGoal(RotatorGoal.STOP);
-                              indexer.setGoal(IndexerGoal.STOP);
+                              triggers.setGoal(TriggersGoal.OUTTAKE);
+                              indexer.setGoal(IndexerGoal.OUTTAKE);
                             },
-                            rotator,
+                            triggers,
                             indexer))),
             Map.entry(
                 SuperstructureState.INTAKE,
                 () ->
                     Commands.parallel(
-                        intakearm.setGoalCommand(IntakearmGoal.DEPLOYED),
-                        intake.setGoalCommand(IntakeGoal.INTAKE))),
-            Map.entry(
-                SuperstructureState.SPIT,
-                () ->
-                    Commands.parallel(
-                        intakearm.setGoalCommand(IntakearmGoal.DEPLOYED),
-                        intake.setGoalCommand(IntakeGoal.OUTTAKE),
-                        Commands.run(
+                        Commands.runOnce(
                             () -> {
-                              rotator.setGoal(RotatorGoal.OUTTAKE);
-                              indexer.setGoal(IndexerGoal.OUTTAKE);
+                              triggers.setGoal(TriggersGoal.STOP);
+                              indexer.setGoal(IndexerGoal.INTAKE);
                             },
-                            rotator,
+                            triggers,
                             indexer))),
             Map.entry(
                 SuperstructureState.SPITSTOP,
                 () ->
                     Commands.parallel(
-                        intakearm.setGoalCommand(IntakearmGoal.DEPLOYED),
-                        intake.setGoalCommand(IntakeGoal.STOP),
-                        Commands.run(
+                        Commands.runOnce(
                             () -> {
-                              rotator.setGoal(RotatorGoal.STOP);
+                              triggers.setGoal(TriggersGoal.STOP);
                               indexer.setGoal(IndexerGoal.STOP);
                             },
-                            rotator,
+                            triggers,
                             indexer))),
             Map.entry(
                 SuperstructureState.SHOOTSPIT,
@@ -141,29 +130,11 @@ public class Superstructure extends SubsystemBase {
                         flywheel.setGoalCommand(FlywheelGoal.FIXED_VELOCITY),
                         Commands.runOnce(
                             () -> {
-                              rotator.setGoal(RotatorGoal.SHOOT);
+                              triggers.setGoal(TriggersGoal.SHOOT);
                               indexer.setGoal(IndexerGoal.SHOOT);
                             },
-                            rotator,
+                            triggers,
                             indexer))),
-            Map.entry(
-                SuperstructureState.INTAKESTOP,
-                () ->
-                    Commands.parallel(
-                        intakearm.setGoalCommand(IntakearmGoal.DEPLOYED),
-                        intake.setGoalCommand(IntakeGoal.STOP))),
-            Map.entry(
-                SuperstructureState.STOW,
-                () ->
-                    Commands.parallel(
-                        intakearm.setGoalCommand(IntakearmGoal.STOWED),
-                        intake.setGoalCommand(IntakeGoal.STOP))),
-            Map.entry(
-                SuperstructureState.SHAKE,
-                () ->
-                    Commands.parallel(
-                        intakearm.setGoalCommand(IntakearmGoal.SHAKE),
-                        intake.setGoalCommand(IntakeGoal.STOW))),
             Map.entry(
                 SuperstructureState.ACTIVESHOOTING,
                 () ->
@@ -173,10 +144,10 @@ public class Superstructure extends SubsystemBase {
                         flywheel.setGoalCommand(FlywheelGoal.ACTIVE),
                         Commands.run(
                             () -> {
-                              rotator.setGoal(RotatorGoal.STOP);
-                              indexer.setGoal(IndexerGoal.STOP);
+                              triggers.setGoal(TriggersGoal.STOP);
+                              indexer.setGoal(IndexerGoal.ACTIVE);
                             },
-                            rotator,
+                            triggers,
                             indexer))),
             Map.entry(
                 SuperstructureState.SHOOTING,
@@ -188,14 +159,14 @@ public class Superstructure extends SubsystemBase {
                         Commands.run(
                             () -> {
                               if (isReadyToShoot()) {
-                                rotator.setGoal(RotatorGoal.SHOOT);
+                                triggers.setGoal(TriggersGoal.SHOOT);
                                 indexer.setGoal(IndexerGoal.SHOOT);
                               } else {
-                                rotator.setGoal(RotatorGoal.STOP);
+                                triggers.setGoal(TriggersGoal.STOP);
                                 indexer.setGoal(IndexerGoal.STOP);
                               }
                             },
-                            rotator,
+                            triggers,
                             indexer))),
             Map.entry(
                 SuperstructureState.SHOOTING_FIXED,
@@ -207,14 +178,14 @@ public class Superstructure extends SubsystemBase {
                         Commands.run(
                             () -> {
                               if (isReadyToShoot()) {
-                                rotator.setGoal(RotatorGoal.SHOOT);
+                                triggers.setGoal(TriggersGoal.SHOOT);
                                 indexer.setGoal(IndexerGoal.SHOOT);
                               } else {
-                                rotator.setGoal(RotatorGoal.STOP);
+                                triggers.setGoal(TriggersGoal.STOP);
                                 indexer.setGoal(IndexerGoal.STOP);
                               }
                             },
-                            rotator,
+                            triggers,
                             indexer))),
             Map.entry(
                 SuperstructureState.PASSING,
@@ -227,13 +198,13 @@ public class Superstructure extends SubsystemBase {
                             () -> {
                               if (isReadyToShoot()) {
                                 indexer.setGoal(IndexerGoal.SHOOT);
-                                rotator.setGoal(RotatorGoal.SHOOT);
+                                triggers.setGoal(TriggersGoal.SHOOT);
                               } else {
                                 indexer.setGoal(IndexerGoal.STOP);
-                                rotator.setGoal(RotatorGoal.STOP);
+                                triggers.setGoal(TriggersGoal.STOP);
                               }
                             },
-                            rotator,
+                            triggers,
                             indexer))),
             Map.entry(
                 SuperstructureState.TRENCH,
@@ -244,10 +215,10 @@ public class Superstructure extends SubsystemBase {
                         flywheel.setGoalCommand(FlywheelGoal.TRACKING),
                         Commands.runOnce(
                             () -> {
-                              rotator.setGoal(RotatorGoal.STOP);
+                              triggers.setGoal(TriggersGoal.STOP);
                               indexer.setGoal(IndexerGoal.STOP);
                             },
-                            rotator,
+                            triggers,
                             indexer))),
             Map.entry(
                 SuperstructureState.TEST,
@@ -259,14 +230,14 @@ public class Superstructure extends SubsystemBase {
                         Commands.run(
                             () -> {
                               if (isReadyToShoot()) {
-                                rotator.setGoal(RotatorGoal.SHOOT);
+                                triggers.setGoal(TriggersGoal.SHOOT);
                                 indexer.setGoal(IndexerGoal.SHOOT);
                               } else {
-                                rotator.setGoal(RotatorGoal.STOP);
+                                triggers.setGoal(TriggersGoal.STOP);
                                 indexer.setGoal(IndexerGoal.STOP);
                               }
                             },
-                            rotator,
+                            triggers,
                             indexer))));
   }
   /** 检查是否准备好发射 */
@@ -372,7 +343,7 @@ public class Superstructure extends SubsystemBase {
     }
 
     // --- 3. 吸球动作 (主动任务) ---
-    if (currentState == SuperstructureState.INTAKE) {
+    if (intake.getGoal() == Intake.IntakeGoal.INTAKE) {
       led.setGoal(LED.LEDState.INTAKING);
       return;
     }
@@ -386,7 +357,7 @@ public class Superstructure extends SubsystemBase {
     }
 
     // --- 5. STOW (收起状态 - 被动) ---
-    if (currentState == SuperstructureState.STOW) {
+    if (intake.getGoal() == Intake.IntakeGoal.STOW) {
       led.setGoal(LED.LEDState.INTAKE_STOWED);
       return;
     }

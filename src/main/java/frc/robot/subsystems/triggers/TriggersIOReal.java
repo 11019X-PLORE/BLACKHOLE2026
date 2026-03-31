@@ -1,4 +1,4 @@
-package frc.robot.subsystems.shooter.flywheel;
+package frc.robot.subsystems.triggers;
 
 import static edu.wpi.first.units.Units.Amps;
 import static frc.robot.util.PhoenixUtil.tryUntilOk;
@@ -10,13 +10,11 @@ import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
-import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
@@ -25,9 +23,8 @@ import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Temperature;
 import edu.wpi.first.units.measure.Voltage;
 
-public class FlywheelIOReal implements FlywheelIO {
+public class TriggersIOReal implements TriggersIO {
   private final TalonFX talon;
-  private final TalonFX secondTalon;
   // 状态信号以便通过 IO 层读取
   private final StatusSignal<Angle> position;
   private final StatusSignal<AngularVelocity> velocity;
@@ -36,21 +33,13 @@ public class FlywheelIOReal implements FlywheelIO {
   private final StatusSignal<Current> torqueCurrent;
   private final StatusSignal<Temperature> temp;
 
-  private final StatusSignal<Angle> secondposition;
-  private final StatusSignal<AngularVelocity> secondvelocity;
-  private final StatusSignal<Voltage> secondappliedVolts;
-  private final StatusSignal<Current> secondsupplyCurrent;
-  private final StatusSignal<Current> secondtorqueCurrent;
-  private final StatusSignal<Temperature> secondtemp;
-
   // 控制请求
   private final VelocityTorqueCurrentFOC velocityControl = new VelocityTorqueCurrentFOC(0.0);
   private final VoltageOut voltageControl = new VoltageOut(0);
   private final NeutralOut coastControl = new NeutralOut();
 
-  public FlywheelIOReal(int id, boolean isclockwice_Positive) {
-    talon = new TalonFX(FlywheelConstants.kFlywheelId);
-    secondTalon = new TalonFX(FlywheelConstants.kSecondFlywheel);
+  public TriggersIOReal(int id, boolean isclockwice_Positive) {
+    talon = new TalonFX(id);
     final TalonFXConfiguration config =
         new TalonFXConfiguration()
             .withMotorOutput(
@@ -62,7 +51,7 @@ public class FlywheelIOReal implements FlywheelIO {
                             : InvertedValue.CounterClockwise_Positive))
             .withFeedback(
                 new FeedbackConfigs()
-                    .withSensorToMechanismRatio(FlywheelConstants.kFlywheelGearRatio))
+                    .withSensorToMechanismRatio(TriggersConstants.kTriggersGearRatio))
             .withCurrentLimits(
                 new CurrentLimitsConfigs()
                     .withStatorCurrentLimit(Amps.of(120.0))
@@ -74,8 +63,6 @@ public class FlywheelIOReal implements FlywheelIO {
                     .withSupplyCurrentLimitEnable(true));
 
     tryUntilOk(5, () -> talon.getConfigurator().apply(config));
-    tryUntilOk(5, () -> secondTalon.getConfigurator().apply(config));
-    secondTalon.setControl(new Follower(talon.getDeviceID(), MotorAlignmentValue.Opposed));
 
     // 初始化信号
     position = talon.getPosition();
@@ -85,43 +72,16 @@ public class FlywheelIOReal implements FlywheelIO {
     torqueCurrent = talon.getTorqueCurrent();
     temp = talon.getDeviceTemp();
 
-    secondposition = secondTalon.getPosition();
-    secondvelocity = secondTalon.getVelocity();
-    secondappliedVolts = secondTalon.getMotorVoltage();
-    secondsupplyCurrent = secondTalon.getSupplyCurrent();
-    secondtorqueCurrent = secondTalon.getTorqueCurrent();
-    secondtemp = secondTalon.getDeviceTemp();
-
     // 优化 CAN 总线带宽，将这些信号设为高频同步更新
     BaseStatusSignal.setUpdateFrequencyForAll(
-        50.0,
-        position,
-        velocity,
-        appliedVolts,
-        supplyCurrent,
-        torqueCurrent,
-        secondposition,
-        secondvelocity,
-        secondappliedVolts,
-        secondsupplyCurrent,
-        secondtorqueCurrent);
+        50.0, position, velocity, appliedVolts, supplyCurrent, torqueCurrent);
   }
 
   @Override
-  public void updateInputs(FlywheelIOInputs inputs) {
+  public void updateInputs(TriggersIOInputs inputs) {
     // 刷新所有信号
     BaseStatusSignal.refreshAll(
-        position,
-        velocity,
-        appliedVolts,
-        supplyCurrent,
-        torqueCurrent,
-        temp,
-        secondposition,
-        secondvelocity,
-        secondappliedVolts,
-        secondsupplyCurrent,
-        secondtorqueCurrent);
+        position, velocity, appliedVolts, supplyCurrent, torqueCurrent, temp);
 
     inputs.connected = true;
     inputs.positionRads = Units.rotationsToRadians(position.getValueAsDouble());
@@ -130,14 +90,6 @@ public class FlywheelIOReal implements FlywheelIO {
     inputs.supplyCurrentAmps = supplyCurrent.getValueAsDouble();
     inputs.torqueCurrentAmps = torqueCurrent.getValueAsDouble();
     inputs.tempCelsius = temp.getValueAsDouble();
-
-    inputs.secondconnected = true;
-    inputs.secondpositionRads = Units.rotationsToRadians(secondposition.getValueAsDouble());
-    inputs.secondvelocityRadsPerSec = Units.rotationsToRadians(secondvelocity.getValueAsDouble());
-    inputs.secondappliedVoltage = secondappliedVolts.getValueAsDouble();
-    inputs.secondsupplyCurrentAmps = secondsupplyCurrent.getValueAsDouble();
-    inputs.secondtorqueCurrentAmps = secondtorqueCurrent.getValueAsDouble();
-    inputs.secondtempCelsius = secondtemp.getValueAsDouble();
   }
 
   @Override
@@ -153,7 +105,7 @@ public class FlywheelIOReal implements FlywheelIO {
   }
 
   @Override
-  public void applyOutputs(FlywheelIOOutputs outputs) {
+  public void applyOutputs(TriggersIOOutputs outputs) {
     switch (outputs.mode) {
       case COAST -> talon.setControl(coastControl);
       case VELOCITY -> {
@@ -162,12 +114,6 @@ public class FlywheelIOReal implements FlywheelIO {
       }
       case VOLTAGE -> {
         talon.setControl(voltageControl.withOutput(outputs.volts));
-      }
-      case VELOCITY_FOC -> {
-        talon.setControl(
-            velocityControl
-                .withVelocity(Units.radiansToRotations(outputs.velocityRadsPerSec))
-                .withFeedForward(outputs.feedforwardAmps));
       }
     }
   }

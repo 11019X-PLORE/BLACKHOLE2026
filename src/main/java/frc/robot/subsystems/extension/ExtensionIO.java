@@ -1,11 +1,11 @@
-package frc.robot.subsystems.intakearm;
+package frc.robot.subsystems.extension;
 
 import org.littletonrobotics.junction.AutoLog;
 
-public interface IntakearmIO {
+public interface ExtensionIO {
 
   @AutoLog
-  public static class IntakearmIOInputs {
+  public static class ExtensionIOInputs {
     // TODO: add encoder
     boolean motorConnected = false;
     double positionRads = 0.0;
@@ -16,17 +16,17 @@ public interface IntakearmIO {
     double tempCelsius = 0.0;
   }
 
-  public static enum IntakearmIOOutputMode {
+  public static enum ExtensionIOOutputMode {
     BRAKE,
     COAST,
     CLOSED_LOOP,
     VOLTAGE
   }
 
-  public static class IntakearmIOOutputs {
-    public IntakearmIOOutputMode mode = IntakearmIOOutputMode.CLOSED_LOOP;
+  public static class ExtensionIOOutputs {
+    public ExtensionIOOutputMode mode = ExtensionIOOutputMode.CLOSED_LOOP;
     // Closed loop control
-    public double positionRad = 0.0;
+    public double positionRads = 0.0;
     public double velocityRadsPerSec = 0.0;
     public double kP = 0.0;
     public double kD = 0.0;
@@ -34,9 +34,9 @@ public interface IntakearmIO {
     public double appliedVolts = 0.0;
   }
 
-  public default void updateInputs(IntakearmIOInputs inputs) {}
+  public default void updateInputs(ExtensionIOInputs inputs) {}
 
-  public default void applyOutputs(IntakearmIOOutputs outputs) {}
+  public default void applyOutputs(ExtensionIOOutputs outputs) {}
 
   public default void setPID(
       double kP, double kI, double kD, double kS, double kV, double kA, double kG) {}
