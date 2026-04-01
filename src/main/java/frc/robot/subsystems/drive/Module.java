@@ -107,10 +107,19 @@ public class Module {
     return new SwerveModulePosition(getPositionMeters(), getAngle());
   }
 
+  public double getForceNewton() {
+    return inputs.driveCurrentAmps * inputs.driveKt * constants.DriveMotorGearRatio / constants.WheelRadius;
+  }
+
   /** Returns the module state (turn angle and drive velocity). */
   public SwerveModuleState getState() {
     return new SwerveModuleState(getVelocityMetersPerSec(), getAngle());
   }
+
+  public SwerveModuleState getForceState() {
+    return new SwerveModuleState(getForceNewton(), getAngle());
+  }
+
 
   /** Returns the module positions received this cycle. */
   public SwerveModulePosition[] getOdometryPositions() {

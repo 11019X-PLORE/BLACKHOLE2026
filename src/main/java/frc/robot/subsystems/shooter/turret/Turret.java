@@ -26,15 +26,18 @@ import frc.robot.subsystems.shooter.turret.TurretIO.TurretIOOutputs;
 import frc.robot.util.EqualsUtil;
 import frc.robot.util.FullSubsystem;
 import frc.robot.util.LoggedTunableNumber;
+import frc.robot.util.PhysicalJoint;
 import frc.robot.util.geometry.AllianceFlipUtil;
 import java.util.function.Supplier;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+
+import org.ejml.simple.SimpleMatrix;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
-public class Turret extends FullSubsystem {
+public class Turret extends FullSubsystem implements PhysicalJoint{
   private static final double trackOverlapMargin = Units.degreesToRadians(10);
   private static final double trackMinAngle = TurretConstants.kTurretMinAngle - trackOverlapMargin;
   private static final double trackMaxAngle = TurretConstants.kTurretMaxAngle + trackOverlapMargin;
@@ -115,6 +118,8 @@ public class Turret extends FullSubsystem {
   private final String name;
   private final Translation2d robotToTurret;
   private Pose2d turretPose = new Pose2d();
+  private final PhysicalJoint.kinematics kinematicsData = new PhysicalJoint.kinematics();
+  private PhysicalJoint base = null;
 
   public Turret(
       TurretIO io,
@@ -137,10 +142,7 @@ public class Turret extends FullSubsystem {
     disconnected.set(!motorConnectedDebouncer.calculate(inputs.turretMotorConnected));
     updateTunables();
     calculateTurretPose();
-  }
-
-  @Override
-  public void periodicAfterScheduler() {
+    updateKinematics();
 
     if (DriverStation.isDisabled() || !turretZeroed) {
       outputs.mode = TurretIOOutputMode.COAST;
@@ -396,5 +398,39 @@ public class Turret extends FullSubsystem {
 
   public void launchFuel() {
     io.launchFuel();
+  }
+
+  //TODO call this in robot container after creating turret and drive, to set up the kinematics chain
+  public void setBase(PhysicalJoint base) {
+    this.base = base;
+  }
+
+  @Override
+  public void updateKinematics(){
+    kinematicsData.forwardKinematic = TurretConstants.swerve2TurretOffset.plus(
+      new Transform3d(new Translation3d(), new Rotation3d(0, 0, getPosition())));
+
+    kinematicsData.localVelocity = new SimpleMatrix(6, 1);
+    kinematicsData.localAcceleration = new SimpleMatrix(6, 1);
+  };
+
+  @Override
+  public PhysicalJoint getParentJoint() {
+    return base;
+  }
+
+  @Override
+  public Transform3d getForwardKinematic() {
+    return kinematicsData.forwardKinematic;
+  }
+
+  @Override
+  public SimpleMatrix getLocalVelocity() {
+    return kinematicsData.localVelocity;
+  }
+
+  @Override
+  public SimpleMatrix getLocalAcceleration() {
+    return kinematicsData.localAcceleration;
   }
 }
