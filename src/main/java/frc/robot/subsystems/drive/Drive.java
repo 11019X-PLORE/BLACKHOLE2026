@@ -45,8 +45,8 @@ import frc.robot.Constants.Mode;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.vision.VisionConstants;
 import frc.robot.util.LocalADStarAK;
-import frc.robot.util.PhysicalJoint;
 import frc.robot.util.TrenchHelper;
+import frc.robot.util.Geoffrey.PhysicalJoint;
 import frc.robot.util.geometry.AllianceFlipUtil;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -365,7 +365,6 @@ public class Drive extends SubsystemBase implements PhysicalJoint {
     SwerveModuleState[] states = new SwerveModuleState[modules.length];
     for (int i = 0; i < modules.length; i++) {
       states[i] = modules[i].getForceState();
-      states[i].speedMetersPerSecond *= modules.length; // 将力转换为等效速度，方便后续使用运动学计算合力
     }
     return states;
   }
@@ -381,17 +380,29 @@ public class Drive extends SubsystemBase implements PhysicalJoint {
     return ChassisSpeeds.fromRobotRelativeSpeeds(getChassisSpeeds(), getRotation());
   }
 
-  public ChassisSpeeds getChassisForces() {
-    return ChassisSpeeds.fromRobotRelativeSpeeds(
-        kinematics.toChassisSpeeds(getModuleForces()), getRotation());
+  public double[] getChassisForces() {
+    SwerveModuleState[] states = getModuleForces();
+    Translation2d[] moduleRs = kinematics.getModules();
+    double[] forces = new double[3];// Fx, Fy, torque
+
+    for(int i = 0; i < states.length; i++){
+      double Fx = states[i].speedMetersPerSecond * states[i].angle.getCos();
+      double Fy = states[i].speedMetersPerSecond * states[i].angle.getSin();
+
+      forces[0] += Fx;
+      forces[1] += Fy;
+      forces[2] += -Fx * moduleRs[i].getY() + Fy * moduleRs[i].getX();
+    }
+
+    return forces;
   }
 
   public ChassisSpeeds getFieldAcceleration() {
-    ChassisSpeeds currentForces = getChassisForces();
+    double[] currentForces = getChassisForces();
     return new ChassisSpeeds(
-        currentForces.vxMetersPerSecond / ROBOT_MASS_KG,
-        currentForces.vyMetersPerSecond / ROBOT_MASS_KG,
-        currentForces.omegaRadiansPerSecond / ROBOT_MOI);
+        currentForces[0] / ROBOT_MASS_KG,
+        currentForces[1] / ROBOT_MASS_KG,
+        currentForces[2] / ROBOT_MOI);
   }
 
   /** Returns the position of each module in radians. */
