@@ -44,8 +44,7 @@ public class TurretConstants {
               Units.degreesToRadians(-24), // pitch
               Units.degreesToRadians(-180))); // yaw
 
-
-  public static final Transform3d swerve2TurretOffset = new Transform3d(); //TODO
+  public static final Transform3d swerve2TurretOffset = new Transform3d(); // TODO
 
   public static final double kVelocityRadPerSec = Units.degreesToRadians(720.0);
   public static final double kAccelerationRadPerSecSq = Units.degreesToRadians(1200.0);

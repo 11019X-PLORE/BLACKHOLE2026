@@ -11,14 +11,15 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.vision.VisionIO.PoseObservationType;
+import frc.robot.util.LoggedTracer;
+import frc.robot.util.VirtualSubsystem;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.Logger;
 
-public class Vision extends SubsystemBase {
+public class Vision extends VirtualSubsystem {
   private final VisionConsumer consumer;
   // private final Drive drive;
   private final VisionIO[] io;
@@ -186,5 +187,10 @@ public class Vision extends SubsystemBase {
         Pose2d visionRobotPoseMeters,
         double timestampSeconds,
         Matrix<N3, N1> visionMeasurementStdDevs);
+  }
+
+  @Override
+  public void periodicAfterScheduler() {
+    LoggedTracer.record("Vision/AfterScheduler");
   }
 }
