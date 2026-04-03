@@ -26,7 +26,7 @@ import frc.robot.subsystems.shooter.turret.TurretIO.TurretIOOutputs;
 import frc.robot.util.EqualsUtil;
 import frc.robot.util.FullSubsystem;
 import frc.robot.util.LoggedTunableNumber;
-import frc.robot.util.PhysicalJoint;
+import frc.robot.util.Geoffrey.PhysicalJoint;
 import frc.robot.util.geometry.AllianceFlipUtil;
 import java.util.function.Supplier;
 import lombok.Getter;
@@ -215,7 +215,7 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
 
     // 2. 寻找最近的合法角度 (保持搜索逻辑)
     // 这步确保炮塔在 [-270, 90] 的物理墙内找到离当前位置最近的等效点
-    boolean hasBestAngle = false;
+    boolean hasBestAngle = false;  
     double bestAngle = 0;
     for (int i = -2; i < 3; i++) {
       double potentialSetpoint = targetRads + (i * 2.0 * Math.PI);
@@ -415,8 +415,14 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
         TurretConstants.swerve2TurretOffset.plus(
             new Transform3d(new Translation3d(), new Rotation3d(0, 0, getPosition())));
 
+<<<<<<< HEAD
     kinematicsData.localVelocity = new SimpleMatrix(6, 1); // TODO
     kinematicsData.localAcceleration = new SimpleMatrix(6, 1); // TODO
+=======
+    kinematicsData.localVelocity = new SimpleMatrix(6, 1);
+    kinematicsData.localVelocity.set(5, 0, getVelocity());
+    kinematicsData.localAcceleration = new SimpleMatrix(6, 1); //NO need to know, 
+>>>>>>> Vision+ShootingOneTheMove
   }
   ;
 

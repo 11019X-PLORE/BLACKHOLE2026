@@ -45,8 +45,8 @@ import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.vision.VisionConstants;
 import frc.robot.util.FullSubsystem;
 import frc.robot.util.LocalADStarAK;
-import frc.robot.util.PhysicalJoint;
 import frc.robot.util.TrenchHelper;
+import frc.robot.util.Geoffrey.PhysicalJoint;
 import frc.robot.util.geometry.AllianceFlipUtil;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -55,7 +55,7 @@ import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 public class Drive extends FullSubsystem implements PhysicalJoint {
-
+  // TunerConstants doesn't include these constants, so they are declared locally
   static final double ODOMETRY_FREQUENCY = TunerConstants.kCANBus.isNetworkFD() ? 250.0 : 100.0;
   public static final double DRIVE_BASE_RADIUS =
       Math.max(
@@ -324,17 +324,29 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
     return ChassisSpeeds.fromRobotRelativeSpeeds(getChassisSpeeds(), getRotation());
   }
 
-  public ChassisSpeeds getChassisForces() {
-    return ChassisSpeeds.fromRobotRelativeSpeeds(
-        kinematics.toChassisSpeeds(getModuleForces()), getRotation());
+  public double[] getChassisForces() {
+    SwerveModuleState[] states = getModuleForces();
+    Translation2d[] moduleRs = kinematics.getModules();
+    double[] forces = new double[3];// Fx, Fy, torque
+
+    for(int i = 0; i < states.length; i++){
+      double Fx = states[i].speedMetersPerSecond * states[i].angle.getCos();
+      double Fy = states[i].speedMetersPerSecond * states[i].angle.getSin();
+
+      forces[0] += Fx;
+      forces[1] += Fy;
+      forces[2] += -Fx * moduleRs[i].getY() + Fy * moduleRs[i].getX();
+    }
+
+    return forces;
   }
 
   public ChassisSpeeds getFieldAcceleration() {
-    ChassisSpeeds currentForces = getChassisForces();
+    double[] currentForces = getChassisForces();
     return new ChassisSpeeds(
-        currentForces.vxMetersPerSecond / ROBOT_MASS_KG,
-        currentForces.vyMetersPerSecond / ROBOT_MASS_KG,
-        currentForces.omegaRadiansPerSecond / ROBOT_MOI);
+        currentForces[0] / ROBOT_MASS_KG,
+        currentForces[1] / ROBOT_MASS_KG,
+        currentForces[2] / ROBOT_MOI);
   }
 
   public double[] getWheelRadiusCharacterizationPositions() {
@@ -407,6 +419,7 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
   }
 
   // --- PhysicalJoint 接口实现 ---
+
   @Override
   public void updateKinematics() {
     Pose2d currentPose = getPose();
@@ -415,8 +428,23 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
             new Translation3d(
                 currentPose.getTranslation().getX(), currentPose.getTranslation().getY(), 0),
             new Rotation3d(0, 0, currentPose.getRotation().getRadians()));
+    kinematicsData.forwardKinematic =
+        new Transform3d(
+            new Translation3d(
+                currentPose.getTranslation().getX(), currentPose.getTranslation().getY(), 0),
+            new Rotation3d(0, 0, currentPose.getRotation().getRadians()));
 
     ChassisSpeeds currentSpeeds = getFieldVelocity();
+    kinematicsData.localVelocity =
+        new SimpleMatrix(
+            new double[] {
+              currentSpeeds.vxMetersPerSecond,
+              currentSpeeds.vyMetersPerSecond,
+              0,
+              0,
+              0,
+              currentSpeeds.omegaRadiansPerSecond,
+            });
     kinematicsData.localVelocity =
         new SimpleMatrix(
             new double[] {
@@ -461,3 +489,4 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
     return kinematicsData.localAcceleration;
   }
 }
+
