@@ -38,15 +38,15 @@ public class TriggersIOReal implements TriggersIO {
   private final VoltageOut voltageControl = new VoltageOut(0);
   private final NeutralOut coastControl = new NeutralOut();
 
-  public TriggersIOReal(int id, boolean isclockwice_Positive) {
-    talon = new TalonFX(id);
+  public TriggersIOReal() {
+    talon = new TalonFX(TriggersConstants.kTriggersId);
     final TalonFXConfiguration config =
         new TalonFXConfiguration()
             .withMotorOutput(
                 new MotorOutputConfigs()
                     .withNeutralMode(NeutralModeValue.Coast)
                     .withInverted(
-                        isclockwice_Positive
+                        TriggersConstants.kTriggersInverted
                             ? InvertedValue.Clockwise_Positive
                             : InvertedValue.CounterClockwise_Positive))
             .withFeedback(

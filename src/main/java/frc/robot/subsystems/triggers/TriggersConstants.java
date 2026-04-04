@@ -4,8 +4,20 @@ import frc.robot.Ports;
 
 public class TriggersConstants {
   public static final int kTriggersId = Ports.kTriggers;
+
+  public static final int kTestLeftTriggersId = Ports.kTestLeftTriggers;
+  public static final int kTestRightTriggersId = Ports.kTestRightTriggers;
+
+  public static final int kTestLeftLimitSwitchId = Ports.kTestLeftLimitSwitch;
+  public static final int kTestRightLimitSwitchId = Ports.kTestRightLimitSwitch;
+
   public static final int kSecondTriggers = 25;
   public static boolean kTriggersInverted = false;
+
+  public static boolean kTestLeftTriggersInverted = true;
+  public static boolean kTestRightTriggersInverted = false;
+
+  public static double minSwitchPeriod = 0.2;
 
   public static final double kTriggersRadius = 0.05; // TODO
   public static final double kTriggersGearRatio = 1.0; // 1.125

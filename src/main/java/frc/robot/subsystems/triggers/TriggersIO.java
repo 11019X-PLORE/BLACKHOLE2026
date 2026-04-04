@@ -12,19 +12,12 @@ public interface TriggersIO {
     public double supplyCurrentAmps;
     public double torqueCurrentAmps;
     public double tempCelsius;
-
-    public boolean secondconnected;
-    public double secondpositionRads;
-    public double secondvelocityRadsPerSec;
-    public double secondappliedVoltage;
-    public double secondsupplyCurrentAmps;
-    public double secondtorqueCurrentAmps;
-    public double secondtempCelsius;
   }
 
   public static enum TriggersIOOutputMode {
     COAST,
     VELOCITY,
+    
     VOLTAGE
   }
 

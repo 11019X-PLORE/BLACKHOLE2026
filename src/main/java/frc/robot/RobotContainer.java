@@ -146,8 +146,7 @@ public class RobotContainer {
                 new IntakeIOReal(IntakeConstants.kIntakeId, IntakeConstants.kIntakeInverted));
         triggers =
             new Triggers(
-                new TriggersIOTest(
-                    TriggersConstants.kTriggersId, TriggersConstants.kTriggersInverted));
+                new TriggersIOTest());
         indexer =
             new Indexer(
                 new IndexerIOReal(IndexerConstants.kIndexerId, IndexerConstants.kIndexerInverted));
