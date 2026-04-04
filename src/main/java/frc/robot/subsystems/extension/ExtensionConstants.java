@@ -6,10 +6,10 @@ import frc.robot.Ports;
 public class ExtensionConstants {
 
   public static final int kExtensionId = Ports.kExtension;
-  public static final boolean kExtensionInverted = true;
+  public static final boolean kExtensionInverted = false;
 
-  public static final double kExtensionRadius = 0.241025; // TODO
-  public static final double kExtensionGearRatio = 320.0 / 3.0; // TODO
+  public static final double kExtensionRadius = 0.0124; // TODO
+  public static final double kExtensionGearRatio = 3.0; // TODO
 
   public static final double kP = 40.0; // 20
   public static final double kI = 0.0;

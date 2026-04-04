@@ -4,10 +4,10 @@ import frc.robot.Ports;
 
 public class IntakeConstants {
   public static final int kIntakeId = Ports.kIntake;
-  public static boolean kIntakeInverted = false;
+  public static boolean kIntakeInverted = true;
 
-  public static final double kIntakeRadius = 0.05; // TODO
-  public static final double kIntakeGearRatio = 1.0; // 1.125
+  public static final double kIntakeRadius = 0.0375; // TODO
+  public static final double kIntakeGearRatio = 44.0 / 12.0; // 1.125
 
   public static final double kP = 10.0; // 10.0
   public static final double kI = 0.0;

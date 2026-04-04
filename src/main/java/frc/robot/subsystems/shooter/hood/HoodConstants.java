@@ -8,7 +8,7 @@ public class HoodConstants {
   public static final boolean kHoodInverted = true;
 
   public static final double kHoodRadius = 0.20193; // TODO
-  public static final double hoodGearRatio = 26.5; // TODO
+  public static final double hoodGearRatio = 174.0 * 44.0 * 44.0 / (14.0 * 8.0 * 10.0); // TODO
 
   public static final double kP = 200.0; // 100
   public static final double kI = 0.0;

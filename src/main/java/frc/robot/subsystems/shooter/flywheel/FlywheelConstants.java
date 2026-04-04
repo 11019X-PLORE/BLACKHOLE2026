@@ -5,7 +5,7 @@ import frc.robot.Ports;
 public class FlywheelConstants {
   public static final int kFlywheelId = Ports.kFlywheel;
   public static final int kSecondFlywheel = Ports.kSecondFlywheel;
-  public static boolean kFlywheelInverted = false;
+  public static boolean kFlywheelInverted = true;
 
   public static final double kFlywheelRadius = 0.05; // TODO
   public static final double kFlywheelGearRatio = 1.0; // 1.125

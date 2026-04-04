@@ -14,13 +14,13 @@ public class TriggersConstants {
   public static final int kSecondTriggers = 25;
   public static boolean kTriggersInverted = false;
 
-  public static boolean kTestLeftTriggersInverted = true;
-  public static boolean kTestRightTriggersInverted = false;
+  public static boolean kTestLeftTriggersInverted = false;
+  public static boolean kTestRightTriggersInverted = true;
 
   public static double minSwitchPeriod = 0.2;
 
   public static final double kTriggersRadius = 0.05; // TODO
-  public static final double kTriggersGearRatio = 1.0; // 1.125
+  public static final double kTriggersGearRatio = 5.0; // 1.125
 
   public static final double kP = 10.0; // 10.0
   public static final double kI = 0.0;

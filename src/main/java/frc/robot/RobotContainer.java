@@ -66,7 +66,6 @@ import frc.robot.subsystems.shooter.turret.TurretIOreal;
 import frc.robot.subsystems.superstructure.Superstructure;
 import frc.robot.subsystems.superstructure.Superstructure.SuperstructureState;
 import frc.robot.subsystems.triggers.Triggers;
-import frc.robot.subsystems.triggers.TriggersConstants;
 import frc.robot.subsystems.triggers.TriggersIOSim;
 import frc.robot.subsystems.triggers.TriggersIOTest;
 import frc.robot.subsystems.vision.Vision;
@@ -144,9 +143,7 @@ public class RobotContainer {
         intake =
             new Intake(
                 new IntakeIOReal(IntakeConstants.kIntakeId, IntakeConstants.kIntakeInverted));
-        triggers =
-            new Triggers(
-                new TriggersIOTest());
+        triggers = new Triggers(new TriggersIOTest());
         indexer =
             new Indexer(
                 new IndexerIOReal(IndexerConstants.kIndexerId, IndexerConstants.kIndexerInverted));

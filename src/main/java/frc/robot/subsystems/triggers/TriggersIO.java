@@ -17,7 +17,7 @@ public interface TriggersIO {
   public static enum TriggersIOOutputMode {
     COAST,
     VELOCITY,
-    
+
     VOLTAGE
   }
 

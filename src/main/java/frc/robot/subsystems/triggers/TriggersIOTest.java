@@ -13,7 +13,6 @@ import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.ProximityParamsConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VoltageOut;
@@ -21,7 +20,6 @@ import com.ctre.phoenix6.hardware.CANrange;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.ForwardLimitSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
-import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
@@ -86,7 +84,10 @@ public class TriggersIOTest implements TriggersIO {
 
     tryUntilOk(5, () -> talon_left.getConfigurator().apply(config_left));
 
-    TalonFXConfiguration config_right = config_left.clone().withMotorOutput(
+    TalonFXConfiguration config_right =
+        config_left
+            .clone()
+            .withMotorOutput(
                 new MotorOutputConfigs()
                     .withNeutralMode(NeutralModeValue.Coast)
                     .withInverted(
@@ -99,10 +100,12 @@ public class TriggersIOTest implements TriggersIO {
     leftCANrange = new CANrange(TriggersConstants.kTestLeftTriggersId);
     rightCANrange = new CANrange(TriggersConstants.kTestRightTriggersId);
 
-    final CANrangeConfiguration canRangeConfig = new CANrangeConfiguration().withProximityParams(
-      new ProximityParamsConfigs()
-      .withProximityThreshold(0.3)
-      .withProximityHysteresis(0.01));//TODO
+    final CANrangeConfiguration canRangeConfig =
+        new CANrangeConfiguration()
+            .withProximityParams(
+                new ProximityParamsConfigs()
+                    .withProximityThreshold(0.3)
+                    .withProximityHysteresis(0.01)); // TODO
     tryUntilOk(5, () -> leftCANrange.getConfigurator().apply(canRangeConfig));
     tryUntilOk(5, () -> rightCANrange.getConfigurator().apply(canRangeConfig));
 
@@ -141,12 +144,7 @@ public class TriggersIOTest implements TriggersIO {
   public void updateInputs(TriggersIOInputs inputs) {
     // 刷新所有信号
     BaseStatusSignal.refreshAll(
-        position,
-        velocity,
-        appliedVolts,
-        supplyCurrent,
-        torqueCurrent,
-        temp);
+        position, velocity, appliedVolts, supplyCurrent, torqueCurrent, temp);
 
     inputs.connected = true;
     inputs.positionRads = Units.rotationsToRadians(position.getValueAsDouble());
@@ -155,7 +153,6 @@ public class TriggersIOTest implements TriggersIO {
     inputs.supplyCurrentAmps = supplyCurrent.getValueAsDouble();
     inputs.torqueCurrentAmps = torqueCurrent.getValueAsDouble();
     inputs.tempCelsius = temp.getValueAsDouble();
-
   }
 
   @Override
@@ -173,15 +170,13 @@ public class TriggersIOTest implements TriggersIO {
 
   @Override
   public void applyOutputs(TriggersIOOutputs outputs) {
-    BaseStatusSignal.refreshAll(
-        rightLimitSwitch,
-        leftLimitSwitch);
+    BaseStatusSignal.refreshAll(rightLimitSwitch, leftLimitSwitch);
 
-    if(Timer.getFPGATimestamp() - lastChangeTime > TriggersConstants.minSwitchPeriod) {
-      if(feedingLeft && (!leftLimitSwitch.getValue())) {
+    if (Timer.getFPGATimestamp() - lastChangeTime > TriggersConstants.minSwitchPeriod) {
+      if (feedingLeft && (!leftLimitSwitch.getValue())) {
         feedingLeft = false;
-      } 
-      if((!feedingLeft) && (!rightLimitSwitch.getValue())) {
+      }
+      if ((!feedingLeft) && (!rightLimitSwitch.getValue())) {
         feedingLeft = true;
       }
       lastChangeTime = Timer.getFPGATimestamp();
@@ -193,11 +188,16 @@ public class TriggersIOTest implements TriggersIO {
         talon_right.setControl(coastControl);
       }
       case VELOCITY -> {
-        talon_right.setControl(velocityControl.withVelocity(Units.radiansToRotations(outputs.velocityRadsPerSec)));
-        talon_left.setControl(velocityControl.withVelocity(Units.radiansToRotations(outputs.velocityRadsPerSec)));
-        
-        if(feedingLeft) {
-          talon_left.getConfigurator().apply(new HardwareLimitSwitchConfigs()); //check if this can disable the limit switch
+        talon_right.setControl(
+            velocityControl.withVelocity(Units.radiansToRotations(outputs.velocityRadsPerSec)));
+        talon_left.setControl(
+            velocityControl.withVelocity(Units.radiansToRotations(outputs.velocityRadsPerSec)));
+
+        if (feedingLeft) {
+          talon_left
+              .getConfigurator()
+              .apply(
+                  new HardwareLimitSwitchConfigs()); // check if this can disable the limit switch
           talon_right.getConfigurator().apply(limitLeftConfigs);
         } else {
           talon_right.getConfigurator().apply(new HardwareLimitSwitchConfigs());
@@ -205,7 +205,7 @@ public class TriggersIOTest implements TriggersIO {
         }
       }
       case VOLTAGE -> {
-        if(feedingLeft) {
+        if (feedingLeft) {
           talon_right.setControl(voltageControl.withOutput(outputs.volts));
           talon_left.setControl(coastControl);
         } else {

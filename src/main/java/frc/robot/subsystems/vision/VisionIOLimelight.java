@@ -143,4 +143,3 @@ public class VisionIOLimelight implements VisionIO {
             Units.degreesToRadians(rawLLArray[5])));
   }
 }
-
