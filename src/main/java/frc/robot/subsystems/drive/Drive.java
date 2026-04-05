@@ -23,6 +23,7 @@ import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.geometry.Twist2d;
+import edu.wpi.first.math.interpolation.TimeInterpolatableBuffer;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -35,6 +36,7 @@ import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -111,6 +113,8 @@ public class Drive extends SubsystemBase implements PhysicalJoint {
   private final PhysicalJoint.kinematics kinematicsData = new PhysicalJoint.kinematics();
   private PhysicalJoint base = PhysicalJoint.ground; // Base joint for kinematics calculations
 
+  private TimeInterpolatableBuffer<Pose2d> robotPoseBuffer = TimeInterpolatableBuffer.createBuffer(2);
+  
   private SwerveDrivePoseEstimator poseEstimator =
       new SwerveDrivePoseEstimator(
           kinematics,
@@ -249,6 +253,8 @@ public class Drive extends SubsystemBase implements PhysicalJoint {
         // 执行姿态估算器更新 (这是最耗时的操作)
         poseEstimator.updateWithTime(sampleTimestamps[i], rawGyroRotation, currentModulePositions);
       }
+
+      this.robotPoseBuffer.addSample(Timer.getFPGATimestamp(), getPose());
 
       // 【兜底逻辑】
       // 如果循环因为步长原因没有处理到最后一个点 (latest data)，
@@ -427,6 +433,10 @@ public class Drive extends SubsystemBase implements PhysicalJoint {
   @AutoLogOutput(key = "Odometry/Robot")
   public Pose2d getPose() {
     return poseEstimator.getEstimatedPosition();
+  }
+
+  public Pose2d getPose(double timestamp) {
+    return robotPoseBuffer.getSample(timestamp).get();
   }
 
   /** Returns the current odometry rotation. */

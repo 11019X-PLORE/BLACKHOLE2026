@@ -3,8 +3,8 @@ package frc.robot.subsystems.vision;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.networktables.DoubleArrayPublisher;
 import edu.wpi.first.networktables.DoubleArraySubscriber;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -16,7 +16,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Supplier;
 
 /** IO implementation for real Limelight hardware. */
 public class VisionIOLimelight implements VisionIO {
@@ -34,6 +33,7 @@ public class VisionIOLimelight implements VisionIO {
   private final double num_pixels;
 
   private final PhysicalJoint baseJoint;
+  private final Transform3d mountingOffset;
 
   /**
    * Creates a new VisionIOLimelight.
@@ -41,7 +41,7 @@ public class VisionIOLimelight implements VisionIO {
    * @param name The configured name of the Limelight.
    * @param rotationSupplier Supplier for the current estimated rotation, used for MegaTag 2.
    */
-  public VisionIOLimelight(String name, double[] resulotion, PhysicalJoint baseJoint) {
+  public VisionIOLimelight(String name, double[] resulotion, PhysicalJoint baseJoint, Transform3d mountingOffset) {
     var table = NetworkTableInstance.getDefault().getTable(name);
     // this.rotationSupplier = rotationSupplier;
     // orientationPublisher = table.getDoubleArrayTopic("robot_orientation_set").publish();
@@ -52,12 +52,13 @@ public class VisionIOLimelight implements VisionIO {
     // megatag2Subscriber =
     //     table.getDoubleArrayTopic("botpose_orb_wpiblue").subscribe(new double[] {});
 
-    rawdetectionsSubscriber =
-          table.getDoubleArrayTopic("rawdetections").subscribe(new double[] {});
+    rawdetectionsSubscriber = table.getDoubleArrayTopic("rawdetections").subscribe(new double[] {});
 
     num_pixels = resulotion[0] * resulotion[1];
 
     this.baseJoint = baseJoint;
+
+    this.mountingOffset = mountingOffset;
   }
 
   @Override
@@ -87,7 +88,7 @@ public class VisionIOLimelight implements VisionIO {
         tagIds.add((int) rawSample.value[i]);
       }
 
-      double [] rawDetections = rawdetectionsSubscriber.get();
+      double[] rawDetections = rawdetectionsSubscriber.get();
 
       poseObservations.add(
           new PoseObservation(
@@ -106,8 +107,9 @@ public class VisionIOLimelight implements VisionIO {
 
               // Average tag distance
               rawSample.value[9],
-
-              rawDetections.length > 0 ? VisionHelper.getMaxTagArea(rawDetections, 4) / num_pixels : 0.0,
+              rawDetections.length > 0
+                  ? VisionHelper.getMaxTagArea(rawDetections, 4) / num_pixels
+                  : 0.0,
 
               // Observation type
               PoseObservationType.MEGATAG_1));
@@ -150,7 +152,6 @@ public class VisionIOLimelight implements VisionIO {
     for (int id : tagIds) {
       inputs.tagIds[i++] = id;
     }
-
   }
 
   /** Parses the 3D pose from a Limelight botpose array. */
@@ -167,6 +168,11 @@ public class VisionIOLimelight implements VisionIO {
 
   @Override
   public PhysicalJoint getBaseJoint() {
-      return baseJoint;
+    return baseJoint;
+  }
+
+  @Override
+  public Transform3d getMountingOffset() {
+    return mountingOffset;
   }
 }

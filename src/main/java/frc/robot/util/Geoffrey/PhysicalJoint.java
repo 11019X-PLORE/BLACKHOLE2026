@@ -65,6 +65,10 @@ public interface PhysicalJoint {
     }
   }
 
+  default Transform3d getGlobalPose(double timestamp) {
+    throw new UnsupportedOperationException("getGlobalPose(double timestamp) not implemented");
+  }
+
   // local velocity instead of the parent rotation
   default SimpleMatrix getGlobalVelocity() {
     PhysicalJoint parent = getParentJoint();

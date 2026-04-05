@@ -2,8 +2,8 @@ package frc.robot.subsystems.vision;
 
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform3d;
 import frc.robot.util.Geoffrey.PhysicalJoint;
-
 import org.littletonrobotics.junction.AutoLog;
 
 public interface VisionIO {
@@ -22,7 +22,7 @@ public interface VisionIO {
   /** Represents a robot pose sample used for pose estimation. */
   public static record PoseObservation(
       double timestamp,
-      Pose3d pose,
+      Pose3d pose, // Field to camera pose
       double ambiguity,
       int tagCount,
       double averageTagDistance,
@@ -36,6 +36,8 @@ public interface VisionIO {
   }
 
   public PhysicalJoint getBaseJoint();
+
+  public Transform3d getMountingOffset();
 
   public default void updateInputs(VisionIOInputs inputs) {}
 }

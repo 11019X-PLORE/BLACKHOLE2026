@@ -7,6 +7,8 @@ import static frc.robot.subsystems.vision.VisionConstants.*;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -75,8 +77,8 @@ import frc.robot.subsystems.vision.VisionIOPhotonVisionSim;
 import frc.robot.util.ClimbTargetSelector;
 import frc.robot.util.Dimensions;
 import frc.robot.util.FuelSim;
-import frc.robot.util.TrenchHelper;
 import frc.robot.util.Geoffrey.PhysicalJoint;
+import frc.robot.util.TrenchHelper;
 import frc.robot.util.geometry.AllianceFlipUtil;
 import java.util.function.BooleanSupplier;
 import org.littletonrobotics.junction.Logger;
@@ -168,9 +170,9 @@ public class RobotContainer {
                 //     turret::getCameraPoseRobotSpace,
                 //     turret::getVelocity,
                 //     VisionConstants.visionCutoffSpeed),
-                new VisionIOLimelight(camera0Name, new double[] {320, 200}, drive),
-                new VisionIOLimelight(camera1Name, new double[] {320, 200}, turret));
-
+                new VisionIOLimelight(camera0Name, new double[] {320, 200}, drive, new Transform3d(0.0, 0.0, 0.616, new Rotation3d(0.0, -0.4, 0.0))),
+                new VisionIOLimelight(camera1Name, new double[] {320, 200}, turret, new Transform3d(-0.0, 0.0, 0.2, new Rotation3d(0.0, -0.4, Math.PI))));
+                //TODO: 传入实际测量的摄像头位置
         flywheel =
             new Flywheel(
                 new FlywheelIOReal(
@@ -268,8 +270,22 @@ public class RobotContainer {
         vision =
             new Vision(
                 drive,
-                new VisionIO() { public PhysicalJoint getBaseJoint() { return null; } },
-                new VisionIO() { public PhysicalJoint getBaseJoint() { return null; } });
+                new VisionIO() {
+                  public PhysicalJoint getBaseJoint() {
+                    return null;
+                  }
+                  public Transform3d getMountingOffset() {
+                    return null;
+                  }
+                },
+                new VisionIO() {
+                  public PhysicalJoint getBaseJoint() {
+                    return null;
+                  }
+                  public Transform3d getMountingOffset() {
+                    return null;
+                  }
+                });
         intake = new Intake(new IntakeIOSim());
         triggers = new Triggers(new TriggersIOSim());
         indexer = new Indexer(new IndexerIOSim());

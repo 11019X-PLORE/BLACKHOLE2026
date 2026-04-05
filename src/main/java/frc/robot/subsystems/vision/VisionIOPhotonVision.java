@@ -6,7 +6,6 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import frc.robot.util.Geoffrey.PhysicalJoint;
-
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -120,10 +119,15 @@ public class VisionIOPhotonVision implements VisionIO {
     }
   }
 
-  //TODO need to change a lot of code to support this, so leaving it for now
+  // TODO need to change a lot of code to support this, so leaving it for now
   @Override
   public PhysicalJoint getBaseJoint() {
-      // TODO Auto-generated method stub
-      return null;
+    // TODO Auto-generated method stub
+    return null;
+  }
+  
+  @Override
+  public Transform3d getMountingOffset(){
+    return null;
   }
 }
