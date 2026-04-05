@@ -1,7 +1,6 @@
 package frc.robot.util.Geoffrey;
 
 public class TrajectoryCalculator {
-  
 
   /**
    * Compute launch velocities (vx, vy) for a given horizontal distance and desired apex height.
@@ -10,8 +9,7 @@ public class TrajectoryCalculator {
    * @param hmax desired apex height (m), must be greater than DY
    * @return double[]{vx, vy} in m/s
    */
-  public static double[] solve(
-    double dx, double hmax, TrajectoryConfig config) {
+  public static double[] solve(double dx, double hmax, TrajectoryConfig config) {
     // 1. Vacuum baseline from kinematics
     double vyVac = Math.sqrt(2.0 * config.G * hmax);
     double vxVac;
@@ -58,49 +56,46 @@ public class TrajectoryCalculator {
     // --- 1. Derivative of Vacuum Components ---
     // vyVac = sqrt(2 * G * hmax). Since hmax is constant w.r.t dx, d(vyVac)/dx = 0
     double d_vyVac_dx = 0;
-    
+
     double d_vxVac_dx;
     double vyVac = Math.sqrt(2.0 * config.G * hmax);
 
     if (Math.abs(config.DY) < 1e-10) {
-        // vxVac = (G / 2*vyVac) * dx
-        d_vxVac_dx = config.G / (2.0 * vyVac);
+      // vxVac = (G / 2*vyVac) * dx
+      d_vxVac_dx = config.G / (2.0 * vyVac);
     } else {
-        double disc = vyVac * vyVac - 2.0 * config.G * config.DY;
-        if (disc < 0) return new double[] {0, 0};
-        
-        double sqrtDisc = Math.sqrt(disc);
-        // vxVac is essentially (Constant * dx), so the derivative is just the constant
-        if (config.APEX_BEFORE_TARGET) {
-            d_vxVac_dx = (vyVac - sqrtDisc) / (2.0 * config.DY);
-        } else {
-            d_vxVac_dx = (vyVac + sqrtDisc) / (2.0 * config.DY);
-        }
+      double disc = vyVac * vyVac - 2.0 * config.G * config.DY;
+      if (disc < 0) return new double[] {0, 0};
+
+      double sqrtDisc = Math.sqrt(disc);
+      // vxVac is essentially (Constant * dx), so the derivative is just the constant
+      if (config.APEX_BEFORE_TARGET) {
+        d_vxVac_dx = (vyVac - sqrtDisc) / (2.0 * config.DY);
+      } else {
+        d_vxVac_dx = (vyVac + sqrtDisc) / (2.0 * config.DY);
+      }
     }
 
     // --- 2. Derivative of Aero Correction ---
     // Original features: {1, dx, hmax, dx2, dx*hmax, h2, dx3, dx2*hmax, dx*h2, h3}
     // We derive each feature with respect to dx:
     double[] dFeatures = new double[10];
-    dFeatures[0] = 0;                        // d(1)/dx
-    dFeatures[1] = 1;                        // d(dx)/dx
-    dFeatures[2] = 0;                        // d(hmax)/dx
-    dFeatures[3] = 2.0 * dx;                 // d(dx^2)/dx
-    dFeatures[4] = hmax;                     // d(dx * hmax)/dx
-    dFeatures[5] = 0;                        // d(hmax^2)/dx
-    dFeatures[6] = 3.0 * dx * dx;            // d(dx^3)/dx
-    dFeatures[7] = 2.0 * dx * hmax;          // d(dx^2 * hmax)/dx
-    dFeatures[8] = hmax * hmax;              // d(dx * hmax^2)/dx
-    dFeatures[9] = 0;                        // d(hmax^3)/dx
+    dFeatures[0] = 0; // d(1)/dx
+    dFeatures[1] = 1; // d(dx)/dx
+    dFeatures[2] = 0; // d(hmax)/dx
+    dFeatures[3] = 2.0 * dx; // d(dx^2)/dx
+    dFeatures[4] = hmax; // d(dx * hmax)/dx
+    dFeatures[5] = 0; // d(hmax^2)/dx
+    dFeatures[6] = 3.0 * dx * dx; // d(dx^3)/dx
+    dFeatures[7] = 2.0 * dx * hmax; // d(dx^2 * hmax)/dx
+    dFeatures[8] = hmax * hmax; // d(dx * hmax^2)/dx
+    dFeatures[9] = 0; // d(hmax^3)/dx
 
     double d_dvx_dx = dot(config.DVX_COEFFS, dFeatures);
     double d_dvy_dx = dot(config.DVY_COEFFS, dFeatures);
 
     // --- 3. Final Summation ---
     // d(Total)/dx = d(Vacuum)/dx + d(Aero)/dx
-    return new double[] {
-        d_vxVac_dx + d_dvx_dx,
-        d_vyVac_dx + d_dvy_dx
-    };
+    return new double[] {d_vxVac_dx + d_dvx_dx, d_vyVac_dx + d_dvy_dx};
   }
 }

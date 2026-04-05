@@ -59,10 +59,10 @@ public class VisionConstants {
       };
 
   // Multipliers to apply for MegaTag 2 observations
-  public static double linearStdDevMegatag2Factor = 0.5; // More stable than full 3D solve
-  public static double angularStdDevMegatag2Factor =
-      Double.POSITIVE_INFINITY; // No rotation data available
+  public static double linearStdDevFactor = 0.5; // More stable than full 3D solve
+  public static double angularStdDevFactor = 1e9; // Don't trust heading
 
+  public static double latencyStdDev = 0.02; // Seconds, for vision timestamp uncertainty
   /**
    * Limelight 目标面积（ta）到视觉测量偏差系数的插值查找表。
    *

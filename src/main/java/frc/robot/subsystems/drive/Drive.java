@@ -44,9 +44,9 @@ import frc.robot.Constants;
 import frc.robot.Constants.Mode;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.vision.VisionConstants;
+import frc.robot.util.Geoffrey.PhysicalJoint;
 import frc.robot.util.LocalADStarAK;
 import frc.robot.util.TrenchHelper;
-import frc.robot.util.Geoffrey.PhysicalJoint;
 import frc.robot.util.geometry.AllianceFlipUtil;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -383,9 +383,9 @@ public class Drive extends SubsystemBase implements PhysicalJoint {
   public double[] getChassisForces() {
     SwerveModuleState[] states = getModuleForces();
     Translation2d[] moduleRs = kinematics.getModules();
-    double[] forces = new double[3];// Fx, Fy, torque
+    double[] forces = new double[3]; // Fx, Fy, torque
 
-    for(int i = 0; i < states.length; i++){
+    for (int i = 0; i < states.length; i++) {
       double Fx = states[i].speedMetersPerSecond * states[i].angle.getCos();
       double Fy = states[i].speedMetersPerSecond * states[i].angle.getSin();
 

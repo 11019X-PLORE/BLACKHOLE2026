@@ -2,6 +2,8 @@ package frc.robot.subsystems.vision;
 
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import frc.robot.util.Geoffrey.PhysicalJoint;
+
 import org.littletonrobotics.junction.AutoLog;
 
 public interface VisionIO {
@@ -24,13 +26,16 @@ public interface VisionIO {
       double ambiguity,
       int tagCount,
       double averageTagDistance,
+      double maxArea,
       PoseObservationType type) {}
 
   public static enum PoseObservationType {
     MEGATAG_1,
-    MEGATAG_2,
+    // MEGATAG_2, 垃圾
     PHOTONVISION
   }
+
+  public PhysicalJoint getBaseJoint();
 
   public default void updateInputs(VisionIOInputs inputs) {}
 }

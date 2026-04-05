@@ -12,25 +12,28 @@ import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.vision.VisionIO.PoseObservationType;
+import frc.robot.util.Geoffrey.PhysicalJoint;
+
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Supplier;
+
+import org.ejml.simple.SimpleMatrix;
 import org.littletonrobotics.junction.Logger;
 
 public class Vision extends SubsystemBase {
-  private final VisionConsumer consumer;
+  private final Drive drive;
   // private final Drive drive;
   private final VisionIO[] io;
   private final VisionIOInputsAutoLogged[] inputs;
   private final Alert[] disconnectedAlerts;
-  private final Supplier<Double> gyroRateSupplierDegPerSec;
 
   public Vision(
-      Supplier<Double> gyroRateSupplierDegPerSec, VisionConsumer consumer, VisionIO... io) {
+      Drive drive, VisionIO... io) {
     // this.drive = drive;
-    this.gyroRateSupplierDegPerSec = gyroRateSupplierDegPerSec;
-    this.consumer = consumer;
+    this.drive = drive;
     this.io = io;
 
     // Initialize inputs
@@ -89,9 +92,16 @@ public class Vision extends SubsystemBase {
         }
       }
 
-      double gyroRateDegPerSec = gyroRateSupplierDegPerSec.get();
+      SimpleMatrix baseV = io[cameraIndex].getBaseJoint().getGlobalVelocity();
+
+      double baseSpeed = Math.hypot(baseV.get(0, 0), baseV.get(1, 0));
+      double baseAngularSpeed = Math.abs(baseV.get(5, 0));
+
       // Loop over pose observations
       for (var observation : inputs[cameraIndex].poseObservations) {
+
+        
+
         // Check whether to reject pose
         boolean rejectPose =
             observation.tagCount() == 0 // Must have at least one tag
@@ -104,8 +114,7 @@ public class Vision extends SubsystemBase {
                 || observation.pose().getX() < 0.0
                 || observation.pose().getX() > aprilTagLayout.getFieldLength()
                 || observation.pose().getY() < 0.0
-                || observation.pose().getY() > aprilTagLayout.getFieldWidth()
-                || Math.abs(gyroRateDegPerSec) > 360.0; // 新增：角速度过大拒绝
+                || observation.pose().getY() > aprilTagLayout.getFieldWidth();
 
         // Add pose to log
         robotPoses.add(observation.pose());
@@ -121,23 +130,11 @@ public class Vision extends SubsystemBase {
         }
 
         // 1. 基于距离和 Tag 数量计算基础因子 (距离越远，平方级增加标准差)
-        double stdDevFactor =
-            Math.pow(observation.averageTagDistance(), 2.0) / observation.tagCount();
+        double stdDevFactor = 1 / (observation.maxArea() + 1e-6); // 避免除以零，面积越大（目标越近），因子越小
 
-        double linearStdDev = linearStdDevBaseline * stdDevFactor;
-        double angularStdDev = angularStdDevBaseline * stdDevFactor;
 
-        // 2. 根据 MegaTag 类型调整
-        if (observation.type() == PoseObservationType.MEGATAG_2) {
-          // MegaTag 2: 使用 VisionConstants 中的特定系数 (通常 linear 较小，angular 无限大)
-          linearStdDev *= linearStdDevMegatag2Factor;
-          angularStdDev *= angularStdDevMegatag2Factor;
-        } else {
-          // MegaTag 1 (包含 Turret Camera):
-          // 强制逻辑：绝对不信任单标签解算的航向角
-          // 无论距离多近，都将角度标准差设为无限大，迫使 PoseEstimator 只信任 Gyro 的航向
-          angularStdDev = Double.POSITIVE_INFINITY;
-        }
+        double linearStdDev = linearStdDevBaseline +  stdDevFactor * linearStdDevFactor + baseSpeed * VisionConstants.latencyStdDev;
+        double angularStdDev = angularStdDevBaseline +  stdDevFactor * angularStdDevFactor + baseAngularSpeed * VisionConstants.latencyStdDev;
 
         // 3. 应用每个摄像头的独立调整系数
         if (cameraIndex < cameraStdDevFactors.length) {
@@ -146,7 +143,7 @@ public class Vision extends SubsystemBase {
         }
 
         // Send vision observation
-        consumer.accept(
+        drive.addVisionMeasurement(
             observation.pose().toPose2d(),
             observation.timestamp(),
             VecBuilder.fill(linearStdDev, linearStdDev, angularStdDev));
@@ -178,13 +175,5 @@ public class Vision extends SubsystemBase {
         "Vision/Summary/RobotPosesAccepted", allRobotPosesAccepted.toArray(new Pose3d[0]));
     Logger.recordOutput(
         "Vision/Summary/RobotPosesRejected", allRobotPosesRejected.toArray(new Pose3d[0]));
-  }
-
-  @FunctionalInterface
-  public static interface VisionConsumer {
-    public void accept(
-        Pose2d visionRobotPoseMeters,
-        double timestampSeconds,
-        Matrix<N3, N1> visionMeasurementStdDevs);
   }
 }

@@ -5,6 +5,8 @@ import static frc.robot.subsystems.vision.VisionConstants.*;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform3d;
+import frc.robot.util.Geoffrey.PhysicalJoint;
+
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -71,6 +73,7 @@ public class VisionIOPhotonVision implements VisionIO {
                 multitagResult.estimatedPose.ambiguity, // Ambiguity
                 multitagResult.fiducialIDsUsed.size(), // Tag count
                 totalTagDistance / result.targets.size(), // Average tag distance
+                100.0, // Max area, not provided by PhotonVision so using a placeholder value
                 PoseObservationType.PHOTONVISION)); // Observation type
 
       } else if (!result.targets.isEmpty()) { // Single tag result
@@ -97,6 +100,7 @@ public class VisionIOPhotonVision implements VisionIO {
                   target.poseAmbiguity, // Ambiguity
                   1, // Tag count
                   cameraToTarget.getTranslation().getNorm(), // Average tag distance
+                  100.0, // Max area, not provided by PhotonVision so using a placeholder value
                   PoseObservationType.PHOTONVISION)); // Observation type
         }
       }
@@ -114,5 +118,12 @@ public class VisionIOPhotonVision implements VisionIO {
     for (int id : tagIds) {
       inputs.tagIds[i++] = id;
     }
+  }
+
+  //TODO need to change a lot of code to support this, so leaving it for now
+  @Override
+  public PhysicalJoint getBaseJoint() {
+      // TODO Auto-generated method stub
+      return null;
   }
 }

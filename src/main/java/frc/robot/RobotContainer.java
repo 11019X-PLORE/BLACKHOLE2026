@@ -66,7 +66,6 @@ import frc.robot.subsystems.shooter.turret.TurretIOreal;
 import frc.robot.subsystems.superstructure.Superstructure;
 import frc.robot.subsystems.superstructure.Superstructure.SuperstructureState;
 import frc.robot.subsystems.triggers.Triggers;
-import frc.robot.subsystems.triggers.TriggersConstants;
 import frc.robot.subsystems.triggers.TriggersIOSim;
 import frc.robot.subsystems.triggers.TriggersIOTest;
 import frc.robot.subsystems.vision.Vision;
@@ -77,6 +76,7 @@ import frc.robot.util.ClimbTargetSelector;
 import frc.robot.util.Dimensions;
 import frc.robot.util.FuelSim;
 import frc.robot.util.TrenchHelper;
+import frc.robot.util.Geoffrey.PhysicalJoint;
 import frc.robot.util.geometry.AllianceFlipUtil;
 import java.util.function.BooleanSupplier;
 import org.littletonrobotics.junction.Logger;
@@ -144,9 +144,7 @@ public class RobotContainer {
         intake =
             new Intake(
                 new IntakeIOReal(IntakeConstants.kIntakeId, IntakeConstants.kIntakeInverted));
-        triggers =
-            new Triggers(
-                new TriggersIOTest());
+        triggers = new Triggers(new TriggersIOTest());
         indexer =
             new Indexer(
                 new IndexerIOReal(IndexerConstants.kIndexerId, IndexerConstants.kIndexerInverted));
@@ -164,15 +162,14 @@ public class RobotContainer {
 
         vision =
             new Vision(
-                drive::getGyroRateDegPerSec,
-                drive::addVisionMeasurement,
+                drive,
                 // new VisionIOLimelightTurret(
                 //     camera1Name,
                 //     turret::getCameraPoseRobotSpace,
                 //     turret::getVelocity,
                 //     VisionConstants.visionCutoffSpeed),
-                new VisionIOLimelight(camera0Name, drive::getRotation),
-                new VisionIOLimelight(camera1Name, drive::getRotation));
+                new VisionIOLimelight(camera0Name, new double[] {320, 200}, drive),
+                new VisionIOLimelight(camera1Name, new double[] {320, 200}, turret));
 
         flywheel =
             new Flywheel(
@@ -209,8 +206,7 @@ public class RobotContainer {
                 new ModuleIOSim(TunerConstants.BackRight));
         vision =
             new Vision(
-                drive::getGyroRateDegPerSec,
-                drive::addVisionMeasurement,
+                drive,
                 new VisionIOPhotonVisionSim(camera0Name, robotToCamera0, drive::getPose),
                 new VisionIOPhotonVisionSim(camera1Name, robotToCamera1, drive::getPose));
         intake = new Intake(new IntakeIOSim());
@@ -271,10 +267,9 @@ public class RobotContainer {
                 new ModuleIO() {});
         vision =
             new Vision(
-                drive::getGyroRateDegPerSec,
-                drive::addVisionMeasurement,
-                new VisionIO() {},
-                new VisionIO() {});
+                drive,
+                new VisionIO() { public PhysicalJoint getBaseJoint() { return null; } },
+                new VisionIO() { public PhysicalJoint getBaseJoint() { return null; } });
         intake = new Intake(new IntakeIOSim());
         triggers = new Triggers(new TriggersIOSim());
         indexer = new Indexer(new IndexerIOSim());

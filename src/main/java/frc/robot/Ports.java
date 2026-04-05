@@ -14,12 +14,11 @@ public final class Ports {
   public static final int kIndexer = 15;
   public static final int kTriggers = 16;
 
-  public static final int kTestLeftTriggers = 25; //TODO
+  public static final int kTestLeftTriggers = 25; // TODO
   public static final int kTestRightTriggers = 26;
 
-  public static final int kTestLeftLimitSwitch = 25; //TODO
+  public static final int kTestLeftLimitSwitch = 25; // TODO
   public static final int kTestRightLimitSwitch = 26;
-
 
   public static final int kTurret = 17;
   public static final int kHood = 18;
