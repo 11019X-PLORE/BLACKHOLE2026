@@ -97,8 +97,8 @@ public class TriggersIOTest implements TriggersIO {
 
     tryUntilOk(5, () -> talon_right.getConfigurator().apply(config_right));
 
-    leftCANrange = new CANrange(TriggersConstants.kTestLeftTriggersId);
-    rightCANrange = new CANrange(TriggersConstants.kTestRightTriggersId);
+    leftCANrange = new CANrange(TriggersConstants.kTestLeftLimitSwitchId);
+    rightCANrange = new CANrange(TriggersConstants.kTestRightLimitSwitchId);
 
     final CANrangeConfiguration canRangeConfig =
         new CANrangeConfiguration()
@@ -153,6 +153,10 @@ public class TriggersIOTest implements TriggersIO {
     inputs.supplyCurrentAmps = supplyCurrent.getValueAsDouble();
     inputs.torqueCurrentAmps = torqueCurrent.getValueAsDouble();
     inputs.tempCelsius = temp.getValueAsDouble();
+    inputs.feedingLeft = feedingLeft;
+    inputs.leftLimitSwitch = leftLimitSwitch.getValue();
+    inputs.rightLimitSwitch = rightLimitSwitch.getValue();
+    inputs.distance = leftCANrange.getDistance().getValueAsDouble();
   }
 
   @Override

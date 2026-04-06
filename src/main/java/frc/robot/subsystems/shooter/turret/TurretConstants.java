@@ -9,11 +9,11 @@ import frc.robot.Ports;
 public class TurretConstants {
 
   public static final int kTurretID = Ports.kTurret;
-  public static final boolean kTurretInverted = true;
+  public static final boolean kTurretInverted = false;
 
-  public static final double kTurretGearRatio = 21.0;
+  public static final double kTurretGearRatio = 82.0 * 5.0 / 10d;
 
-  public static final double kTurretRadius = 0.10027; // TODO
+  public static final double kTurretRadius = 0.20027; // TODO
 
   public static final double kP = 125.0; // 150
   public static final double kI = 0.0;

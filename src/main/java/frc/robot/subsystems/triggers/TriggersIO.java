@@ -12,6 +12,11 @@ public interface TriggersIO {
     public double supplyCurrentAmps;
     public double torqueCurrentAmps;
     public double tempCelsius;
+
+    public boolean feedingLeft;
+    public boolean leftLimitSwitch;
+    public boolean rightLimitSwitch;
+    public double distance;
   }
 
   public static enum TriggersIOOutputMode {

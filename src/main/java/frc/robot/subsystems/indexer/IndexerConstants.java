@@ -4,10 +4,10 @@ import frc.robot.Ports;
 
 public class IndexerConstants {
   public static final int kIndexerId = Ports.kIndexer;
-  public static boolean kIndexerInverted = false;
+  public static boolean kIndexerInverted = true;
 
   public static final double kIndexerRadius = 0.05; // TODO
-  public static final double kIndexerGearRatio = 1.0; // 1.125
+  public static final double kIndexerGearRatio = 5.0; // 1.125
 
   public static final double kP = 10.0; // 10.0
   public static final double kI = 0.0;

@@ -5,26 +5,29 @@ import edu.wpi.first.wpilibj.AddressableLEDBuffer;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.util.Color;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.util.LoggedTracer;
+import frc.robot.util.VirtualSubsystem;
 import lombok.Getter;
 import lombok.Setter;
 import org.littletonrobotics.junction.AutoLogOutput;
 
-public class LED extends SubsystemBase {
-  private AddressableLED leds = new AddressableLED(LEDConstants.LEDPort);
-  private AddressableLEDBuffer buffer = new AddressableLEDBuffer(LEDConstants.length);
+public class LED extends VirtualSubsystem {
+  // 硬件接口
+  private final AddressableLED leds = new AddressableLED(LEDConstants.LEDPort);
+  private final AddressableLEDBuffer buffer = new AddressableLEDBuffer(LEDConstants.length);
 
+  // 状态枚举
   public enum LEDState {
     INITIAL, // 初始状态（联盟色）
     OFF, // 熄灭
-    SHOOTING, // 正在发射（快速闪烁）
+    SHOOTING, // 正在发射（快速绿闪）
     READY_TO_SHOOT, // 瞄准完毕/转速达标（绿色常亮）
     TRENCH, // 处于隧道模式（黄色）
-    INTAKING, // 正在吸球
+    INTAKING, // 正在吸球（白色流水）
     INTAKE_STOWED, // 进气臂收起
-    PASSING, // 正在传球
-    CLIMBING, // 爬升中
-    AUTO // 自动阶段
+    PASSING, // 正在传球（紫色闪烁）
+    CLIMBING, // 爬升中（彩虹）
+    AUTO // 自动阶段（金光闪烁）
   }
 
   @Getter @Setter @AutoLogOutput private LEDState goal = LEDState.INITIAL;
@@ -36,33 +39,36 @@ public class LED extends SubsystemBase {
   }
 
   @Override
-  public void periodic() {
-    // 获取当前联盟颜色
+  public void periodic() {}
+
+  @Override
+  public void periodicAfterScheduler() {
     var alliance = DriverStation.getAlliance();
     Color allianceColor = Color.kBlack;
     if (alliance.isPresent()) {
       allianceColor = (alliance.get() == DriverStation.Alliance.Blue) ? Color.kBlue : Color.kRed;
     }
 
-    // 根据目标状态执行灯效
     switch (goal) {
       case INITIAL -> solidColor(allianceColor);
       case OFF -> solidColor(Color.kBlack);
-      case SHOOTING -> strobe(Color.kGreen, Color.kBlack, 0.5); // 快速绿闪
-      case READY_TO_SHOOT -> solidColor(Color.kGreen); // 绿色提示可以开火
-      case PASSING -> strobe(Color.kPurple, Color.kBlack, 0.5); // 快速紫闪
-      case TRENCH -> solidColor(Color.kYellow); // 黄色代表安全高度
+      case SHOOTING -> strobe(Color.kGreen, Color.kBlack, 0.5); // 极快绿闪
+      case READY_TO_SHOOT -> solidColor(Color.kGreen);
+      case PASSING -> strobe(Color.kPurple, Color.kBlack, 0.5); // 紫闪
+      case TRENCH -> solidColor(Color.kYellow);
       case INTAKING -> wave(allianceColor, Color.kWhite, 10, 0.5);
-      case INTAKE_STOWED -> wave(allianceColor, Color.kOrange, 10, 0.5);
+      case INTAKE_STOWED -> wave(allianceColor, Color.kOrange, 10, 0.8);
       case CLIMBING -> rainbow(10, 0.5);
-      case AUTO -> strobe(Color.kGold, Color.kBlack, 0.5);
+      case AUTO -> strobe(Color.kGold, Color.kBlack, 0.3);
       default -> solidColor(Color.kBlack);
     }
 
     leds.setData(buffer);
+
+    // 记录性能追踪
+    LoggedTracer.record("LED/OutputData");
   }
 
-  // --- 基础灯效方法 ---
   private void solidColor(Color color) {
     for (int i = 0; i < buffer.getLength(); i++) {
       buffer.setLED(i, color);
@@ -70,7 +76,7 @@ public class LED extends SubsystemBase {
   }
 
   private void strobe(Color c1, Color c2, double duration) {
-    boolean on = ((Timer.getFPGATimestamp() % (duration * 2e6)) / (duration * 2e6)) > 0.5;
+    boolean on = ((Timer.getFPGATimestamp() % duration) / duration) > 0.5;
     solidColor(on ? c1 : c2);
   }
 
