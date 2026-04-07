@@ -134,7 +134,7 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
   @Override
   public void periodic() {
     io.updateInputs(inputs);
-    Logger.processInputs("turret/turret", inputs);
+    Logger.processInputs("turret", inputs);
     disconnected.set(!motorConnectedDebouncer.calculate(inputs.turretMotorConnected));
     updateTunables();
     calculateTurretPose();
@@ -199,9 +199,9 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
     }
 
     io.applyOutputs(outputs);
-    Logger.recordOutput("turret/turret" + "/atGoal", atGoal);
-    Logger.recordOutput("turret/turret" + "/IsWrapping", isWrapping);
-    Logger.recordOutput("turret/turret" + "/CurrentSetpoint", currentSetpoint);
+    Logger.recordOutput("turret/atGoal", atGoal);
+    Logger.recordOutput("turret/IsWrapping", isWrapping);
+    Logger.recordOutput("turret/CurrentSetpoint", currentSetpoint);
   }
 
   private void runTrackingLogic(Rotation2d goalAngleFieldRelative, double goalVelocity) {
@@ -245,8 +245,8 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
 
     atGoal = EqualsUtil.epsilonEquals(bestAngle, inputs.positionRads, toleranceDeg.get());
 
-    Logger.recordOutput("turret/turret" + "/GoalPositionRad", bestAngle);
-    Logger.recordOutput("turret/turret" + "/SetpointPositionRad", goalStateAngle);
+    Logger.recordOutput("turret/GoalPositionRad", bestAngle);
+    Logger.recordOutput("turret/SetpointPositionRad", goalStateAngle);
   }
 
   private void runPositionFOCLogic(
@@ -296,8 +296,8 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
 
     atGoal = EqualsUtil.epsilonEquals(bestAngle, inputs.positionRads, toleranceDeg.get());
 
-    Logger.recordOutput("turret/turret" + "/GoalPositionRad", bestAngle);
-    Logger.recordOutput("turret/turret" + "/SetpointPositionRad", goalStateAngle);
+    Logger.recordOutput("turret/GoalPositionRad", bestAngle);
+    Logger.recordOutput("turret/SetpointPositionRad", goalStateAngle);
   }
 
   private void updateTunables() {
@@ -375,8 +375,7 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
             : rightTarget;
 
     // 5. 记录选中的目标点到日志，方便在 AdvantageScope 中通过 Pose2d 观察
-    Logger.recordOutput(
-        "turret/turret" + "/PassingTargetUsed", new Pose2d(bestTarget, new Rotation2d()));
+    Logger.recordOutput("turret/PassingTargetUsed", new Pose2d(bestTarget, new Rotation2d()));
 
     // 6. 返回从机器人指向该目标点的角度
     return bestTarget.minus(robotTrans).getAngle();

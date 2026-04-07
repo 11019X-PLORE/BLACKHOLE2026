@@ -285,7 +285,6 @@ public class RobotContainer {
                     return null;
                   }
 
-
                   public Transform3d getMountingOffset() {
                     return null;
                   }
@@ -294,7 +293,6 @@ public class RobotContainer {
                   public PhysicalJoint getBaseJoint() {
                     return null;
                   }
-
 
                   public Transform3d getMountingOffset() {
                     return null;

@@ -132,10 +132,6 @@ public class VisionIOPhotonVision implements VisionIO {
 
   @Override
   public Transform3d getMountingOffset() {
-<<<<<<< HEAD
-    return null;
-=======
     return mountingOffset;
->>>>>>> Vision+ShootingOneTheMove
   }
 }
