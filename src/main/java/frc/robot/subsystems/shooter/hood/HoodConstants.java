@@ -15,8 +15,8 @@ public class HoodConstants {
   public static final double kD = 0.0; // 0.0;
   public static final double kG = 0.0; // 重力补偿
   public static final double kS = 0.1; // 静态前馈
-  public static final double kV = 0.13; // 轨迹规划得到的目标速度
-  public static final double kA = 0; // 轨迹规划得到的目标加速度
+  public static final double kV = 0.0; // 轨迹规划得到的目标速度
+  public static final double kA = 0.0; // 轨迹规划得到的目标加速度
 
   public static final double kAccelerationRadPerSecSq = Units.degreesToRadians(180); // 最大角加速度
   public static final double kVelocityRadPerSec = Units.degreesToRadians(180);
@@ -26,6 +26,11 @@ public class HoodConstants {
   public static final double kHoodInitialAngle = Units.degreesToRadians(0.0);
   public static final double kHoodPassingAngle = Units.degreesToRadians(25.0);
   public static final double kHoodTrenchAngle = Units.degreesToRadians(0.0);
+
+  public static final double kInertiaHood = 0.125; // TODO
+  public static final double kInertiaMotorSide =
+      kInertiaHood / (hoodGearRatio * hoodGearRatio); // 电机侧的转动惯量
+  public static final double kT = 0.01537;
 
   public static final double kHoodoffset =
       Units.degreesToRadians(0.0); // TODO: offset for hood angle

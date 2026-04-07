@@ -159,8 +159,7 @@ public class RobotContainer {
                 new TurretIOreal(TurretConstants.kTurretID, TurretConstants.kTurretInverted),
                 TurretConstants.kTurretonRobotoffset,
                 drive::getPose,
-                drive::getFieldVelocity,
-                "1");
+                drive::getFieldVelocity);
 
         vision =
             new Vision(
@@ -170,9 +169,17 @@ public class RobotContainer {
                 //     turret::getCameraPoseRobotSpace,
                 //     turret::getVelocity,
                 //     VisionConstants.visionCutoffSpeed),
-                new VisionIOLimelight(camera0Name, new double[] {320, 200}, drive, new Transform3d(0.0, 0.0, 0.616, new Rotation3d(0.0, -0.4, 0.0))),
-                new VisionIOLimelight(camera1Name, new double[] {320, 200}, turret, new Transform3d(-0.0, 0.0, 0.2, new Rotation3d(0.0, -0.4, Math.PI))));
-                //TODO: 传入实际测量的摄像头位置
+                new VisionIOLimelight(
+                    camera0Name,
+                    new double[] {320, 200},
+                    drive,
+                    new Transform3d(0.0, 0.0, 0.616, new Rotation3d(0.0, -0.4, 0.0))),
+                new VisionIOLimelight(
+                    camera1Name,
+                    new double[] {320, 200},
+                    turret,
+                    TurretConstants.kCameraonTurretoffset));
+        // TODO: 传入实际测量的摄像头位置
         flywheel =
             new Flywheel(
                 new FlywheelIOReal(
@@ -220,8 +227,7 @@ public class RobotContainer {
                 new TurretIOSim(fuelSim),
                 TurretConstants.kTurretonRobotoffset,
                 drive::getPose,
-                drive::getFieldVelocity,
-                "1");
+                drive::getFieldVelocity);
         flywheel = new Flywheel(new FlywheelIOSim());
         // upperStructure = new UpperStructure(turret, turretFR);
         hood = new Hood(new HoodIOSim());
@@ -274,6 +280,7 @@ public class RobotContainer {
                   public PhysicalJoint getBaseJoint() {
                     return null;
                   }
+
                   public Transform3d getMountingOffset() {
                     return null;
                   }
@@ -282,6 +289,7 @@ public class RobotContainer {
                   public PhysicalJoint getBaseJoint() {
                     return null;
                   }
+
                   public Transform3d getMountingOffset() {
                     return null;
                   }
@@ -295,8 +303,7 @@ public class RobotContainer {
                 new TurretIOSim(fuelSim),
                 TurretConstants.kTurretonRobotoffset,
                 drive::getPose,
-                drive::getFieldVelocity,
-                "1");
+                drive::getFieldVelocity);
         flywheel = new Flywheel(new FlywheelIOSim());
         // upperStructure = new UpperStructure(turret, turretFR);
         hood = new Hood(new HoodIOSim());

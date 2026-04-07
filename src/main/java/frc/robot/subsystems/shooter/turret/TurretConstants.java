@@ -3,6 +3,7 @@ package frc.robot.subsystems.shooter.turret;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
 import frc.robot.Ports;
 
@@ -20,8 +21,13 @@ public class TurretConstants {
   public static final double kD = 0.0; // 0.0
   public static final double kG = 0.0; // 重力补偿
   public static final double kS = 0.1; // 静态前馈
-  public static final double kV = 1.2; // 0.13 轨迹规划得到的目标速度8.0
-  public static final double kA = 0.1; // 轨迹规划得到的目标加速度
+  public static final double kV = 0.0; // 0.13 轨迹规划得到的目标速度8.0
+  public static final double kA = 0.0; // 轨迹规划得到的目标加速度
+
+  public static final double kInertiaTurret = 0.1; // TODO
+  public static final double kInertiaMotorSide =
+      kInertiaTurret / (kTurretGearRatio * kTurretGearRatio); // 电机侧的转动惯量
+  public static final double kT = 0.01537;
 
   // ========== 角度限制 ==========
   public static final double kTurretMinAngle = Units.degreesToRadians(-270); // radius
@@ -32,18 +38,11 @@ public class TurretConstants {
   public static final double kTurretFixAngle = Units.degreesToRadians(90);
 
   // 炮塔的相对于机器中心的位置
-  public static final Translation2d kTurretonRobotoffset = new Translation2d(-0.1225, -0.153);
+  public static final Translation2d kTurretonRobotoffset = new Translation2d(-0.158, 0);
   // 摄像头相对于炮塔中心的位置
   public static final Transform3d kCameraonTurretoffset =
       new Transform3d(
-          -0.43,
-          0.0, /// -0.43
-          0.16237,
-          new Rotation3d(
-              Units.degreesToRadians(0), // roll
-              Units.degreesToRadians(-24), // pitch
-              Units.degreesToRadians(-180))); // yaw
-
+          new Translation3d(-0.169025, 0, 0.097176), new Rotation3d(0, Math.toRadians(-22.887), 0));
   public static final Transform3d swerve2TurretOffset = new Transform3d(); // TODO
 
   public static final double kVelocityRadPerSec = Units.degreesToRadians(720.0);

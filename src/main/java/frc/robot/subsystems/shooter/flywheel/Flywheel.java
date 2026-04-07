@@ -179,7 +179,7 @@ public class Flywheel extends FullSubsystem {
       double velocityRadsPerSec, double acelerationRadPerSec2, double feedforwardAmps) {
     outputs.mode = FlywheelIOOutputMode.VELOCITY_FOC;
     outputs.velocityRadsPerSec = velocityRadsPerSec;
-    outputs.acelerationRadPerSec2 = acelerationRadPerSec2;
+    outputs.accelerationRadPerSec2 = acelerationRadPerSec2;
     outputs.feedforwardAmps = feedforwardAmps; // 这里直接用电压作为前馈，具体实现时可能需要转换为电流
 
     outputs.volts = 0.0; // 清零电压，防止干扰闭环

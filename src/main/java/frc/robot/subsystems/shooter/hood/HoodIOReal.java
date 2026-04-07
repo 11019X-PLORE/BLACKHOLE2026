@@ -42,6 +42,8 @@ public class HoodIOReal implements HoodIO {
   private final NeutralOut coastControl = new NeutralOut();
   private final StaticBrake brakeControl = new StaticBrake();
 
+  private double currentKA = 0.0;
+
   public HoodIOReal(int id, boolean isclockwice_Positive) {
     talon = new TalonFX(HoodConstants.kHoodId);
 
@@ -118,11 +120,15 @@ public class HoodIOReal implements HoodIO {
                 .withVelocity(Units.radiansToRotations(outputs.velocityRadsPerSec)));
       }
       case POSITION_FOC -> {
-        talon.setControl(
-            torqueControl
-                .withPosition(Units.radiansToRotations(outputs.positionRads))
-                .withVelocity(Units.radiansToRotations(outputs.velocityRadsPerSec))
-                .withFeedForward(outputs.feedforwardAmps));
+        double ffAmps =
+            outputs.accelerationRadPerSec2
+                * HoodConstants.hoodGearRatio
+                * HoodConstants.kInertiaMotorSide
+                / HoodConstants.kT;
+        torqueControl
+            .withPosition(Units.radiansToRotations(outputs.positionRads))
+            .withVelocity(Units.radiansToRotations(outputs.velocityRadsPerSec))
+            .withFeedForward(ffAmps);
       }
     }
   }
@@ -135,8 +141,9 @@ public class HoodIOReal implements HoodIO {
     cfg.kD = kD; // A velocity error of 1 rps results in 0.5 V output
     cfg.kS = kS; // static feedforward voltage
     cfg.kV = kV; // velocity feedforward voltage
-    cfg.kA = kA; // acceleration feedforward voltage
     cfg.kG = kG; // gravity feedforward voltage
+
+    this.currentKA = kA; // acceleration feedforward voltage
     tryUntilOk(5, () -> talon.getConfigurator().apply(cfg));
   }
 

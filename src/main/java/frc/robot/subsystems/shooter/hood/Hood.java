@@ -175,7 +175,7 @@ public class Hood extends FullSubsystem {
     outputs.mode = HoodIOOutputMode.POSITION_FOC;
     outputs.positionRads = clampedAngle;
     outputs.velocityRadsPerSec = targetVelocityRadsPerSec;
-    outputs.acelerationRadPerSec2 = targetAccelation;
+    outputs.accelerationRadPerSec2 = targetAccelation;
     outputs.feedforwardAmps = feedforwardAmps;
 
     // 计算是否到位

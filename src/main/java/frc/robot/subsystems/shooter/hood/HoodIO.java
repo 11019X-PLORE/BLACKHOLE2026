@@ -29,7 +29,7 @@ public interface HoodIO {
     // Closed loop control
     public double positionRads = 0.0;
     public double velocityRadsPerSec = 0.0;
-    public double acelerationRadPerSec2 = 0.0;
+    public double accelerationRadPerSec2 = 0.0;
     public double feedforwardAmps = 0.0;
   }
 

@@ -11,7 +11,6 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.RobotController;
 import frc.robot.util.Geoffrey.PhysicalJoint;
 import frc.robot.util.Geoffrey.VisionHelper;
-
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -41,7 +40,8 @@ public class VisionIOLimelight implements VisionIO {
    * @param name The configured name of the Limelight.
    * @param rotationSupplier Supplier for the current estimated rotation, used for MegaTag 2.
    */
-  public VisionIOLimelight(String name, double[] resulotion, PhysicalJoint baseJoint, Transform3d mountingOffset) {
+  public VisionIOLimelight(
+      String name, double[] resulotion, PhysicalJoint baseJoint, Transform3d mountingOffset) {
     var table = NetworkTableInstance.getDefault().getTable(name);
     // this.rotationSupplier = rotationSupplier;
     // orientationPublisher = table.getDoubleArrayTopic("robot_orientation_set").publish();

@@ -114,7 +114,6 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
   @AutoLogOutput
   private boolean atGoal = false;
 
-  private final String name;
   private final Translation2d robotToTurret;
   private Pose2d turretPose = new Pose2d();
   private final PhysicalJoint.kinematics kinematicsData = new PhysicalJoint.kinematics();
@@ -124,9 +123,7 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
       TurretIO io,
       Translation2d robotToTurret,
       Supplier<Pose2d> poseSupplier,
-      Supplier<ChassisSpeeds> chassisSpeedSupplier,
-      String name) {
-    this.name = name;
+      Supplier<ChassisSpeeds> chassisSpeedSupplier) {
     this.io = io;
     this.robotToTurret = robotToTurret;
     this.poseSupplier = poseSupplier;
@@ -137,7 +134,7 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
   @Override
   public void periodic() {
     io.updateInputs(inputs);
-    Logger.processInputs("turret/turret" + name, inputs);
+    Logger.processInputs("turret/turret", inputs);
     disconnected.set(!motorConnectedDebouncer.calculate(inputs.turretMotorConnected));
     updateTunables();
     calculateTurretPose();
@@ -202,9 +199,9 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
     }
 
     io.applyOutputs(outputs);
-    Logger.recordOutput("turret/turret" + name + "/atGoal", atGoal);
-    Logger.recordOutput("turret/turret" + name + "/IsWrapping", isWrapping);
-    Logger.recordOutput("turret/turret" + name + "/CurrentSetpoint", currentSetpoint);
+    Logger.recordOutput("turret/turret" + "/atGoal", atGoal);
+    Logger.recordOutput("turret/turret" + "/IsWrapping", isWrapping);
+    Logger.recordOutput("turret/turret" + "/CurrentSetpoint", currentSetpoint);
   }
 
   private void runTrackingLogic(Rotation2d goalAngleFieldRelative, double goalVelocity) {
@@ -248,8 +245,8 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
 
     atGoal = EqualsUtil.epsilonEquals(bestAngle, inputs.positionRads, toleranceDeg.get());
 
-    Logger.recordOutput("turret/turret" + name + "/GoalPositionRad", bestAngle);
-    Logger.recordOutput("turret/turret" + name + "/SetpointPositionRad", goalStateAngle);
+    Logger.recordOutput("turret/turret" + "/GoalPositionRad", bestAngle);
+    Logger.recordOutput("turret/turret" + "/SetpointPositionRad", goalStateAngle);
   }
 
   private void runPositionFOCLogic(
@@ -299,8 +296,8 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
 
     atGoal = EqualsUtil.epsilonEquals(bestAngle, inputs.positionRads, toleranceDeg.get());
 
-    Logger.recordOutput("turret/turret" + name + "/GoalPositionRad", bestAngle);
-    Logger.recordOutput("turret/turret" + name + "/SetpointPositionRad", goalStateAngle);
+    Logger.recordOutput("turret/turret" + "/GoalPositionRad", bestAngle);
+    Logger.recordOutput("turret/turret" + "/SetpointPositionRad", goalStateAngle);
   }
 
   private void updateTunables() {
@@ -379,7 +376,7 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
 
     // 5. 记录选中的目标点到日志，方便在 AdvantageScope 中通过 Pose2d 观察
     Logger.recordOutput(
-        "turret/turret" + name + "/PassingTargetUsed", new Pose2d(bestTarget, new Rotation2d()));
+        "turret/turret" + "/PassingTargetUsed", new Pose2d(bestTarget, new Rotation2d()));
 
     // 6. 返回从机器人指向该目标点的角度
     return bestTarget.minus(robotTrans).getAngle();
@@ -387,7 +384,11 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
 
   public Pose3d getCameraPoseRobotSpace() {
     Pose3d turretBase =
-        new Pose3d(robotToTurret.getX(), robotToTurret.getY(), 0.3004, new Rotation3d());
+        new Pose3d(
+            robotToTurret.getX(),
+            robotToTurret.getY(),
+            0.417,
+            new Rotation3d(0, 0, Math.PI)); // 炮塔中心相对于机器人中心的位姿，TODO: 测量确认
     Rotation3d turretRotation = new Rotation3d(0.0, 0.0, inputs.positionRads);
     Transform3d cameraOnTurret = TurretConstants.kCameraonTurretoffset;
     return turretBase

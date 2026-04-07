@@ -4,6 +4,7 @@ import static frc.robot.subsystems.vision.VisionConstants.aprilTagLayout;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Transform3d;
+import frc.robot.util.Geoffrey.PhysicalJoint;
 import java.util.function.Supplier;
 import org.photonvision.simulation.PhotonCameraSim;
 import org.photonvision.simulation.SimCameraProperties;
@@ -15,6 +16,7 @@ public class VisionIOPhotonVisionSim extends VisionIOPhotonVision {
 
   private final Supplier<Pose2d> poseSupplier;
   private final PhotonCameraSim cameraSim;
+  private final PhysicalJoint baseJoint;
 
   /**
    * Creates a new VisionIOPhotonVisionSim.
@@ -23,9 +25,13 @@ public class VisionIOPhotonVisionSim extends VisionIOPhotonVision {
    * @param poseSupplier Supplier for the robot pose to use in simulation.
    */
   public VisionIOPhotonVisionSim(
-      String name, Transform3d robotToCamera, Supplier<Pose2d> poseSupplier) {
+      String name,
+      Transform3d robotToCamera,
+      Supplier<Pose2d> poseSupplier,
+      PhysicalJoint baseJoint) {
     super(name, robotToCamera);
     this.poseSupplier = poseSupplier;
+    this.baseJoint = baseJoint;
 
     // Initialize vision sim
     if (visionSim == null) {
@@ -43,5 +49,10 @@ public class VisionIOPhotonVisionSim extends VisionIOPhotonVision {
   public void updateInputs(VisionIOInputs inputs) {
     visionSim.update(poseSupplier.get());
     super.updateInputs(inputs);
+  }
+
+  @Override
+  public PhysicalJoint getBaseJoint() {
+    return baseJoint;
   }
 }

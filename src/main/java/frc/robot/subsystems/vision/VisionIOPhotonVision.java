@@ -125,9 +125,9 @@ public class VisionIOPhotonVision implements VisionIO {
     // TODO Auto-generated method stub
     return null;
   }
-  
+
   @Override
-  public Transform3d getMountingOffset(){
+  public Transform3d getMountingOffset() {
     return null;
   }
 }

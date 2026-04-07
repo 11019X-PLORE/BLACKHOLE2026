@@ -32,7 +32,7 @@ public interface FlywheelIO {
   public static class FlywheelIOOutputs {
     public FlywheelIOOutputMode mode = FlywheelIOOutputMode.VELOCITY;
     public double velocityRadsPerSec = 0.0;
-    public double acelerationRadPerSec2 = 0.0;
+    public double accelerationRadPerSec2 = 0.0;
     public double feedforwardAmps = 0.0;
     public double volts = 0.0;
   }
