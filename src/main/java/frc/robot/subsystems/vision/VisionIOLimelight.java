@@ -7,6 +7,7 @@ import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.DoubleArraySubscriber;
 import edu.wpi.first.networktables.DoubleSubscriber;
+import edu.wpi.first.networktables.IntegerSubscriber;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.RobotController;
 import frc.robot.util.Geoffrey.PhysicalJoint;
@@ -24,8 +25,9 @@ public class VisionIOLimelight implements VisionIO {
   private final DoubleSubscriber latencySubscriber;
   private final DoubleSubscriber txSubscriber;
   private final DoubleSubscriber tySubscriber;
+  private final IntegerSubscriber primaryIDSubscriber;
   private final DoubleArraySubscriber megatag1Subscriber;
-  // private final DoubleArraySubscriber megatag2Subscriber;
+  private final DoubleArraySubscriber tagPoseSubscriber;
 
   private final DoubleArraySubscriber rawdetectionsSubscriber;
 
@@ -49,8 +51,9 @@ public class VisionIOLimelight implements VisionIO {
     txSubscriber = table.getDoubleTopic("tx").subscribe(0.0);
     tySubscriber = table.getDoubleTopic("ty").subscribe(0.0);
     megatag1Subscriber = table.getDoubleArrayTopic("botpose_wpiblue").subscribe(new double[] {});
-    // megatag2Subscriber =
-    //     table.getDoubleArrayTopic("botpose_orb_wpiblue").subscribe(new double[] {});
+    tagPoseSubscriber =
+        table.getDoubleArrayTopic("targetpose_cameraspace").subscribe(new double[] {});
+    primaryIDSubscriber = table.getIntegerTopic("ty").subscribe(-1);
 
     rawdetectionsSubscriber = table.getDoubleArrayTopic("rawdetections").subscribe(new double[] {});
 
@@ -81,15 +84,14 @@ public class VisionIOLimelight implements VisionIO {
 
     // Read new pose observations from NetworkTables
     Set<Integer> tagIds = new HashSet<>();
+    double[] rawDetections = rawdetectionsSubscriber.get();
+
     List<PoseObservation> poseObservations = new LinkedList<>();
     for (var rawSample : megatag1Subscriber.readQueue()) {
       if (rawSample.value.length == 0) continue;
       for (int i = 11; i < rawSample.value.length; i += 7) {
         tagIds.add((int) rawSample.value[i]);
       }
-
-      double[] rawDetections = rawdetectionsSubscriber.get();
-
       poseObservations.add(
           new PoseObservation(
               // Timestamp, based on server timestamp of publish and latency
@@ -114,31 +116,37 @@ public class VisionIOLimelight implements VisionIO {
               // Observation type
               PoseObservationType.MEGATAG_1));
     }
-    // for (var rawSample : megatag2Subscriber.readQueue()) {
-    //   if (rawSample.value.length == 0) continue;
-    //   for (int i = 11; i < rawSample.value.length; i += 7) {
-    //     tagIds.add((int) rawSample.value[i]);
-    //   }
-    //   poseObservations.add(
-    //       new PoseObservation(
-    //           // Timestamp, based on server timestamp of publish and latency
-    //           rawSample.timestamp * 1.0e-6 - rawSample.value[6] * 1.0e-3,
 
-    //           // 3D pose estimate
-    //           parsePose(rawSample.value),
+    int primaryID = (int) primaryIDSubscriber.get();
+    for (var rawSample : tagPoseSubscriber.readQueue()) {
+      if (rawSample.value.length == 0) continue;
+      for (int i = 11; i < rawSample.value.length; i += 7) {
+        tagIds.add((int) rawSample.value[i]);
+      }
+      poseObservations.add(
+          new PoseObservation(
+              // Timestamp, based on server timestamp of publish and latency
+              rawSample.timestamp * 1.0e-6 - rawSample.value[6] * 1.0e-3,
 
-    //           // Ambiguity, zeroed because the pose is already disambiguated
-    //           0.0,
+              // 3D pose estimate
+              parsePose(rawSample.value),
 
-    //           // Tag count
-    //           (int) rawSample.value[7],
+              // Ambiguity, using only the first tag because ambiguity isn't applicable for
+              // multitag
+              rawSample.value.length >= 18 ? rawSample.value[17] : 0.0,
 
-    //           // Average tag distance
-    //           rawSample.value[9],
+              // Tag count
+              (int) rawSample.value[7],
 
-    //           // Observation type
-    //           PoseObservationType.MEGATAG_2));
-    // }
+              // Average tag distance
+              rawSample.value[9],
+              rawDetections.length > 0
+                  ? VisionHelper.getSingleTagArea(rawDetections, 4, primaryID, 0) / num_pixels
+                  : 0.0,
+
+              // Observation type
+              PoseObservationType.CAMERA2TAG));
+    }
 
     // Save pose observations to inputs object
     inputs.poseObservations = new PoseObservation[poseObservations.size()];
@@ -148,8 +156,10 @@ public class VisionIOLimelight implements VisionIO {
 
     // Save tag IDs to inputs objects
     inputs.tagIds = new int[tagIds.size()];
-    int i = 0;
+    inputs.tagIds[0] = primaryID;
+    int i = 1;
     for (int id : tagIds) {
+      if (id == primaryID) continue;
       inputs.tagIds[i++] = id;
     }
   }

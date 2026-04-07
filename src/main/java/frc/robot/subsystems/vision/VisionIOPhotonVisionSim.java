@@ -4,6 +4,7 @@ import static frc.robot.subsystems.vision.VisionConstants.aprilTagLayout;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Transform3d;
+import frc.robot.util.Geoffrey.PhysicalJoint;
 import java.util.function.Supplier;
 import org.photonvision.simulation.PhotonCameraSim;
 import org.photonvision.simulation.SimCameraProperties;
@@ -20,11 +21,18 @@ public class VisionIOPhotonVisionSim extends VisionIOPhotonVision {
    * Creates a new VisionIOPhotonVisionSim.
    *
    * @param name The name of the camera.
+   * @param robotToCamera The 3D transform from robot to camera (used for PhotonVision sim).
+   * @param baseJoint The physical joint the camera is mounted on.
+   * @param mountingOffset The transform from the base joint to the camera.
    * @param poseSupplier Supplier for the robot pose to use in simulation.
    */
   public VisionIOPhotonVisionSim(
-      String name, Transform3d robotToCamera, Supplier<Pose2d> poseSupplier) {
-    super(name, robotToCamera);
+      String name,
+      Transform3d robotToCamera,
+      PhysicalJoint baseJoint,
+      Transform3d mountingOffset,
+      Supplier<Pose2d> poseSupplier) {
+    super(name, robotToCamera, baseJoint, mountingOffset);
     this.poseSupplier = poseSupplier;
 
     // Initialize vision sim

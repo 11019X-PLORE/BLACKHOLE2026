@@ -219,8 +219,10 @@ public class RobotContainer {
         vision =
             new Vision(
                 drive,
-                new VisionIOPhotonVisionSim(camera0Name, robotToCamera0, drive::getPose),
-                new VisionIOPhotonVisionSim(camera1Name, robotToCamera1, drive::getPose));
+                new VisionIOPhotonVisionSim(
+                    camera0Name, robotToCamera0, drive, robotToCamera0, drive::getPose),
+                new VisionIOPhotonVisionSim(
+                    camera1Name, robotToCamera1, drive, robotToCamera1, drive::getPose));
         intake = new Intake(new IntakeIOSim());
         triggers = new Triggers(new TriggersIOSim());
         indexer = new Indexer(new IndexerIOSim());

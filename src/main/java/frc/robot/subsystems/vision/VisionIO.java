@@ -32,6 +32,7 @@ public interface VisionIO {
   public static enum PoseObservationType {
     MEGATAG_1,
     // MEGATAG_2, 垃圾
+    CAMERA2TAG,
     PHOTONVISION
   }
 

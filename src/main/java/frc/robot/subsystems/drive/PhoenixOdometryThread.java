@@ -2,7 +2,6 @@ package frc.robot.subsystems.drive;
 
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
-import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.RobotController;
 import frc.robot.generated.TunerConstants;
 import java.util.ArrayList;
@@ -53,7 +52,7 @@ public class PhoenixOdometryThread extends Thread {
   }
 
   /** Registers a Phoenix signal to be read from the thread. */
-  public Queue<Double> registerSignal(StatusSignal<Angle> signal) {
+  public Queue<Double> registerSignal(StatusSignal<?> signal) {
     Queue<Double> queue = new ArrayBlockingQueue<>(20);
     signalsLock.lock();
     Drive.odometryLock.lock();

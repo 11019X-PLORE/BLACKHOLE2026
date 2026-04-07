@@ -16,16 +16,23 @@ import org.photonvision.PhotonCamera;
 public class VisionIOPhotonVision implements VisionIO {
   protected final PhotonCamera camera;
   protected final Transform3d robotToCamera;
+  private final PhysicalJoint baseJoint;
+  private final Transform3d mountingOffset;
 
   /**
    * Creates a new VisionIOPhotonVision.
    *
    * @param name The configured name of the camera.
    * @param robotToCamera The 3D position of the camera relative to the robot.
+   * @param baseJoint The physical joint this camera is mounted on.
+   * @param mountingOffset The transform from the base joint to the camera.
    */
-  public VisionIOPhotonVision(String name, Transform3d robotToCamera) {
+  public VisionIOPhotonVision(
+      String name, Transform3d robotToCamera, PhysicalJoint baseJoint, Transform3d mountingOffset) {
     camera = new PhotonCamera(name);
     this.robotToCamera = robotToCamera;
+    this.baseJoint = baseJoint;
+    this.mountingOffset = mountingOffset;
   }
 
   @Override
@@ -50,10 +57,9 @@ public class VisionIOPhotonVision implements VisionIO {
       if (result.multitagResult.isPresent()) { // Multitag result
         var multitagResult = result.multitagResult.get();
 
-        // Calculate robot pose
+        // Calculate field-to-camera pose
         Transform3d fieldToCamera = multitagResult.estimatedPose.best;
-        Transform3d fieldToRobot = fieldToCamera.plus(robotToCamera.inverse());
-        Pose3d robotPose = new Pose3d(fieldToRobot.getTranslation(), fieldToRobot.getRotation());
+        Pose3d cameraPose = new Pose3d(fieldToCamera.getTranslation(), fieldToCamera.getRotation());
 
         // Calculate average tag distance
         double totalTagDistance = 0.0;
@@ -68,7 +74,7 @@ public class VisionIOPhotonVision implements VisionIO {
         poseObservations.add(
             new PoseObservation(
                 result.getTimestampSeconds(), // Timestamp
-                robotPose, // 3D pose estimate
+                cameraPose, // 3D field-to-camera pose estimate
                 multitagResult.estimatedPose.ambiguity, // Ambiguity
                 multitagResult.fiducialIDsUsed.size(), // Tag count
                 totalTagDistance / result.targets.size(), // Average tag distance
@@ -78,15 +84,15 @@ public class VisionIOPhotonVision implements VisionIO {
       } else if (!result.targets.isEmpty()) { // Single tag result
         var target = result.targets.get(0);
 
-        // Calculate robot pose
+        // Calculate field-to-camera pose
         var tagPose = aprilTagLayout.getTagPose(target.fiducialId);
         if (tagPose.isPresent()) {
           Transform3d fieldToTarget =
               new Transform3d(tagPose.get().getTranslation(), tagPose.get().getRotation());
           Transform3d cameraToTarget = target.bestCameraToTarget;
           Transform3d fieldToCamera = fieldToTarget.plus(cameraToTarget.inverse());
-          Transform3d fieldToRobot = fieldToCamera.plus(robotToCamera.inverse());
-          Pose3d robotPose = new Pose3d(fieldToRobot.getTranslation(), fieldToRobot.getRotation());
+          Pose3d cameraPose =
+              new Pose3d(fieldToCamera.getTranslation(), fieldToCamera.getRotation());
 
           // Add tag ID
           tagIds.add((short) target.fiducialId);
@@ -95,7 +101,7 @@ public class VisionIOPhotonVision implements VisionIO {
           poseObservations.add(
               new PoseObservation(
                   result.getTimestampSeconds(), // Timestamp
-                  robotPose, // 3D pose estimate
+                  cameraPose, // 3D field-to-camera pose estimate
                   target.poseAmbiguity, // Ambiguity
                   1, // Tag count
                   cameraToTarget.getTranslation().getNorm(), // Average tag distance
@@ -119,15 +125,13 @@ public class VisionIOPhotonVision implements VisionIO {
     }
   }
 
-  // TODO need to change a lot of code to support this, so leaving it for now
   @Override
   public PhysicalJoint getBaseJoint() {
-    // TODO Auto-generated method stub
-    return null;
+    return baseJoint;
   }
 
   @Override
   public Transform3d getMountingOffset() {
-    return null;
+    return mountingOffset;
   }
 }
