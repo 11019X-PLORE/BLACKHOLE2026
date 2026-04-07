@@ -105,6 +105,8 @@ public class RobotContainer {
   // Controller
   private final CommandPS5Controller controller = new CommandPS5Controller(0);
 
+  private final CommandPS5Controller testing_controller = new CommandPS5Controller(1);
+
   // Bindings
   private final Trigger zeroSuperstructurePosition = controller.square();
   private final Trigger zeroGyro = controller.button(13);
@@ -170,9 +172,17 @@ public class RobotContainer {
                 //     turret::getCameraPoseRobotSpace,
                 //     turret::getVelocity,
                 //     VisionConstants.visionCutoffSpeed),
-                new VisionIOLimelight(camera0Name, new double[] {320, 200}, drive, new Transform3d(0.0, 0.0, 0.616, new Rotation3d(0.0, -0.4, 0.0))),
-                new VisionIOLimelight(camera1Name, new double[] {320, 200}, turret, new Transform3d(-0.0, 0.0, 0.2, new Rotation3d(0.0, -0.4, Math.PI))));
-                //TODO: 传入实际测量的摄像头位置
+                new VisionIOLimelight(
+                    camera0Name,
+                    new double[] {320, 200},
+                    drive,
+                    new Transform3d(0.0, 0.0, 0.616, new Rotation3d(0.0, -0.4, 0.0))),
+                new VisionIOLimelight(
+                    camera1Name,
+                    new double[] {320, 200},
+                    turret,
+                    new Transform3d(-0.0, 0.0, 0.2, new Rotation3d(0.0, -0.4, Math.PI))));
+        // TODO: 传入实际测量的摄像头位置
         flywheel =
             new Flywheel(
                 new FlywheelIOReal(
@@ -274,6 +284,7 @@ public class RobotContainer {
                   public PhysicalJoint getBaseJoint() {
                     return null;
                   }
+
                   public Transform3d getMountingOffset() {
                     return null;
                   }
@@ -282,6 +293,7 @@ public class RobotContainer {
                   public PhysicalJoint getBaseJoint() {
                     return null;
                   }
+
                   public Transform3d getMountingOffset() {
                     return null;
                   }
@@ -484,6 +496,20 @@ public class RobotContainer {
                         drive, TrenchHelper.getTrenchTargetPose(drive::getPose)),
                 java.util.Set.of(drive) // 声明占用 drive 子系统
                 )));
+
+    // testing:
+    testing_controller
+        .button(1)
+        .onTrue(
+            Commands.parallel(
+                flywheel.setGoalCommand(Flywheel.FlywheelGoal.FIXED_VELOCITY),
+                indexer.setGoalCommand(Indexer.IndexerGoal.SHOOT),
+                triggers.setGoalCommand(Triggers.TriggersGoal.SHOOT)))
+        .onFalse(
+            Commands.parallel(
+                flywheel.setGoalCommand(Flywheel.FlywheelGoal.IDLE),
+                indexer.setGoalCommand(Indexer.IndexerGoal.STOP),
+                triggers.setGoalCommand(Triggers.TriggersGoal.STOP)));
   }
 
   private void configureFuelSim() {

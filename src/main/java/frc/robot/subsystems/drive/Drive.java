@@ -114,8 +114,9 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
   private final PhysicalJoint.kinematics kinematicsData = new PhysicalJoint.kinematics();
   private PhysicalJoint base = PhysicalJoint.ground;
 
-  private TimeInterpolatableBuffer<Pose2d> robotPoseBuffer = TimeInterpolatableBuffer.createBuffer(2);
-  
+  private TimeInterpolatableBuffer<Pose2d> robotPoseBuffer =
+      TimeInterpolatableBuffer.createBuffer(2);
+
   private SwerveDrivePoseEstimator poseEstimator =
       new SwerveDrivePoseEstimator(
           kinematics,

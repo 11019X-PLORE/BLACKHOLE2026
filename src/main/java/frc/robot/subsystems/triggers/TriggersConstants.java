@@ -14,8 +14,8 @@ public class TriggersConstants {
   public static final int kSecondTriggers = 25;
   public static boolean kTriggersInverted = false;
 
-  public static boolean kTestLeftTriggersInverted = false;
-  public static boolean kTestRightTriggersInverted = true;
+  public static boolean kTestLeftTriggersInverted = true;
+  public static boolean kTestRightTriggersInverted = false;
 
   public static double minSwitchPeriod = 0.2;
 

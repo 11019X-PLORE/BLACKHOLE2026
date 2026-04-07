@@ -10,10 +10,8 @@ import edu.wpi.first.math.interpolation.TimeInterpolatableBuffer;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.util.FullSubsystem;
-
 import java.util.LinkedList;
 import java.util.List;
 import org.ejml.simple.SimpleMatrix;
@@ -47,7 +45,8 @@ public class Vision extends FullSubsystem {
               "Vision camera " + Integer.toString(i) + " is disconnected.", AlertType.kWarning);
     }
 
-    robot2cameraPoseBuffer = new TimeInterpolatableBuffer[io.length]; // Separate buffer for each camera
+    robot2cameraPoseBuffer =
+        new TimeInterpolatableBuffer[io.length]; // Separate buffer for each camera
     for (int i = 0; i < io.length; i++) {
       robot2cameraPoseBuffer[i] = TimeInterpolatableBuffer.createBuffer(2.0);
     }
@@ -75,7 +74,8 @@ public class Vision extends FullSubsystem {
       // Compute the camera pose in the robot (base) frame:
       //   T_robot_to_camera = T_world_to_robot^-1 ⊕ T_world_to_camera
       // where T_world_to_camera = mountingEnd.globalTip ⊕ mountingOffset
-      Transform3d cameraGlobal = io[i].getBaseJoint().getGlobalPose().plus(io[i].getMountingOffset());
+      Transform3d cameraGlobal =
+          io[i].getBaseJoint().getGlobalPose().plus(io[i].getMountingOffset());
       Transform3d robotGlobal = drive.getGlobalPose();
       // robot^-1 ⊕ camera  →  camera expressed in robot frame
       Pose3d cameraInRobot = new Pose3d().transformBy(robotGlobal.inverse().plus(cameraGlobal));
@@ -115,26 +115,25 @@ public class Vision extends FullSubsystem {
       // Loop over pose observations
       for (var observation : inputs[cameraIndex].poseObservations) {
 
-        Pose3d robot2cameraPose = this.robot2cameraPoseBuffer[cameraIndex].getSample(observation.timestamp()).get();
+        Pose3d robot2cameraPose =
+            this.robot2cameraPoseBuffer[cameraIndex].getSample(observation.timestamp()).get();
 
-        if(robot2cameraPose == null) {
-          continue; // Skip if we don't have a valid robot-to-camera transform at the observation timestamp
+        if (robot2cameraPose == null) {
+          continue; // Skip if we don't have a valid robot-to-camera transform at the observation
+          // timestamp
         }
 
         Pose3d visionPose3d =
-          observation.pose()
-              .transformBy(
-                  new Transform3d(
-                          new Pose3d(), robot2cameraPose)
-                      .inverse());
+            observation
+                .pose()
+                .transformBy(new Transform3d(new Pose3d(), robot2cameraPose).inverse());
 
         // Check whether to reject pose
         boolean rejectPose =
             observation.tagCount() == 0 // Must have at least one tag
                 || (observation.tagCount() == 1
                     && observation.ambiguity() > maxAmbiguity) // Cannot be high ambiguity
-                || Math.abs(visionPose3d.getZ())
-                    > maxZError // Must have realistic Z coordinate
+                || Math.abs(visionPose3d.getZ()) > maxZError // Must have realistic Z coordinate
 
                 // Must be within the field boundaries
                 || visionPose3d.getX() < 0.0
