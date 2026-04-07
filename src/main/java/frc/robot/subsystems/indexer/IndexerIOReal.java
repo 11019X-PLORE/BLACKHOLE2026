@@ -55,9 +55,9 @@ public class IndexerIOReal implements IndexerIO {
             .withCurrentLimits(
                 new CurrentLimitsConfigs()
                     .withStatorCurrentLimit(Amps.of(120.0))
-                    .withStatorCurrentLimitEnable(true)
+                    .withStatorCurrentLimitEnable(false)
                     .withSupplyCurrentLimit(Amps.of(40))
-                    .withSupplyCurrentLimitEnable(true)
+                    .withSupplyCurrentLimitEnable(false)
                     .withSupplyCurrentLowerLimit(Amps.of(60)) // 允许短时间更高电流
                     .withSupplyCurrentLowerTime(0.1)
                     .withSupplyCurrentLimitEnable(true));

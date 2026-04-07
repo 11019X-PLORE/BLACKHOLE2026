@@ -105,6 +105,8 @@ public class RobotContainer {
   // Controller
   private final CommandPS5Controller controller = new CommandPS5Controller(0);
 
+  private final CommandPS5Controller testing_controller = new CommandPS5Controller(1);
+
   // Bindings
   private final Trigger zeroSuperstructurePosition = controller.square();
   private final Trigger zeroGyro = controller.button(13);
@@ -216,8 +218,10 @@ public class RobotContainer {
         vision =
             new Vision(
                 drive,
-                new VisionIOPhotonVisionSim(camera0Name, robotToCamera0, drive::getPose),
-                new VisionIOPhotonVisionSim(camera1Name, robotToCamera1, drive::getPose));
+                new VisionIOPhotonVisionSim(
+                    camera0Name, robotToCamera0, drive, robotToCamera0, drive::getPose),
+                new VisionIOPhotonVisionSim(
+                    camera1Name, robotToCamera1, drive, robotToCamera1, drive::getPose));
         intake = new Intake(new IntakeIOSim());
         triggers = new Triggers(new TriggersIOSim());
         indexer = new Indexer(new IndexerIOSim());
@@ -281,6 +285,7 @@ public class RobotContainer {
                     return null;
                   }
 
+
                   public Transform3d getMountingOffset() {
                     return null;
                   }
@@ -289,6 +294,7 @@ public class RobotContainer {
                   public PhysicalJoint getBaseJoint() {
                     return null;
                   }
+
 
                   public Transform3d getMountingOffset() {
                     return null;
@@ -491,6 +497,20 @@ public class RobotContainer {
                         drive, TrenchHelper.getTrenchTargetPose(drive::getPose)),
                 java.util.Set.of(drive) // 声明占用 drive 子系统
                 )));
+
+    // testing:
+    testing_controller
+        .button(1)
+        .onTrue(
+            Commands.parallel(
+                flywheel.setGoalCommand(Flywheel.FlywheelGoal.FIXED_VELOCITY),
+                indexer.setGoalCommand(Indexer.IndexerGoal.SHOOT),
+                triggers.setGoalCommand(Triggers.TriggersGoal.SHOOT)))
+        .onFalse(
+            Commands.parallel(
+                flywheel.setGoalCommand(Flywheel.FlywheelGoal.IDLE),
+                indexer.setGoalCommand(Indexer.IndexerGoal.STOP),
+                triggers.setGoalCommand(Triggers.TriggersGoal.STOP)));
   }
 
   private void configureFuelSim() {

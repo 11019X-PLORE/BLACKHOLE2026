@@ -16,22 +16,24 @@ public class VisionIOPhotonVisionSim extends VisionIOPhotonVision {
 
   private final Supplier<Pose2d> poseSupplier;
   private final PhotonCameraSim cameraSim;
-  private final PhysicalJoint baseJoint;
 
   /**
    * Creates a new VisionIOPhotonVisionSim.
    *
    * @param name The name of the camera.
+   * @param robotToCamera The 3D transform from robot to camera (used for PhotonVision sim).
+   * @param baseJoint The physical joint the camera is mounted on.
+   * @param mountingOffset The transform from the base joint to the camera.
    * @param poseSupplier Supplier for the robot pose to use in simulation.
    */
   public VisionIOPhotonVisionSim(
       String name,
       Transform3d robotToCamera,
-      Supplier<Pose2d> poseSupplier,
-      PhysicalJoint baseJoint) {
-    super(name, robotToCamera);
+      PhysicalJoint baseJoint,
+      Transform3d mountingOffset,
+      Supplier<Pose2d> poseSupplier) {
+    super(name, robotToCamera, baseJoint, mountingOffset);
     this.poseSupplier = poseSupplier;
-    this.baseJoint = baseJoint;
 
     // Initialize vision sim
     if (visionSim == null) {
@@ -49,10 +51,5 @@ public class VisionIOPhotonVisionSim extends VisionIOPhotonVision {
   public void updateInputs(VisionIOInputs inputs) {
     visionSim.update(poseSupplier.get());
     super.updateInputs(inputs);
-  }
-
-  @Override
-  public PhysicalJoint getBaseJoint() {
-    return baseJoint;
   }
 }

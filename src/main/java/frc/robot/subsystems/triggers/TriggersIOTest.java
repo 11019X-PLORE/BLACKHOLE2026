@@ -89,9 +89,9 @@ public class TriggersIOTest implements TriggersIO {
             .clone()
             .withMotorOutput(
                 new MotorOutputConfigs()
-                    .withNeutralMode(NeutralModeValue.Coast)
+                    .withNeutralMode(NeutralModeValue.Brake)
                     .withInverted(
-                        TriggersConstants.kTestLeftTriggersInverted
+                        TriggersConstants.kTestRightTriggersInverted
                             ? InvertedValue.Clockwise_Positive
                             : InvertedValue.CounterClockwise_Positive));
 

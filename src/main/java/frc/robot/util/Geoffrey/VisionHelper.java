@@ -49,4 +49,19 @@ public class VisionHelper {
 
     return maxArea;
   }
+
+  public static double getSingleTagArea(
+      double[] rawDetection, int num_nonCornerEntries, int targetId, int tagIndex) {
+    if (rawDetection == null || rawDetection.length < num_nonCornerEntries + 8) {
+      return 0.0;
+    }
+    for (int i = 0; i < rawDetection.length; i += 8 + num_nonCornerEntries) {
+      if (i + tagIndex == targetId) {
+        double[] corners = new double[8];
+        System.arraycopy(rawDetection, i + num_nonCornerEntries, corners, 0, 8);
+        return getMaxTagArea(corners, 0);
+      }
+    }
+    return 0.0;
+  }
 }
