@@ -119,27 +119,35 @@ public class VisionIOLimelight implements VisionIO {
 
     int primaryID = (int) primaryIDSubscriber.get();
     for (var rawSample : tagPoseSubscriber.readQueue()) {
-      if (rawSample.value.length == 0) continue;
-      for (int i = 11; i < rawSample.value.length; i += 7) {
-        tagIds.add((int) rawSample.value[i]);
-      }
+      if (rawSample.value.length < 6) continue;
+
+      // targetpose_cameraspace only has 6 values: x, y, z, rx, ry, rz
+      // Use the megatag1 latency for timestamp, and primary ID for tag tracking
+      tagIds.add(primaryID);
+
+      // Compute distance from camera to tag using the translation components
+      double tagDistance =
+          Math.sqrt(
+              rawSample.value[0] * rawSample.value[0]
+                  + rawSample.value[1] * rawSample.value[1]
+                  + rawSample.value[2] * rawSample.value[2]);
+
       poseObservations.add(
           new PoseObservation(
-              // Timestamp, based on server timestamp of publish and latency
-              rawSample.timestamp * 1.0e-6 - rawSample.value[6] * 1.0e-3,
+              // Timestamp, use NT server timestamp minus limelight latency
+              rawSample.timestamp * 1.0e-6 - latencySubscriber.get() * 1.0e-3,
 
-              // 3D pose estimate
+              // 3D pose estimate (camera-space tag pose)
               parsePose(rawSample.value),
 
-              // Ambiguity, using only the first tag because ambiguity isn't applicable for
-              // multitag
-              rawSample.value.length >= 18 ? rawSample.value[17] : 0.0,
+              // Ambiguity (not available for single targetpose)
+              0.0,
 
               // Tag count
-              (int) rawSample.value[7],
+              1,
 
               // Average tag distance
-              rawSample.value[9],
+              tagDistance,
               rawDetections.length > 0
                   ? VisionHelper.getSingleTagArea(rawDetections, 4, primaryID, 0) / num_pixels
                   : 0.0,
