@@ -9,20 +9,19 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.FieldConstants;
 import frc.robot.Robot;
-import frc.robot.subsystems.shooter.ShotCalculator;
 import frc.robot.subsystems.shooter.hood.HoodIO.HoodIOOutputMode;
 import frc.robot.subsystems.shooter.hood.HoodIO.HoodIOOutputs;
 import frc.robot.util.FullSubsystem;
+import frc.robot.util.Geoffrey.PhysicalJoint;
+import frc.robot.util.Geoffrey.ShooterSetpoint;
+import frc.robot.util.Geoffrey.TrajectoryConfig;
 import frc.robot.util.LoggedTunableNumber;
+import frc.robot.util.geometry.AllianceFlipUtil;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
-import frc.robot.util.Geoffrey.PhysicalJoint;
-import frc.robot.util.Geoffrey.ShooterSetpoint;
-import frc.robot.util.Geoffrey.TrajectoryConfig;
-import frc.robot.util.geometry.AllianceFlipUtil;
 
 public class Hood extends FullSubsystem {
 
@@ -128,23 +127,36 @@ public class Hood extends FullSubsystem {
           atGoal = true;
         }
         case TRACKING -> {
-          Translation2d target = AllianceFlipUtil.apply(FieldConstants.Hub.topCenterPoint.toTranslation2d());
-          ShooterSetpoint sp = ShooterSetpoint.makeSetpoint(muzzleJoint, target, FieldConstants.hMax, TrajectoryConfig.getHubConfig());
-          runPositionFOCLogic(sp.hoodPositionRadians, sp.hoodVelocityRadsPerSec, sp.hoodAccelerationRadsPerSecSquared,0.0);
+          Translation2d target =
+              AllianceFlipUtil.apply(FieldConstants.Hub.topCenterPoint.toTranslation2d());
+          ShooterSetpoint sp =
+              ShooterSetpoint.makeSetpoint(
+                  muzzleJoint, target, FieldConstants.hMax, TrajectoryConfig.getHubConfig());
+          runPositionFOCLogic(
+              sp.hoodPositionRadians,
+              sp.hoodVelocityRadsPerSec,
+              sp.hoodAccelerationRadsPerSecSquared,
+              0.0);
         }
         case PASSING -> {
           Translation2d target = getBestPassingTarget();
-          ShooterSetpoint sp = ShooterSetpoint.makeSetpoint(muzzleJoint, target, FieldConstants.hMax, TrajectoryConfig.getPassingConfig());
-          runPositionFOCLogic(sp.hoodPositionRadians, sp.hoodVelocityRadsPerSec, sp.hoodAccelerationRadsPerSecSquared,0.0);
+          ShooterSetpoint sp =
+              ShooterSetpoint.makeSetpoint(
+                  muzzleJoint, target, FieldConstants.hMax, TrajectoryConfig.getPassingConfig());
+          runPositionFOCLogic(
+              sp.hoodPositionRadians,
+              sp.hoodVelocityRadsPerSec,
+              sp.hoodAccelerationRadsPerSecSquared,
+              0.0);
         }
         case FIXED_ANGLE -> {
-          runPositionFOCLogic(fixedAngleRads, 0.0, 0.0,0.0);
+          runPositionFOCLogic(fixedAngleRads, 0.0, 0.0, 0.0);
         }
         case TEST -> {
-          runPositionFOCLogic(kFixAngle.get(), 0.0, 0.0,0.0);
+          runPositionFOCLogic(kFixAngle.get(), 0.0, 0.0, 0.0);
         }
         case ZEROING -> {
-          runPositionFOCLogic(HoodConstants.kHoodInitialAngle, 0.0, 0.0,0.0);
+          runPositionFOCLogic(HoodConstants.kHoodInitialAngle, 0.0, 0.0, 0.0);
         }
       }
     }
@@ -157,7 +169,8 @@ public class Hood extends FullSubsystem {
   /** 内部位置闭环辅助方法：负责 clamp 角度、设置 output 并计算 atGoal */
   // private void runPositionLogic(double targetAngleRads, double targetVelocityRadsPerSec) {
   //   double clampedAngle =
-  //       MathUtil.clamp(targetAngleRads, HoodConstants.kHoodMinAngle, HoodConstants.kHoodMaxAngle);
+  //       MathUtil.clamp(targetAngleRads, HoodConstants.kHoodMinAngle,
+  // HoodConstants.kHoodMaxAngle);
 
   //   outputs.mode = HoodIOOutputMode.CLOSED_LOOP;
   //   outputs.positionRads = clampedAngle;

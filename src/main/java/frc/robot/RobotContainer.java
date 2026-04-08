@@ -7,6 +7,8 @@ import static frc.robot.subsystems.vision.VisionConstants.*;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -69,6 +71,9 @@ import frc.robot.subsystems.superstructure.Superstructure.SuperstructureState;
 import frc.robot.subsystems.triggers.Triggers;
 import frc.robot.subsystems.triggers.TriggersIOSim;
 import frc.robot.subsystems.triggers.TriggersIOTest;
+import frc.robot.subsystems.vision.Vision;
+import frc.robot.subsystems.vision.VisionIOLimelight;
+import frc.robot.subsystems.vision.VisionIOPhotonVisionSim;
 import frc.robot.util.ClimbTargetSelector;
 import frc.robot.util.Dimensions;
 import frc.robot.util.FuelSim;
@@ -89,7 +94,7 @@ public class RobotContainer {
   public final Turret turret;
   public final Flywheel flywheel;
   public final Hood hood;
-  // public final Vision vision;
+  public final Vision vision;
   public final Hanger hanger;
   public final LED led;
   public final Superstructure superstructure;
@@ -157,38 +162,25 @@ public class RobotContainer {
                 drive::getPose,
                 drive::getFieldVelocity);
 
-        // vision =
-        //     new Vision(
-        //         drive,
-        // new VisionIOLimelightTurret(
-        //     camera1Name,
-        //     turret::getCameraPoseRobotSpace,
-        //     turret::getVelocity,
-        //     VisionConstants.visionCutoffSpeed),
-        // new VisionIOLimelight(
-        //     camera0Name,
-        //     new double[] {320, 200},
-        //     drive,
-        //     new Transform3d(0.0, 0.0, 0.616, new Rotation3d(0.0, -0.4, 0.0))),
-        // new VisionIOLimelight(
-        //     camera1Name,
-        //     new double[] {320, 200},
-        //     turret,
-        //     TurretConstants.kCameraonTurretoffset)
-        // );
-        // vision =
-        //     new Vision(
-        //         drive,
-        //         new VisionIOPhotonVisionSim(
-        //             camera0Name, robotToCamera0, drive, robotToCamera0, drive::getPose),
-        //         new VisionIOPhotonVisionSim(
-        //             camera1Name, robotToCamera1, drive, robotToCamera1, drive::getPose));
-        // TODO: 传入实际测量的摄像头位置
+        vision =
+            new Vision(
+                drive,
+                new VisionIOLimelight(
+                    camera0Name,
+                    new double[] {320, 200},
+                    drive,
+                    new Transform3d(0.0, 0.0, 0.616, new Rotation3d(0.0, -0.4, 0.0))),
+                new VisionIOLimelight(
+                    camera1Name,
+                    new double[] {320, 200},
+                    turret,
+                    TurretConstants.kCameraonTurretoffset));
         flywheel =
             new Flywheel(
                 new FlywheelIOReal(
-                    FlywheelConstants.kFlywheelId, FlywheelConstants.kFlywheelInverted),turret);
-        hood = new Hood(new HoodIOReal(HoodConstants.kHoodId, HoodConstants.kHoodInverted),turret);
+                    FlywheelConstants.kFlywheelId, FlywheelConstants.kFlywheelInverted),
+                turret);
+        hood = new Hood(new HoodIOReal(HoodConstants.kHoodId, HoodConstants.kHoodInverted), turret);
         ShotCalculator.getInstance().robotToTurret = turret.getRobotToTurret();
         hanger =
             new Hanger(
@@ -217,13 +209,13 @@ public class RobotContainer {
                 new ModuleIOSim(TunerConstants.FrontRight),
                 new ModuleIOSim(TunerConstants.BackLeft),
                 new ModuleIOSim(TunerConstants.BackRight));
-        // vision =
-        //     new Vision(
-        //         drive,
-        //         new VisionIOPhotonVisionSim(
-        //             camera0Name, robotToCamera0, drive, robotToCamera0, drive::getPose),
-        //         new VisionIOPhotonVisionSim(
-        //             camera1Name, robotToCamera1, drive, robotToCamera1, drive::getPose));
+        vision =
+            new Vision(
+                drive,
+                new VisionIOPhotonVisionSim(
+                    camera0Name, robotToCamera0, drive, robotToCamera0, drive::getPose),
+                new VisionIOPhotonVisionSim(
+                    camera1Name, robotToCamera1, drive, robotToCamera1, drive::getPose));
         intake = new Intake(new IntakeIOSim());
         triggers = new Triggers(new TriggersIOSim());
         indexer = new Indexer(new IndexerIOSim());
@@ -234,9 +226,9 @@ public class RobotContainer {
                 TurretConstants.kTurretonRobotoffset,
                 drive::getPose,
                 drive::getFieldVelocity);
-        flywheel = new Flywheel(new FlywheelIOSim(),turret);
+        flywheel = new Flywheel(new FlywheelIOSim(), turret);
         // upperStructure = new UpperStructure(turret, turretFR);
-        hood = new Hood(new HoodIOSim(),turret);
+        hood = new Hood(new HoodIOSim(), turret);
         ShotCalculator.getInstance().robotToTurret = turret.getRobotToTurret();
         hanger = new Hanger(new HangerIOSim());
         led = new LED();
@@ -279,27 +271,13 @@ public class RobotContainer {
                 new ModuleIO() {},
                 new ModuleIO() {},
                 new ModuleIO() {});
-        // vision =
-        //     new Vision(
-        //         drive,
-        //         new VisionIO() {
-        //           public PhysicalJoint getBaseJoint() {
-        //             return null;
-        //           }
-
-        //           public Transform3d getMountingOffset() {
-        //             return null;
-        //           }
-        //         },
-        //         new VisionIO() {
-        //           public PhysicalJoint getBaseJoint() {
-        //             return null;
-        //           }
-
-        //           public Transform3d getMountingOffset() {
-        //             return null;
-        //           }
-        //         });
+        vision =
+            new Vision(
+                drive,
+                new VisionIOPhotonVisionSim(
+                    camera0Name, robotToCamera0, drive, robotToCamera0, drive::getPose),
+                new VisionIOPhotonVisionSim(
+                    camera1Name, robotToCamera1, drive, robotToCamera1, drive::getPose));
         intake = new Intake(new IntakeIOSim());
         triggers = new Triggers(new TriggersIOSim());
         indexer = new Indexer(new IndexerIOSim());
@@ -310,9 +288,9 @@ public class RobotContainer {
                 TurretConstants.kTurretonRobotoffset,
                 drive::getPose,
                 drive::getFieldVelocity);
-        flywheel = new Flywheel(new FlywheelIOSim(),turret);
+        flywheel = new Flywheel(new FlywheelIOSim(), turret);
         // upperStructure = new UpperStructure(turret, turretFR);
-        hood = new Hood(new HoodIOSim(),turret);
+        hood = new Hood(new HoodIOSim(), turret);
         ShotCalculator.getInstance().robotToTurret = turret.getRobotToTurret();
         hanger = new Hanger(new HangerIOSim());
         led = new LED();

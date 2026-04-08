@@ -9,20 +9,19 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.FieldConstants;
 import frc.robot.Robot;
-import frc.robot.subsystems.shooter.ShotCalculator;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO.FlywheelIOOutputMode;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO.FlywheelIOOutputs;
 import frc.robot.util.FullSubsystem;
+import frc.robot.util.Geoffrey.PhysicalJoint;
+import frc.robot.util.Geoffrey.ShooterSetpoint;
+import frc.robot.util.Geoffrey.TrajectoryConfig;
 import frc.robot.util.LoggedTunableNumber;
+import frc.robot.util.geometry.AllianceFlipUtil;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
-import frc.robot.util.Geoffrey.PhysicalJoint;
-import frc.robot.util.Geoffrey.ShooterSetpoint; 
-import frc.robot.util.Geoffrey.TrajectoryConfig;
-import frc.robot.util.geometry.AllianceFlipUtil;
 
 public class Flywheel extends FullSubsystem {
   // --- Tunable Numbers ---
@@ -69,7 +68,7 @@ public class Flywheel extends FullSubsystem {
   private final FlywheelIO io;
   private final FlywheelIOInputsAutoLogged inputs = new FlywheelIOInputsAutoLogged();
   private final FlywheelIOOutputs outputs = new FlywheelIOOutputs();
-  private final PhysicalJoint muzzleJoint; 
+  private final PhysicalJoint muzzleJoint;
 
   // --- State Variables ---
   public enum FlywheelGoal {
@@ -84,11 +83,10 @@ public class Flywheel extends FullSubsystem {
 
   @Getter @Setter @AutoLogOutput private FlywheelGoal goal = FlywheelGoal.IDLE;
 
-  @Setter
-  private double fixedVelocity = FlywheelConstants.kFixVelocity; 
+  @Setter private double fixedVelocity = FlywheelConstants.kFixVelocity;
 
   @Getter
-  @Accessors(fluent = true) 
+  @Accessors(fluent = true)
   @AutoLogOutput
   private boolean atGoal = false;
 
@@ -135,24 +133,37 @@ public class Flywheel extends FullSubsystem {
           atGoal = false;
         }
         case TRACKING -> {
-          Translation2d target = AllianceFlipUtil.apply(FieldConstants.Hub.topCenterPoint.toTranslation2d());
-          ShooterSetpoint sp = ShooterSetpoint.makeSetpoint(muzzleJoint, target, FieldConstants.hMax, TrajectoryConfig.getHubConfig());
+          Translation2d target =
+              AllianceFlipUtil.apply(FieldConstants.Hub.topCenterPoint.toTranslation2d());
+          ShooterSetpoint sp =
+              ShooterSetpoint.makeSetpoint(
+                  muzzleJoint, target, FieldConstants.hMax, TrajectoryConfig.getHubConfig());
           double radPerSec = sp.shooterVelocityMetersPerSec / FlywheelConstants.kFlywheelRadius;
-          double radPerSec2 = sp.shooterAccelerationMetersPerSecSquared / FlywheelConstants.kFlywheelRadius;
+          double radPerSec2 =
+              sp.shooterAccelerationMetersPerSecSquared / FlywheelConstants.kFlywheelRadius;
           runVelocityFOCLogic(radPerSec, radPerSec2, 0.0);
         }
         case PASSING -> {
-           Translation2d target = getBestPassingTarget(); 
-          ShooterSetpoint sp = ShooterSetpoint.makeSetpoint(muzzleJoint, target, 3.0, TrajectoryConfig.getPassingConfig());
+          Translation2d target = getBestPassingTarget();
+          ShooterSetpoint sp =
+              ShooterSetpoint.makeSetpoint(
+                  muzzleJoint, target, FieldConstants.hMax, TrajectoryConfig.getPassingConfig());
           double radPerSec = sp.shooterVelocityMetersPerSec / FlywheelConstants.kFlywheelRadius;
-          double radPerSec2 = sp.shooterAccelerationMetersPerSecSquared / FlywheelConstants.kFlywheelRadius;
+          double radPerSec2 =
+              sp.shooterAccelerationMetersPerSecSquared / FlywheelConstants.kFlywheelRadius;
           runVelocityFOCLogic(radPerSec, radPerSec2, 0.0);
         }
         case ACTIVE -> {
-          Translation2d target = AllianceFlipUtil.apply(FieldConstants.Hub.topCenterPoint.toTranslation2d());
-          ShooterSetpoint sp = ShooterSetpoint.makeSetpoint(muzzleJoint, target, FieldConstants.hMax, TrajectoryConfig.getHubConfig());
-          double radPerSec = (sp.shooterVelocityMetersPerSec / FlywheelConstants.kFlywheelRadius) * FlywheelConstants.kActiveRatio;
-          double radPerSec2 = sp.shooterAccelerationMetersPerSecSquared / FlywheelConstants.kFlywheelRadius;
+          Translation2d target =
+              AllianceFlipUtil.apply(FieldConstants.Hub.topCenterPoint.toTranslation2d());
+          ShooterSetpoint sp =
+              ShooterSetpoint.makeSetpoint(
+                  muzzleJoint, target, FieldConstants.hMax, TrajectoryConfig.getHubConfig());
+          double radPerSec =
+              (sp.shooterVelocityMetersPerSec / FlywheelConstants.kFlywheelRadius)
+                  * FlywheelConstants.kActiveRatio;
+          double radPerSec2 =
+              sp.shooterAccelerationMetersPerSecSquared / FlywheelConstants.kFlywheelRadius;
           runVelocityFOCLogic(radPerSec, radPerSec2, 0.0);
         }
         case FIXED_VELOCITY -> {
@@ -162,7 +173,7 @@ public class Flywheel extends FullSubsystem {
           runVelocityFOCLogic(kFixVelocity.get(), 0.0, 0.0);
         }
         case OUTTAKE -> {
-          runVelocityFOCLogic(FlywheelConstants.kOutTakeVelocity,0.0,0.0);
+          runVelocityFOCLogic(FlywheelConstants.kOutTakeVelocity, 0.0, 0.0);
         }
       }
       Logger.recordOutput("Flywheel/Mode", outputs.mode);
@@ -210,12 +221,12 @@ public class Flywheel extends FullSubsystem {
     atGoal = atGoalDebouncer.calculate(inTolerance);
   }
 
-   private Translation2d getBestPassingTarget() {
+  private Translation2d getBestPassingTarget() {
     Translation2d blueLeft = new Translation2d(1.874, 5.49);
     Translation2d blueRight = new Translation2d(1.874, 2.17);
     Translation2d left = AllianceFlipUtil.apply(blueLeft);
     Translation2d right = AllianceFlipUtil.apply(blueRight);
-    
+
     // 从物理关节获取当前机器人在场地的位置
     Translation2d robotPos = muzzleJoint.getGlobalPose().getTranslation().toTranslation2d();
     return (robotPos.getDistance(left) < robotPos.getDistance(right)) ? left : right;

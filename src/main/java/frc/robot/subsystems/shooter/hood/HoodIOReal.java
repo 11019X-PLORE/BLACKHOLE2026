@@ -121,10 +121,7 @@ public class HoodIOReal implements HoodIO {
       }
       case POSITION_FOC -> {
         double ffAmps =
-            outputs.accelerationRadPerSec2
-                * HoodConstants.hoodGearRatio
-                * HoodConstants.kInertiaMotorSide
-                / HoodConstants.kT;
+            (outputs.accelerationRadPerSec2*HoodConstants.kInertiaHood/HoodConstants.hoodGearRatio)/ HoodConstants.kT;
         torqueControl
             .withPosition(Units.radiansToRotations(outputs.positionRads))
             .withVelocity(Units.radiansToRotations(outputs.velocityRadsPerSec))

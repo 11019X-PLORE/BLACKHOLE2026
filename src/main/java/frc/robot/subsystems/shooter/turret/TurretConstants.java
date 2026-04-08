@@ -25,8 +25,6 @@ public class TurretConstants {
   public static final double kA = 0.0; // 轨迹规划得到的目标加速度
 
   public static final double kInertiaTurret = 0.1; // TODO
-  public static final double kInertiaMotorSide =
-      kInertiaTurret / (kTurretGearRatio * kTurretGearRatio); // 电机侧的转动惯量
   public static final double kT = 0.01537;
 
   // ========== 角度限制 ==========

@@ -177,10 +177,7 @@ public class TurretIOreal implements TurretIO {
       }
       case POSITION_FOC -> {
         double ffAmps =
-            outputs.accelerationRadPerSec2
-                * TurretConstants.kTurretGearRatio
-                * TurretConstants.kInertiaMotorSide
-                / TurretConstants.kT;
+            (outputs.accelerationRadPerSec2*TurretConstants.kInertiaTurret/TurretConstants.kTurretGearRatio)/ TurretConstants.kT;
         talon.setControl(
             positionControl
                 .withPosition(Units.radiansToRotations(outputs.positionRads)) // 目标位置 (Rotations)

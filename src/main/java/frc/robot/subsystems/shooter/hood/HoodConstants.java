@@ -28,8 +28,6 @@ public class HoodConstants {
   public static final double kHoodTrenchAngle = Units.degreesToRadians(0.0);
 
   public static final double kInertiaHood = 0.125; // TODO
-  public static final double kInertiaMotorSide =
-      kInertiaHood / (hoodGearRatio * hoodGearRatio); // 电机侧的转动惯量
   public static final double kT = 0.01537;
 
   public static final double kHoodoffset =

@@ -238,8 +238,7 @@ public class Superstructure extends SubsystemBase {
                               }
                             },
                             triggers,
-                            indexer)
-                        )));
+                            indexer))));
   }
   /** 检查是否准备好发射 */
   @AutoLogOutput(key = "Superstructure/ReadyToShoot")

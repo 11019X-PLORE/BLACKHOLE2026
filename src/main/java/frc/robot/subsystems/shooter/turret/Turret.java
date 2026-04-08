@@ -20,15 +20,14 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.FieldConstants;
 import frc.robot.Robot;
-import frc.robot.subsystems.shooter.ShotCalculator;
 import frc.robot.subsystems.shooter.turret.Turret.TurretGoal;
 import frc.robot.subsystems.shooter.turret.TurretIO.TurretIOOutputMode;
 import frc.robot.subsystems.shooter.turret.TurretIO.TurretIOOutputs;
 import frc.robot.util.EqualsUtil;
 import frc.robot.util.FullSubsystem;
 import frc.robot.util.Geoffrey.PhysicalJoint;
-import frc.robot.util.Geoffrey.ShooterSetpoint; 
-import frc.robot.util.Geoffrey.TrajectoryConfig; 
+import frc.robot.util.Geoffrey.ShooterSetpoint;
+import frc.robot.util.Geoffrey.TrajectoryConfig;
 import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.geometry.AllianceFlipUtil;
 import java.util.function.Supplier;
@@ -96,8 +95,7 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
     FIXED_ANGLE,
     PASSING,
     ZEROING,
-    TEST,
-    POSITION_FOC
+    TEST
   }
 
   @Getter @Setter @AutoLogOutput private TurretGoal goal = TurretGoal.IDLE;
@@ -164,28 +162,41 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
           currentSetpoint = inputs.positionRads;
         }
         case TRACKING -> {
-          Translation2d targetPos = AllianceFlipUtil.apply(FieldConstants.Hub.topCenterPoint.toTranslation2d());
-          ShooterSetpoint sp = ShooterSetpoint.makeSetpoint(this, targetPos, FieldConstants.hMax, TrajectoryConfig.getHubConfig());
-          runPositionFOCLogic(sp.turretPositionRadians, sp.turretVelocityRadsPerSec, sp.turretAccelerationRadsPerSecSquared,0.0);
+          Translation2d targetPos =
+              AllianceFlipUtil.apply(FieldConstants.Hub.topCenterPoint.toTranslation2d());
+          ShooterSetpoint sp =
+              ShooterSetpoint.makeSetpoint(
+                  this, targetPos, FieldConstants.hMax, TrajectoryConfig.getHubConfig());
+          runPositionFOCLogic(
+              sp.turretPositionRadians,
+              sp.turretVelocityRadsPerSec,
+              sp.turretAccelerationRadsPerSecSquared,
+              0.0);
         }
         case PASSING -> {
           Translation2d passTarget = getBestPassingTarget();
-          ShooterSetpoint sp = ShooterSetpoint.makeSetpoint(this, passTarget, FieldConstants.hMax, TrajectoryConfig.getPassingConfig());
-          runPositionFOCLogic(sp.turretPositionRadians, sp.turretVelocityRadsPerSec, sp.turretAccelerationRadsPerSecSquared,0.0);
+          ShooterSetpoint sp =
+              ShooterSetpoint.makeSetpoint(
+                  this, passTarget, FieldConstants.hMax, TrajectoryConfig.getPassingConfig());
+          runPositionFOCLogic(
+              sp.turretPositionRadians,
+              sp.turretVelocityRadsPerSec,
+              sp.turretAccelerationRadsPerSecSquared,
+              0.0);
         }
-         case FIXED_ANGLE -> {
+        case FIXED_ANGLE -> {
           var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
           Rotation2d targetFieldAngle =
               (alliance == Alliance.Red)
                   ? Rotation2d.fromDegrees(180.0)
                   : Rotation2d.fromDegrees(0.0);
           double compensateVel = -chassisSpeedSupplier.get().omegaRadiansPerSecond;
-          runPositionFOCLogic(targetFieldAngle.getRadians(), compensateVel, 0.0,0.0);
+          runPositionFOCLogic(targetFieldAngle.getRadians(), compensateVel, 0.0, 0.0);
         }
         case ZEROING -> {
-          Rotation2d targetFieldAngle =Rotation2d.fromDegrees(-180.0);
+          Rotation2d targetFieldAngle = Rotation2d.fromDegrees(-180.0);
           double compensateVel = -chassisSpeedSupplier.get().omegaRadiansPerSecond;
-          runPositionFOCLogic(targetFieldAngle.getRadians(), compensateVel, 0.0,0.0);
+          runPositionFOCLogic(targetFieldAngle.getRadians(), compensateVel, 0.0, 0.0);
         }
         case TEST -> {
           double targetRelativeRads =
@@ -196,9 +207,6 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
           outputs.mode = TurretIOOutputMode.CLOSED_LOOP;
           outputs.positionRads = targetRelativeRads; // 直接给电机相对位置
           outputs.velocityRadsPerSec = testVelocity.get();
-        }
-        case POSITION_FOC -> {
-          runPositionFOCLogic(trackMinAngle, trackMaxAngle, lastGoalAngle, currentSetpoint);
         }
       }
     }
@@ -220,7 +228,8 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
   //     if (potentialSetpoint >= TurretConstants.kTurretMinAngle
   //         && potentialSetpoint <= TurretConstants.kTurretMaxAngle) {
   //       if (!hasBestAngle
-  //           || Math.abs(lastGoalAngle - potentialSetpoint) < Math.abs(lastGoalAngle - bestAngle)) {
+  //           || Math.abs(lastGoalAngle - potentialSetpoint) < Math.abs(lastGoalAngle - bestAngle))
+  // {
   //         bestAngle = potentialSetpoint;
   //         hasBestAngle = true;
   //       }
@@ -240,7 +249,8 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
   //   outputs.velocityRadsPerSec = goalVelocity;
 
   //   double goalStateAngle =
-  //       MathUtil.clamp(bestAngle, TurretConstants.kTurretMinAngle, TurretConstants.kTurretMaxAngle);
+  //       MathUtil.clamp(bestAngle, TurretConstants.kTurretMinAngle,
+  // TurretConstants.kTurretMaxAngle);
 
   //   atGoal = EqualsUtil.epsilonEquals(bestAngle, inputs.positionRads, toleranceDeg.get());
 
@@ -248,7 +258,8 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
   //   Logger.recordOutput("turret/SetpointPositionRad", goalStateAngle);
   // }
 
-  private void runPositionFOCLogic(double targetFieldAngleRad, double targetVel, double targetAccel,double feedforwardAmps) {
+  private void runPositionFOCLogic(
+      double targetFieldAngleRad, double targetVel, double targetAccel, double feedforwardAmps) {
     double targetRads = targetFieldAngleRad;
     // 1. 寻找 [-270, 90] 物理限位内最近的等效点
     boolean hasBestAngle = false;
