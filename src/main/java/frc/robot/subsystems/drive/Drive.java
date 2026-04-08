@@ -235,12 +235,11 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
     // Update gyro alert
     gyroDisconnectedAlert.set(!gyroInputs.connected && Constants.currentMode != Mode.SIM);
     field.setRobotPose(getPose());
+    updateKinematics();
   }
 
   @Override
-  public void periodicAfterScheduler() {
-    updateKinematics();
-  }
+  public void periodicAfterScheduler() {}
 
   // --- 控制方法 ---
   public void runVelocity(ChassisSpeeds speeds) {

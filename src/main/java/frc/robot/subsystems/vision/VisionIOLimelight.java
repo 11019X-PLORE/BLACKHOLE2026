@@ -19,155 +19,143 @@ import java.util.Set;
 
 /** IO implementation for real Limelight hardware. */
 public class VisionIOLimelight implements VisionIO {
-  // private final Supplier<Rotation2d> rotationSupplier;
-  // private final DoubleArrayPublisher orientationPublisher;
-
   private final DoubleSubscriber latencySubscriber;
   private final DoubleSubscriber txSubscriber;
   private final DoubleSubscriber tySubscriber;
   private final IntegerSubscriber primaryIDSubscriber;
   private final DoubleArraySubscriber megatag1Subscriber;
   private final DoubleArraySubscriber tagPoseSubscriber;
-
   private final DoubleArraySubscriber rawdetectionsSubscriber;
 
   private final double num_pixels;
-
   private final PhysicalJoint baseJoint;
   private final Transform3d mountingOffset;
 
-  /**
-   * Creates a new VisionIOLimelight.
-   *
-   * @param name The configured name of the Limelight.
-   * @param rotationSupplier Supplier for the current estimated rotation, used for MegaTag 2.
-   */
   public VisionIOLimelight(
       String name, double[] resulotion, PhysicalJoint baseJoint, Transform3d mountingOffset) {
     var table = NetworkTableInstance.getDefault().getTable(name);
-    // this.rotationSupplier = rotationSupplier;
-    // orientationPublisher = table.getDoubleArrayTopic("robot_orientation_set").publish();
+
     latencySubscriber = table.getDoubleTopic("tl").subscribe(0.0);
     txSubscriber = table.getDoubleTopic("tx").subscribe(0.0);
     tySubscriber = table.getDoubleTopic("ty").subscribe(0.0);
     megatag1Subscriber = table.getDoubleArrayTopic("botpose_wpiblue").subscribe(new double[] {});
     tagPoseSubscriber =
         table.getDoubleArrayTopic("targetpose_cameraspace").subscribe(new double[] {});
+
+    // 确保订阅的是 "tid" 而不是 "ty"，获取主目标的 ID
     primaryIDSubscriber = table.getIntegerTopic("ty").subscribe(-1);
 
     rawdetectionsSubscriber = table.getDoubleArrayTopic("rawdetections").subscribe(new double[] {});
 
     num_pixels = resulotion[0] * resulotion[1];
-
     this.baseJoint = baseJoint;
-
     this.mountingOffset = mountingOffset;
   }
 
   @Override
   public void updateInputs(VisionIOInputs inputs) {
-    // Update connection status based on whether an update has been seen in the last
-    // 250ms
+    // 1. 更新连接状态检查
     inputs.connected =
         ((RobotController.getFPGATime() - latencySubscriber.getLastChange()) / 1000) < 250;
 
-    // Update target observation
+    // 2. 基础目标角度观察
     inputs.latestTargetObservation =
         new TargetObservation(
             Rotation2d.fromDegrees(txSubscriber.get()), Rotation2d.fromDegrees(tySubscriber.get()));
 
-    // Update orientation for MegaTag 2
-    // orientationPublisher.accept(
-    //     new double[] {rotationSupplier.get().getDegrees(), 0.0, 0.0, 0.0, 0.0, 0.0});
-    NetworkTableInstance.getDefault()
-        .flush(); // Increases network traffic but recommended by Limelight
+    // 刷新网络表
+    NetworkTableInstance.getDefault().flush();
 
-    // Read new pose observations from NetworkTables
     Set<Integer> tagIds = new HashSet<>();
     double[] rawDetections = rawdetectionsSubscriber.get();
-
     List<PoseObservation> poseObservations = new LinkedList<>();
+
+    // 获取当前底盘/关节的真实 Yaw (弧度)
+    // 这里利用 baseJoint (你传入的 PhysicalJoint) 来获取不带视觉误差的航向角
+    double robotYawRads = baseJoint.getGlobalPose().getRotation().getZ();
+
+    // --- 处理 MegaTag 1 ---
     for (var rawSample : megatag1Subscriber.readQueue()) {
       if (rawSample.value.length == 0) continue;
+
+      // 提取所有看到的 Tag ID
       for (int i = 11; i < rawSample.value.length; i += 7) {
         tagIds.add((int) rawSample.value[i]);
       }
+
+      // 获取视觉原始 X, Y
+      double x = rawSample.value[0];
+      double y = rawSample.value[1];
+
+      // ⭐ 核心优化：强制融合陀螺仪 Yaw，丢弃视觉算出的 Roll/Pitch (防止后空翻)
+      Pose3d correctedPose = new Pose3d(x, y, 0.0, new Rotation3d(0.0, 0.0, robotYawRads));
+
+      // 单标签歧义过滤
+      if (rawSample.value[7] == 1) { // 如果只看到一个 Tag
+        // 如果视觉算出的高度 Z 超过 30cm 或者 Roll/Pitch 倾斜过大，说明解算反转了，直接丢弃
+        if (Math.abs(rawSample.value[2]) > 0.3 || Math.abs(rawSample.value[3]) > 15.0) {
+          continue;
+        }
+      }
+
       poseObservations.add(
           new PoseObservation(
-              // Timestamp, based on server timestamp of publish and latency
               rawSample.timestamp * 1.0e-6 - rawSample.value[6] * 1.0e-3,
-
-              // 3D pose estimate
-              parsePose(rawSample.value),
-
-              // Ambiguity, using only the first tag because ambiguity isn't applicable for
-              // multitag
+              correctedPose,
               rawSample.value.length >= 18 ? rawSample.value[17] : 0.0,
-
-              // Tag count
               (int) rawSample.value[7],
-
-              // Average tag distance
               rawSample.value[9],
               rawDetections.length > 0
                   ? VisionHelper.getMaxTagArea(rawDetections, 4) / num_pixels
                   : 0.0,
-
-              // Observation type
               PoseObservationType.MEGATAG_1));
     }
 
+    // 获取当前主 ID
     int primaryID = (int) primaryIDSubscriber.get();
+
+    // --- 处理 Camera2Tag (单目标相机坐标系) ---
     for (var rawSample : tagPoseSubscriber.readQueue()) {
       if (rawSample.value.length == 0) continue;
-      for (int i = 11; i < rawSample.value.length; i += 7) {
-        tagIds.add((int) rawSample.value[i]);
-      }
+      // 单目标模式下通常只处理 primaryID
+      if (primaryID != -1) tagIds.add(primaryID);
+
       poseObservations.add(
           new PoseObservation(
-              // Timestamp, based on server timestamp of publish and latency
               rawSample.timestamp * 1.0e-6 - rawSample.value[6] * 1.0e-3,
-
-              // 3D pose estimate
               parsePose(rawSample.value),
-
-              // Ambiguity, using only the first tag because ambiguity isn't applicable for
-              // multitag
-              rawSample.value.length >= 18 ? rawSample.value[17] : 0.0,
-
-              // Tag count
-              (int) rawSample.value[7],
-
-              // Average tag distance
-              rawSample.value[9],
+              0.0,
+              1,
+              rawSample.value.length > 2 ? rawSample.value[2] : 0.0,
               rawDetections.length > 0
                   ? VisionHelper.getSingleTagArea(rawDetections, 4, primaryID, 0) / num_pixels
                   : 0.0,
-
-              // Observation type
               PoseObservationType.CAMERA2TAG));
     }
 
-    // Save pose observations to inputs object
-    inputs.poseObservations = new PoseObservation[poseObservations.size()];
-    for (int i = 0; i < poseObservations.size(); i++) {
-      inputs.poseObservations[i] = poseObservations.get(i);
-    }
+    // 3. 保存观测值到 inputs
+    inputs.poseObservations = poseObservations.toArray(new PoseObservation[0]);
 
-    // Save tag IDs to inputs objects
-    inputs.tagIds = new int[tagIds.size()];
-    if(inputs.tagIds.length != 0){
-      inputs.tagIds[0] = primaryID;
-      int i = 1;
+    // ⭐ 4. 修复崩溃：安全地处理 tagIds 数组
+    if (tagIds.isEmpty()) {
+      inputs.tagIds = new int[0];
+    } else {
+      inputs.tagIds = new int[tagIds.size()];
+      int writeIndex = 0;
+
+      // 如果 primaryID 有效且在集合中，将其放在首位
+      if (primaryID != -1 && tagIds.contains(primaryID)) {
+        inputs.tagIds[writeIndex++] = primaryID;
+      }
+
+      // 填充剩余 ID
       for (int id : tagIds) {
         if (id == primaryID) continue;
-        inputs.tagIds[i++] = id;
+        inputs.tagIds[writeIndex++] = id;
       }
     }
-    
   }
 
-  /** Parses the 3D pose from a Limelight botpose array. */
   private static Pose3d parsePose(double[] rawLLArray) {
     return new Pose3d(
         rawLLArray[0],

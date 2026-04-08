@@ -75,7 +75,7 @@ public class HoodIOReal implements HoodIO {
 
     talon.getConfigurator().apply(config);
 
-    resetAngle(0);
+    resetAngle(HoodConstants.kHoodInitialAngle);
 
     // 初始化信号
     position = talon.getPosition();

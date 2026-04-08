@@ -224,21 +224,23 @@ public class Superstructure extends SubsystemBase {
                 SuperstructureState.TEST,
                 () ->
                     Commands.parallel(
-                        turret.setGoalCommand(TurretGoal.IDLE),
+                        // turret.setGoalCommand(TurretGoal.IDLE),
                         hood.setGoalCommand(HoodGoal.TEST),
-                        flywheel.setGoalCommand(FlywheelGoal.TEST),
-                        Commands.run(
-                            () -> {
-                              if (isReadyToShoot()) {
-                                triggers.setGoal(TriggersGoal.SHOOT);
-                                indexer.setGoal(IndexerGoal.SHOOT);
-                              } else {
-                                triggers.setGoal(TriggersGoal.STOP);
-                                indexer.setGoal(IndexerGoal.STOP);
-                              }
-                            },
-                            triggers,
-                            indexer))));
+                        flywheel.setGoalCommand(FlywheelGoal.TEST)
+                        // ,
+                        // Commands.run(
+                        //     () -> {
+                        //       if (isReadyToShoot()) {
+                        //         triggers.setGoal(TriggersGoal.SHOOT);
+                        //         indexer.setGoal(IndexerGoal.SHOOT);
+                        //       } else {
+                        //         triggers.setGoal(TriggersGoal.STOP);
+                        //         indexer.setGoal(IndexerGoal.STOP);
+                        //       }
+                        //     },
+                        //     triggers,
+                        //     indexer)
+                        )));
   }
   /** 检查是否准备好发射 */
   @AutoLogOutput(key = "Superstructure/ReadyToShoot")
