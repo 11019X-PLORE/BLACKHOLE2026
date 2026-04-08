@@ -98,4 +98,22 @@ public class TrajectoryCalculator {
     // d(Total)/dx = d(Vacuum)/dx + d(Aero)/dx
     return new double[] {d_vxVac_dx + d_dvx_dx, d_vyVac_dx + d_dvy_dx};
   }
+
+  /**
+   * Compute the required flywheel surface speed for a given total ball speed.
+   *
+   * @param v total ball speed (m/s)
+   * @return flywheel surface speed (m/s)
+   */
+  public static double getFlywheelSetpoint(double v) {
+    return 4.40309 * Math.pow(1.17819, v);
+    // return 4.62907 * Math.pow(1.18664, v); // placeholder for testing
+    // return 3.44691 * v - 9.06894;
+  }
+
+  public static double getFlywheelAcceleration(double v, double a) {
+    double dx = 1e-6; // small delta for numerical differentiation
+    double dv = getFlywheelSetpoint(v + dx) - getFlywheelSetpoint(v);
+    return (dv / dx) * a;
+  }
 }
