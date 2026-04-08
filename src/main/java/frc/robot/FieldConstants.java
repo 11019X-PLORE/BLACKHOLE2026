@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
  */
 public class FieldConstants {
   public static final FieldType fieldType = FieldType.WELDED; //
+  public static final double hMax = 2.2;
 
   // AprilTag related constants
   public static final int aprilTagCount = AprilTagLayoutType.OFFICIAL.getLayout().getTags().size();

@@ -18,6 +18,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import frc.robot.FieldConstants;
 import frc.robot.Robot;
 import frc.robot.subsystems.shooter.ShotCalculator;
 import frc.robot.subsystems.shooter.turret.Turret.TurretGoal;
@@ -26,6 +27,8 @@ import frc.robot.subsystems.shooter.turret.TurretIO.TurretIOOutputs;
 import frc.robot.util.EqualsUtil;
 import frc.robot.util.FullSubsystem;
 import frc.robot.util.Geoffrey.PhysicalJoint;
+import frc.robot.util.Geoffrey.ShooterSetpoint; 
+import frc.robot.util.Geoffrey.TrajectoryConfig; 
 import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.geometry.AllianceFlipUtil;
 import java.util.function.Supplier;
@@ -161,26 +164,28 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
           currentSetpoint = inputs.positionRads;
         }
         case TRACKING -> {
-          var params = ShotCalculator.getInstance().getParameters();
-          runTrackingLogic(params.turretAngle(), params.turretVelocity());
+          Translation2d targetPos = AllianceFlipUtil.apply(FieldConstants.Hub.topCenterPoint.toTranslation2d());
+          ShooterSetpoint sp = ShooterSetpoint.makeSetpoint(this, targetPos, FieldConstants.hMax, TrajectoryConfig.getHubConfig());
+          runPositionFOCLogic(sp.turretPositionRadians, sp.turretVelocityRadsPerSec, sp.turretAccelerationRadsPerSecSquared,0.0);
         }
-        case FIXED_ANGLE -> {
+        case PASSING -> {
+          Translation2d passTarget = getBestPassingTarget();
+          ShooterSetpoint sp = ShooterSetpoint.makeSetpoint(this, passTarget, FieldConstants.hMax, TrajectoryConfig.getPassingConfig());
+          runPositionFOCLogic(sp.turretPositionRadians, sp.turretVelocityRadsPerSec, sp.turretAccelerationRadsPerSecSquared,0.0);
+        }
+         case FIXED_ANGLE -> {
           var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
           Rotation2d targetFieldAngle =
               (alliance == Alliance.Red)
                   ? Rotation2d.fromDegrees(180.0)
                   : Rotation2d.fromDegrees(0.0);
           double compensateVel = -chassisSpeedSupplier.get().omegaRadiansPerSecond;
-          runTrackingLogic(targetFieldAngle, compensateVel);
-        }
-        case PASSING -> {
-          double compensateVel = -chassisSpeedSupplier.get().omegaRadiansPerSecond;
-          runTrackingLogic(getBestPassingAngle(), compensateVel);
+          runPositionFOCLogic(targetFieldAngle.getRadians(), compensateVel, 0.0,0.0);
         }
         case ZEROING -> {
-          Rotation2d robotRot = poseSupplier.get().getRotation();
-          Rotation2d targetFieldAngle = robotRot.plus(Rotation2d.fromDegrees(-90.0));
-          runTrackingLogic(targetFieldAngle, 0.0);
+          Rotation2d targetFieldAngle =Rotation2d.fromDegrees(-180.0);
+          double compensateVel = -chassisSpeedSupplier.get().omegaRadiansPerSecond;
+          runPositionFOCLogic(targetFieldAngle.getRadians(), compensateVel, 0.0,0.0);
         }
         case TEST -> {
           double targetRelativeRads =
@@ -193,7 +198,7 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
           outputs.velocityRadsPerSec = testVelocity.get();
         }
         case POSITION_FOC -> {
-          runPositionFOCLogic(new Rotation2d(0.0), 0.0, 0.0, 0.0);
+          runPositionFOCLogic(trackMinAngle, trackMaxAngle, lastGoalAngle, currentSetpoint);
         }
       }
     }
@@ -204,14 +209,48 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
     Logger.recordOutput("turret/CurrentSetpoint", currentSetpoint);
   }
 
-  private void runTrackingLogic(Rotation2d goalAngleFieldRelative, double goalVelocity) {
-    // 1. 获取当前底盘朝向
-    Rotation2d robotAngle = poseSupplier.get().getRotation();
-    // 计算目标相对于车身的“原始”角度
-    double targetRads = goalAngleFieldRelative.minus(robotAngle).getRadians();
+  // private void runTrackingLogic(Rotation2d goalAngleFieldRelative, double goalVelocity) {
+  //   Rotation2d robotAngle = poseSupplier.get().getRotation();
+  //   double targetRads = goalAngleFieldRelative.minus(robotAngle).getRadians();
 
-    // 2. 寻找最近的合法角度 (保持搜索逻辑)
-    // 这步确保炮塔在 [-270, 90] 的物理墙内找到离当前位置最近的等效点
+  //   boolean hasBestAngle = false;
+  //   double bestAngle = 0;
+  //   for (int i = -2; i < 3; i++) {
+  //     double potentialSetpoint = targetRads + (i * 2.0 * Math.PI);
+  //     if (potentialSetpoint >= TurretConstants.kTurretMinAngle
+  //         && potentialSetpoint <= TurretConstants.kTurretMaxAngle) {
+  //       if (!hasBestAngle
+  //           || Math.abs(lastGoalAngle - potentialSetpoint) < Math.abs(lastGoalAngle - bestAngle)) {
+  //         bestAngle = potentialSetpoint;
+  //         hasBestAngle = true;
+  //       }
+  //     }
+  //   }
+
+  //   if (!hasBestAngle) {
+  //     bestAngle =
+  //         MathUtil.clamp(
+  //             targetRads, TurretConstants.kTurretMinAngle, TurretConstants.kTurretMaxAngle);
+  //   }
+
+  //   lastGoalAngle = bestAngle;
+
+  //   outputs.mode = TurretIOOutputMode.CLOSED_LOOP;
+  //   outputs.positionRads = bestAngle;
+  //   outputs.velocityRadsPerSec = goalVelocity;
+
+  //   double goalStateAngle =
+  //       MathUtil.clamp(bestAngle, TurretConstants.kTurretMinAngle, TurretConstants.kTurretMaxAngle);
+
+  //   atGoal = EqualsUtil.epsilonEquals(bestAngle, inputs.positionRads, toleranceDeg.get());
+
+  //   Logger.recordOutput("turret/GoalPositionRad", bestAngle);
+  //   Logger.recordOutput("turret/SetpointPositionRad", goalStateAngle);
+  // }
+
+  private void runPositionFOCLogic(double targetFieldAngleRad, double targetVel, double targetAccel,double feedforwardAmps) {
+    double targetRads = targetFieldAngleRad;
+    // 1. 寻找 [-270, 90] 物理限位内最近的等效点
     boolean hasBestAngle = false;
     double bestAngle = 0;
     for (int i = -2; i < 3; i++) {
@@ -233,71 +272,30 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
               targetRads, TurretConstants.kTurretMinAngle, TurretConstants.kTurretMaxAngle);
     }
 
-    // 更新上一次的目标点，确保搜索逻辑的连续性
-    lastGoalAngle = bestAngle;
-
-    outputs.mode = TurretIOOutputMode.CLOSED_LOOP;
-    outputs.positionRads = bestAngle;
-    outputs.velocityRadsPerSec = goalVelocity;
-
-    double goalStateAngle =
-        MathUtil.clamp(bestAngle, TurretConstants.kTurretMinAngle, TurretConstants.kTurretMaxAngle);
-
-    atGoal = EqualsUtil.epsilonEquals(bestAngle, inputs.positionRads, toleranceDeg.get());
-
-    Logger.recordOutput("turret/GoalPositionRad", bestAngle);
-    Logger.recordOutput("turret/SetpointPositionRad", goalStateAngle);
-  }
-
-  private void runPositionFOCLogic(
-      Rotation2d goalAngleFieldRelative,
-      double goalVelocity,
-      double goalAccelation,
-      double goalFeedForward) {
-    // 1. 获取当前底盘朝向
-    Rotation2d robotAngle = poseSupplier.get().getRotation();
-    // 计算目标相对于车身的“原始”角度
-    double targetRads = goalAngleFieldRelative.minus(robotAngle).getRadians();
-
-    // 2. 寻找最近的合法角度 (保持搜索逻辑)
-    // 这步确保炮塔在 [-270, 90] 的物理墙内找到离当前位置最近的等效点
-    boolean hasBestAngle = false;
-    double bestAngle = 0;
-    for (int i = -2; i < 3; i++) {
-      double potentialSetpoint = targetRads + (i * 2.0 * Math.PI);
-      if (potentialSetpoint >= TurretConstants.kTurretMinAngle
-          && potentialSetpoint <= TurretConstants.kTurretMaxAngle) {
-        if (!hasBestAngle
-            || Math.abs(lastGoalAngle - potentialSetpoint) < Math.abs(lastGoalAngle - bestAngle)) {
-          bestAngle = potentialSetpoint;
-          hasBestAngle = true;
-        }
-      }
-    }
-
-    // 强制 Clamp 到物理边界
-    if (!hasBestAngle) {
-      bestAngle =
-          MathUtil.clamp(
-              targetRads, TurretConstants.kTurretMinAngle, TurretConstants.kTurretMaxAngle);
-    }
-
-    // 更新上一次的目标点，确保搜索逻辑的连续性
     lastGoalAngle = bestAngle;
 
     outputs.mode = TurretIOOutputMode.POSITION_FOC;
     outputs.positionRads = bestAngle;
-    outputs.velocityRadsPerSec = goalVelocity;
-    outputs.accelerationRadPerSec2 = goalAccelation;
-    outputs.feedforwardAmps = goalFeedForward;
-
-    double goalStateAngle =
-        MathUtil.clamp(bestAngle, TurretConstants.kTurretMinAngle, TurretConstants.kTurretMaxAngle);
+    outputs.velocityRadsPerSec = targetVel;
+    outputs.accelerationRadPerSec2 = targetAccel;
+    outputs.feedforwardAmps = feedforwardAmps;
 
     atGoal = EqualsUtil.epsilonEquals(bestAngle, inputs.positionRads, toleranceDeg.get());
 
+    double goalStateAngle =
+        MathUtil.clamp(bestAngle, TurretConstants.kTurretMinAngle, TurretConstants.kTurretMaxAngle);
     Logger.recordOutput("turret/GoalPositionRad", bestAngle);
     Logger.recordOutput("turret/SetpointPositionRad", goalStateAngle);
+  }
+
+  /** 计算并返回最近的传球点坐标 */
+  private Translation2d getBestPassingTarget() {
+    Translation2d blueLeft = new Translation2d(1.874, 5.49);
+    Translation2d blueRight = new Translation2d(1.874, 2.17);
+    Translation2d left = AllianceFlipUtil.apply(blueLeft);
+    Translation2d right = AllianceFlipUtil.apply(blueRight);
+    Translation2d robot = poseSupplier.get().getTranslation();
+    return (robot.getDistance(left) < robot.getDistance(right)) ? left : right;
   }
 
   private void updateTunables() {
@@ -357,27 +355,16 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
   }
 
   private Rotation2d getBestPassingAngle() {
-    // 1. 定义两个基础目标点（基于蓝方原点：X=0是蓝墙，Y增大是向左）
     Translation2d blueLeftTarget = new Translation2d(1.874, 5.49);
     Translation2d blueRightTarget = new Translation2d(1.874, 2.17);
-
-    // 2. 根据当前联盟自动翻转坐标
     Translation2d leftTarget = AllianceFlipUtil.apply(blueLeftTarget);
     Translation2d rightTarget = AllianceFlipUtil.apply(blueRightTarget);
-
-    // 3. 获取当前机器人平面的位置
     Translation2d robotTrans = poseSupplier.get().getTranslation();
-
-    // 4. 选择距离最近的那个点
     Translation2d bestTarget =
         (robotTrans.getDistance(leftTarget) < robotTrans.getDistance(rightTarget))
             ? leftTarget
             : rightTarget;
-
-    // 5. 记录选中的目标点到日志，方便在 AdvantageScope 中通过 Pose2d 观察
     Logger.recordOutput("turret/PassingTargetUsed", new Pose2d(bestTarget, new Rotation2d()));
-
-    // 6. 返回从机器人指向该目标点的角度
     return bestTarget.minus(robotTrans).getAngle();
   }
 

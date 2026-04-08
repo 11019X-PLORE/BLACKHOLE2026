@@ -187,8 +187,8 @@ public class RobotContainer {
         flywheel =
             new Flywheel(
                 new FlywheelIOReal(
-                    FlywheelConstants.kFlywheelId, FlywheelConstants.kFlywheelInverted));
-        hood = new Hood(new HoodIOReal(HoodConstants.kHoodId, HoodConstants.kHoodInverted));
+                    FlywheelConstants.kFlywheelId, FlywheelConstants.kFlywheelInverted),turret);
+        hood = new Hood(new HoodIOReal(HoodConstants.kHoodId, HoodConstants.kHoodInverted),turret);
         ShotCalculator.getInstance().robotToTurret = turret.getRobotToTurret();
         hanger =
             new Hanger(
@@ -234,9 +234,9 @@ public class RobotContainer {
                 TurretConstants.kTurretonRobotoffset,
                 drive::getPose,
                 drive::getFieldVelocity);
-        flywheel = new Flywheel(new FlywheelIOSim());
+        flywheel = new Flywheel(new FlywheelIOSim(),turret);
         // upperStructure = new UpperStructure(turret, turretFR);
-        hood = new Hood(new HoodIOSim());
+        hood = new Hood(new HoodIOSim(),turret);
         ShotCalculator.getInstance().robotToTurret = turret.getRobotToTurret();
         hanger = new Hanger(new HangerIOSim());
         led = new LED();
@@ -310,9 +310,9 @@ public class RobotContainer {
                 TurretConstants.kTurretonRobotoffset,
                 drive::getPose,
                 drive::getFieldVelocity);
-        flywheel = new Flywheel(new FlywheelIOSim());
+        flywheel = new Flywheel(new FlywheelIOSim(),turret);
         // upperStructure = new UpperStructure(turret, turretFR);
-        hood = new Hood(new HoodIOSim());
+        hood = new Hood(new HoodIOSim(),turret);
         ShotCalculator.getInstance().robotToTurret = turret.getRobotToTurret();
         hanger = new Hanger(new HangerIOSim());
         led = new LED();
