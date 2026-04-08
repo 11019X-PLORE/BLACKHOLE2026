@@ -14,6 +14,7 @@ import frc.robot.subsystems.shooter.flywheel.FlywheelIO.FlywheelIOOutputs;
 import frc.robot.util.FullSubsystem;
 import frc.robot.util.Geoffrey.PhysicalJoint;
 import frc.robot.util.Geoffrey.ShooterSetpoint;
+import frc.robot.util.Geoffrey.TrajectoryCalculator;
 import frc.robot.util.Geoffrey.TrajectoryConfig;
 import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.geometry.AllianceFlipUtil;
@@ -203,8 +204,8 @@ public class Flywheel extends FullSubsystem {
   private void runVelocityFOCLogic(
       double velocityRadsPerSec, double acelerationRadPerSec2, double feedforwardAmps) {
     outputs.mode = FlywheelIOOutputMode.VELOCITY_FOC;
-    outputs.velocityRadsPerSec = velocityRadsPerSec;
-    outputs.accelerationRadPerSec2 = acelerationRadPerSec2;
+    outputs.velocityRadsPerSec = TrajectoryCalculator.getFlywheelSetpoint(velocityRadsPerSec);
+    outputs.accelerationRadPerSec2 = TrajectoryCalculator.getFlywheelAcceleration(velocityRadsPerSec, acelerationRadPerSec2);
     outputs.feedforwardAmps = feedforwardAmps; // 这里直接用电压作为前馈，具体实现时可能需要转换为电流
 
     outputs.volts = 0.0; // 清零电压，防止干扰闭环
