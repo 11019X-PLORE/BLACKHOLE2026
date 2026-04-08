@@ -109,6 +109,7 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
   // 预分配对象
   private final SwerveModulePosition[] currentModulePositions = new SwerveModulePosition[4];
   private final SwerveModulePosition[] currentModuleDeltas = new SwerveModulePosition[4];
+  private static final SwerveModuleState[] kEmptyModuleStates = new SwerveModuleState[] {};
 
   // 动力学数据
   private final PhysicalJoint.kinematics kinematicsData = new PhysicalJoint.kinematics();
@@ -195,8 +196,8 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
       for (var module : modules) {
         module.stop();
       }
-      Logger.recordOutput("SwerveStates/Setpoints", new SwerveModuleState[] {});
-      Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
+      Logger.recordOutput("SwerveStates/Setpoints", kEmptyModuleStates);
+      Logger.recordOutput("SwerveStates/SetpointsOptimized", kEmptyModuleStates);
     }
 
     // Update odometry
@@ -205,16 +206,14 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
     int sampleCount = sampleTimestamps.length;
     for (int i = 0; i < sampleCount; i++) {
       // Read wheel positions and deltas from each module
-      SwerveModulePosition[] modulePositions = new SwerveModulePosition[4];
-      SwerveModulePosition[] moduleDeltas = new SwerveModulePosition[4];
       for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
-        modulePositions[moduleIndex] = modules[moduleIndex].getOdometryPositions()[i];
-        moduleDeltas[moduleIndex] =
+        currentModulePositions[moduleIndex] = modules[moduleIndex].getOdometryPositions()[i];
+        currentModuleDeltas[moduleIndex] =
             new SwerveModulePosition(
-                modulePositions[moduleIndex].distanceMeters
+                currentModulePositions[moduleIndex].distanceMeters
                     - lastModulePositions[moduleIndex].distanceMeters,
-                modulePositions[moduleIndex].angle);
-        lastModulePositions[moduleIndex] = modulePositions[moduleIndex];
+                currentModulePositions[moduleIndex].angle);
+        lastModulePositions[moduleIndex] = currentModulePositions[moduleIndex];
       }
 
       this.robotPoseBuffer.addSample(Timer.getFPGATimestamp(), getPose());
@@ -224,12 +223,12 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
         rawGyroRotation = gyroInputs.odometryYawPositions[i];
       } else {
         // Use the angle delta from the kinematics and module deltas
-        Twist2d twist = kinematics.toTwist2d(moduleDeltas);
+        Twist2d twist = kinematics.toTwist2d(currentModuleDeltas);
         rawGyroRotation = rawGyroRotation.plus(new Rotation2d(twist.dtheta));
       }
 
       // Apply update
-      poseEstimator.updateWithTime(sampleTimestamps[i], rawGyroRotation, modulePositions);
+      poseEstimator.updateWithTime(sampleTimestamps[i], rawGyroRotation, currentModulePositions);
     }
 
     // Update gyro alert
@@ -438,45 +437,24 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
             new Translation3d(
                 currentPose.getTranslation().getX(), currentPose.getTranslation().getY(), 0),
             new Rotation3d(0, 0, currentPose.getRotation().getRadians()));
-    kinematicsData.forwardKinematic =
-        new Transform3d(
-            new Translation3d(
-                currentPose.getTranslation().getX(), currentPose.getTranslation().getY(), 0),
-            new Rotation3d(0, 0, currentPose.getRotation().getRadians()));
 
     ChassisSpeeds currentSpeeds = getFieldVelocity();
-    kinematicsData.localVelocity =
-        new SimpleMatrix(
-            new double[] {
-              currentSpeeds.vxMetersPerSecond,
-              currentSpeeds.vyMetersPerSecond,
-              0,
-              0,
-              0,
-              currentSpeeds.omegaRadiansPerSecond,
-            });
-    kinematicsData.localVelocity =
-        new SimpleMatrix(
-            new double[] {
-              currentSpeeds.vxMetersPerSecond,
-              currentSpeeds.vyMetersPerSecond,
-              0,
-              0,
-              0,
-              currentSpeeds.omegaRadiansPerSecond,
-            });
+    SimpleMatrix vel = kinematicsData.localVelocity;
+    vel.set(0, currentSpeeds.vxMetersPerSecond);
+    vel.set(1, currentSpeeds.vyMetersPerSecond);
+    vel.set(2, 0);
+    vel.set(3, 0);
+    vel.set(4, 0);
+    vel.set(5, currentSpeeds.omegaRadiansPerSecond);
 
     ChassisSpeeds currentAcceleration = getFieldAcceleration();
-    kinematicsData.localAcceleration =
-        new SimpleMatrix(
-            new double[] {
-              currentAcceleration.vxMetersPerSecond,
-              currentAcceleration.vyMetersPerSecond,
-              0,
-              0,
-              0,
-              currentAcceleration.omegaRadiansPerSecond,
-            });
+    SimpleMatrix acc = kinematicsData.localAcceleration;
+    acc.set(0, currentAcceleration.vxMetersPerSecond);
+    acc.set(1, currentAcceleration.vyMetersPerSecond);
+    acc.set(2, 0);
+    acc.set(3, 0);
+    acc.set(4, 0);
+    acc.set(5, currentAcceleration.omegaRadiansPerSecond);
   }
 
   @Override

@@ -116,6 +116,7 @@ public class VisionIOLimelight implements VisionIO {
 
     // --- 处理 Camera2Tag (单目标相机坐标系) ---
     for (var rawSample : tagPoseSubscriber.readQueue()) {
+<<<<<<< HEAD
       if (rawSample.value.length == 0) continue;
       // 单目标模式下通常只处理 primaryID
       if (primaryID != -1) tagIds.add(primaryID);
@@ -127,6 +128,37 @@ public class VisionIOLimelight implements VisionIO {
               0.0,
               1,
               rawSample.value.length > 2 ? rawSample.value[2] : 0.0,
+=======
+      if (rawSample.value.length < 6) continue;
+
+      // targetpose_cameraspace only has 6 values: x, y, z, rx, ry, rz
+      // Use the megatag1 latency for timestamp, and primary ID for tag tracking
+      tagIds.add(primaryID);
+
+      // Compute distance from camera to tag using the translation components
+      double tagDistance =
+          Math.sqrt(
+              rawSample.value[0] * rawSample.value[0]
+                  + rawSample.value[1] * rawSample.value[1]
+                  + rawSample.value[2] * rawSample.value[2]);
+
+      poseObservations.add(
+          new PoseObservation(
+              // Timestamp, use NT server timestamp minus limelight latency
+              rawSample.timestamp * 1.0e-6 - latencySubscriber.get() * 1.0e-3,
+
+              // 3D pose estimate (camera-space tag pose)
+              parsePose(rawSample.value),
+
+              // Ambiguity (not available for single targetpose)
+              0.0,
+
+              // Tag count
+              1,
+
+              // Average tag distance
+              tagDistance,
+>>>>>>> Vision+ShootingOneTheMove
               rawDetections.length > 0
                   ? VisionHelper.getSingleTagArea(rawDetections, 4, primaryID, 0) / num_pixels
                   : 0.0,
@@ -136,6 +168,7 @@ public class VisionIOLimelight implements VisionIO {
     // 3. 保存观测值到 inputs
     inputs.poseObservations = poseObservations.toArray(new PoseObservation[0]);
 
+<<<<<<< HEAD
     // ⭐ 4. 修复崩溃：安全地处理 tagIds 数组
     if (tagIds.isEmpty()) {
       inputs.tagIds = new int[0];
@@ -149,6 +182,13 @@ public class VisionIOLimelight implements VisionIO {
       }
 
       // 填充剩余 ID
+=======
+    // Save tag IDs to inputs objects
+    inputs.tagIds = new int[tagIds.size()];
+    if (inputs.tagIds.length != 0) {
+      inputs.tagIds[0] = primaryID;
+      int i = 1;
+>>>>>>> Vision+ShootingOneTheMove
       for (int id : tagIds) {
         if (id == primaryID) continue;
         inputs.tagIds[writeIndex++] = id;
