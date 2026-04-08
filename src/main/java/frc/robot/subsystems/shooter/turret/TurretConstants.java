@@ -10,15 +10,15 @@ import frc.robot.Ports;
 public class TurretConstants {
 
   public static final int kTurretID = Ports.kTurret;
-  public static final boolean kTurretInverted = false;
+  public static final boolean kTurretInverted = true;
 
   public static final double kTurretGearRatio = 82.0 * 5.0 / 10d;
 
   public static final double kTurretRadius = 0.20027; // TODO
 
-  public static final double kP = 125.0; // 150
+  public static final double kP = 1500.0; // 150
   public static final double kI = 0.0;
-  public static final double kD = 0.0; // 0.0
+  public static final double kD = 200.0; // 0.0
   public static final double kG = 0.0; // 重力补偿
   public static final double kS = 0.1; // 静态前馈
   public static final double kV = 0.0; // 0.13 轨迹规划得到的目标速度8.0
@@ -40,8 +40,9 @@ public class TurretConstants {
   // 摄像头相对于炮塔中心的位置
   public static final Transform3d kCameraonTurretoffset =
       new Transform3d(
-          new Translation3d(-0.169025, 0, 0.097176), new Rotation3d(0, Math.toRadians(-22.887), 0));
-  public static final Transform3d swerve2TurretOffset = new Transform3d(); // TODO
+          new Translation3d(-0.169025, 0, 0.107176), new Rotation3d(0, Math.toRadians(-22.887), 0));
+  public static final Transform3d swerve2TurretOffset =
+      new Transform3d(new Translation3d(-0.158, 0, 0.407), new Rotation3d(0, 0, 0.0));
 
   public static final double kVelocityRadPerSec = Units.degreesToRadians(720.0);
   public static final double kAccelerationRadPerSecSq = Units.degreesToRadians(1200.0);

@@ -53,7 +53,7 @@ public class TurretIOreal implements TurretIO {
         new TalonFXConfiguration()
             .withMotorOutput(
                 new MotorOutputConfigs()
-                    .withNeutralMode(NeutralModeValue.Brake)
+                    .withNeutralMode(NeutralModeValue.Coast)
                     .withInverted(
                         isclockwice_Positive
                             ? InvertedValue.Clockwise_Positive
@@ -74,10 +74,10 @@ public class TurretIOreal implements TurretIO {
                     .withPeakReverseTorqueCurrent(-100.0))
             .withSoftwareLimitSwitch(
                 new SoftwareLimitSwitchConfigs()
-                    .withForwardSoftLimitEnable(true)
+                    .withForwardSoftLimitEnable(false)
                     .withForwardSoftLimitThreshold(
                         Units.radiansToRotations(TurretConstants.kTurretMaxAngle))
-                    .withReverseSoftLimitEnable(true)
+                    .withReverseSoftLimitEnable(false)
                     .withReverseSoftLimitThreshold(
                         Units.radiansToRotations(TurretConstants.kTurretMinAngle)))
             .withMotionMagic(
@@ -177,7 +177,10 @@ public class TurretIOreal implements TurretIO {
       }
       case POSITION_FOC -> {
         double ffAmps =
-            (outputs.accelerationRadPerSec2*TurretConstants.kInertiaTurret/TurretConstants.kTurretGearRatio)/ TurretConstants.kT;
+            (outputs.accelerationRadPerSec2
+                    * TurretConstants.kInertiaTurret
+                    / TurretConstants.kTurretGearRatio)
+                / TurretConstants.kT;
         talon.setControl(
             positionControl
                 .withPosition(Units.radiansToRotations(outputs.positionRads)) // 目标位置 (Rotations)

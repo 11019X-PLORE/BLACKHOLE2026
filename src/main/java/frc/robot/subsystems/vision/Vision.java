@@ -188,29 +188,34 @@ public class Vision extends FullSubsystem {
                   .transformBy(new Transform3d(kPose3dIdentity, robot2cameraPose).inverse());
         } else if (observation.type() == VisionIO.PoseObservationType.CAMERA2TAG) {
           // Pin-Point estimation
-          Pose3d robotToTagPose =
-              robot2cameraPose.plus(new Transform3d(kPose3dIdentity, observation.pose()));
-          Translation2d fieldToTagTranslation =
-              AprilTagLayoutType.OFFICIAL
-                  .getLayout()
-                  .getTagPose(inputs[cameraIndex].tagIds[0])
-                  .get()
-                  .getTranslation()
-                  .toTranslation2d();
-          Translation2d robotToTagTranslation = robotToTagPose.getTranslation().toTranslation2d();
+          try {
+            Pose3d robotToTagPose =
+                robot2cameraPose.plus(new Transform3d(kPose3dIdentity, observation.pose()));
+            Translation2d fieldToTagTranslation =
+                AprilTagLayoutType.OFFICIAL
+                    .getLayout()
+                    .getTagPose(inputs[cameraIndex].tagIds[0])
+                    .get()
+                    .getTranslation()
+                    .toTranslation2d();
+            Translation2d robotToTagTranslation = robotToTagPose.getTranslation().toTranslation2d();
 
-          Translation2d fieldToRobot =
-              fieldToTagTranslation.minus(
-                  robotToTagTranslation.rotateBy(sampleRobotPose.getRotation()));
-          // TODO update std dev calculation to account for distance and tag count, and add a
-          // separate angular std dev
-          // double translationDev = (odometryStateStdDevs.get(2, 0)+robotToTag.stdDevs.get(2, 0)) *
-          // robotToTagTranslation.getNorm() + robotToTag.stdDevs.get(0, 0);
-          // var stdDevs = new Matrix<>(VecBuilder.fill(translationDev, translationDev, 1e+12));
-          visionPose3d =
-              new Pose3d(
-                  new Translation3d(fieldToRobot.getX(), fieldToRobot.getY(), 0),
-                  new Rotation3d(0, 0, sampleRobotPose.getRotation().getRadians()));
+            Translation2d fieldToRobot =
+                fieldToTagTranslation.minus(
+                    robotToTagTranslation.rotateBy(sampleRobotPose.getRotation()));
+            // TODO update std dev calculation to account for distance and tag count, and add a
+            // separate angular std dev
+            // double translationDev = (odometryStateStdDevs.get(2, 0)+robotToTag.stdDevs.get(2, 0))
+            // *
+            // robotToTagTranslation.getNorm() + robotToTag.stdDevs.get(0, 0);
+            // var stdDevs = new Matrix<>(VecBuilder.fill(translationDev, translationDev, 1e+12));
+            visionPose3d =
+                new Pose3d(
+                    new Translation3d(fieldToRobot.getX(), fieldToRobot.getY(), 0),
+                    new Rotation3d(0, 0, sampleRobotPose.getRotation().getRadians()));
+          } catch (Exception e) {
+            continue;
+          }
           continue; // for testing
         } else {
           continue; // Skip unsupported observation types
@@ -267,6 +272,10 @@ public class Vision extends FullSubsystem {
         stdDevMatrix.set(0, 0, linearStdDev);
         stdDevMatrix.set(1, 0, linearStdDev);
         stdDevMatrix.set(2, 0, angularStdDev);
+        // Send vision observation
+        // stdDevMatrix.set(0, 0, 0.1);
+        // stdDevMatrix.set(1, 0, 0.1);
+        // stdDevMatrix.set(2, 0, 1e9);
         drive.addVisionMeasurement(visionPose3d.toPose2d(), observation.timestamp(), stdDevMatrix);
       }
 

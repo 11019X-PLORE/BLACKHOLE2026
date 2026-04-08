@@ -70,6 +70,11 @@ public class HoodIOSim implements HoodIO {
 
         currentControl = true;
       }
+      case POSITION_FOC -> {
+        currentOutput = controller.calculate(sim.getAngleRads(), outputs.positionRads);
+
+        currentControl = true;
+      }
     }
   }
 }

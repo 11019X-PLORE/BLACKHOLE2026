@@ -139,13 +139,13 @@ public class Superstructure extends SubsystemBase {
                 SuperstructureState.ACTIVESHOOTING,
                 () ->
                     Commands.parallel(
-                        turret.setGoalCommand(TurretGoal.ZEROING),
+                        turret.setGoalCommand(TurretGoal.TRACKING),
                         hood.setGoalCommand(HoodGoal.ZEROING),
                         flywheel.setGoalCommand(FlywheelGoal.ACTIVE),
                         Commands.run(
                             () -> {
                               triggers.setGoal(TriggersGoal.STOP);
-                              indexer.setGoal(IndexerGoal.ACTIVE);
+                              indexer.setGoal(IndexerGoal.STOP);
                             },
                             triggers,
                             indexer))),

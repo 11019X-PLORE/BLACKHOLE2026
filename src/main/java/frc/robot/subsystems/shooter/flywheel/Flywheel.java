@@ -139,9 +139,13 @@ public class Flywheel extends FullSubsystem {
           ShooterSetpoint sp =
               ShooterSetpoint.makeSetpoint(
                   muzzleJoint, target, FieldConstants.hMax, TrajectoryConfig.getHubConfig());
-          double radPerSec = sp.shooterVelocityMetersPerSec / FlywheelConstants.kFlywheelRadius;
+          double radPerSec =
+              TrajectoryCalculator.getFlywheelSetpoint(sp.shooterVelocityMetersPerSec)
+                  / FlywheelConstants.kFlywheelRadius;
           double radPerSec2 =
-              sp.shooterAccelerationMetersPerSecSquared / FlywheelConstants.kFlywheelRadius;
+              TrajectoryCalculator.getFlywheelAcceleration(
+                      sp.shooterVelocityMetersPerSec, sp.shooterAccelerationMetersPerSecSquared)
+                  / FlywheelConstants.kFlywheelRadius;
           runVelocityFOCLogic(radPerSec, radPerSec2, 0.0);
         }
         case PASSING -> {
@@ -149,9 +153,13 @@ public class Flywheel extends FullSubsystem {
           ShooterSetpoint sp =
               ShooterSetpoint.makeSetpoint(
                   muzzleJoint, target, FieldConstants.hMax, TrajectoryConfig.getPassingConfig());
-          double radPerSec = sp.shooterVelocityMetersPerSec / FlywheelConstants.kFlywheelRadius;
+          double radPerSec =
+              TrajectoryCalculator.getFlywheelSetpoint(sp.shooterVelocityMetersPerSec)
+                  / FlywheelConstants.kFlywheelRadius;
           double radPerSec2 =
-              sp.shooterAccelerationMetersPerSecSquared / FlywheelConstants.kFlywheelRadius;
+              TrajectoryCalculator.getFlywheelAcceleration(
+                      sp.shooterVelocityMetersPerSec, sp.shooterAccelerationMetersPerSecSquared)
+                  / FlywheelConstants.kFlywheelRadius;
           runVelocityFOCLogic(radPerSec, radPerSec2, 0.0);
         }
         case ACTIVE -> {
@@ -161,10 +169,13 @@ public class Flywheel extends FullSubsystem {
               ShooterSetpoint.makeSetpoint(
                   muzzleJoint, target, FieldConstants.hMax, TrajectoryConfig.getHubConfig());
           double radPerSec =
-              (sp.shooterVelocityMetersPerSec / FlywheelConstants.kFlywheelRadius)
+              (TrajectoryCalculator.getFlywheelSetpoint(sp.shooterVelocityMetersPerSec)
+                      / FlywheelConstants.kFlywheelRadius)
                   * FlywheelConstants.kActiveRatio;
           double radPerSec2 =
-              sp.shooterAccelerationMetersPerSecSquared / FlywheelConstants.kFlywheelRadius;
+              TrajectoryCalculator.getFlywheelAcceleration(
+                      sp.shooterVelocityMetersPerSec, sp.shooterAccelerationMetersPerSecSquared)
+                  / FlywheelConstants.kFlywheelRadius;
           runVelocityFOCLogic(radPerSec, radPerSec2, 0.0);
         }
         case FIXED_VELOCITY -> {
@@ -204,8 +215,8 @@ public class Flywheel extends FullSubsystem {
   private void runVelocityFOCLogic(
       double velocityRadsPerSec, double acelerationRadPerSec2, double feedforwardAmps) {
     outputs.mode = FlywheelIOOutputMode.VELOCITY_FOC;
-    outputs.velocityRadsPerSec = TrajectoryCalculator.getFlywheelSetpoint(velocityRadsPerSec);
-    outputs.accelerationRadPerSec2 = TrajectoryCalculator.getFlywheelAcceleration(velocityRadsPerSec, acelerationRadPerSec2);
+    outputs.velocityRadsPerSec = velocityRadsPerSec;
+    outputs.accelerationRadPerSec2 = acelerationRadPerSec2;
     outputs.feedforwardAmps = feedforwardAmps; // 这里直接用电压作为前馈，具体实现时可能需要转换为电流
 
     outputs.volts = 0.0; // 清零电压，防止干扰闭环

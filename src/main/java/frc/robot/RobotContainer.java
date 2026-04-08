@@ -161,18 +161,19 @@ public class RobotContainer {
                 TurretConstants.kTurretonRobotoffset,
                 drive::getPose,
                 drive::getFieldVelocity);
+        turret.setBase(drive);
 
         vision =
             new Vision(
                 drive,
                 new VisionIOLimelight(
                     camera0Name,
-                    new double[] {320, 200},
+                    new double[] {640, 480},
                     drive,
                     new Transform3d(0.0, 0.0, 0.616, new Rotation3d(0.0, -0.4, 0.0))),
                 new VisionIOLimelight(
                     camera1Name,
-                    new double[] {320, 200},
+                    new double[] {640, 480},
                     turret,
                     TurretConstants.kCameraonTurretoffset));
         flywheel =
@@ -226,6 +227,7 @@ public class RobotContainer {
                 TurretConstants.kTurretonRobotoffset,
                 drive::getPose,
                 drive::getFieldVelocity);
+        turret.setBase(drive);
         flywheel = new Flywheel(new FlywheelIOSim(), turret);
         // upperStructure = new UpperStructure(turret, turretFR);
         hood = new Hood(new HoodIOSim(), turret);
@@ -288,8 +290,8 @@ public class RobotContainer {
                 TurretConstants.kTurretonRobotoffset,
                 drive::getPose,
                 drive::getFieldVelocity);
+        turret.setBase(drive);
         flywheel = new Flywheel(new FlywheelIOSim(), turret);
-        // upperStructure = new UpperStructure(turret, turretFR);
         hood = new Hood(new HoodIOSim(), turret);
         ShotCalculator.getInstance().robotToTurret = turret.getRobotToTurret();
         hanger = new Hanger(new HangerIOSim());

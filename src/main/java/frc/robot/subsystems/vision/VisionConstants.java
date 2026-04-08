@@ -58,7 +58,7 @@ public class VisionConstants {
       };
 
   // Multipliers to apply for MegaTag 2 observations
-  public static double linearStdDevFactor = 0.5; // More stable than full 3D solve
+  public static double linearStdDevFactor = 0.000001; // More stable than full 3D solve
   public static double angularStdDevFactor = 1e9; // Don't trust heading
 
   public static double latencyStdDev = 0.02; // Seconds, for vision timestamp uncertainty

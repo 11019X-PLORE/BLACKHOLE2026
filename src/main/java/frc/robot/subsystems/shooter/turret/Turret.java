@@ -365,26 +365,12 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
     return robotToTurret;
   }
 
-  private Rotation2d getBestPassingAngle() {
-    Translation2d blueLeftTarget = new Translation2d(1.874, 5.49);
-    Translation2d blueRightTarget = new Translation2d(1.874, 2.17);
-    Translation2d leftTarget = AllianceFlipUtil.apply(blueLeftTarget);
-    Translation2d rightTarget = AllianceFlipUtil.apply(blueRightTarget);
-    Translation2d robotTrans = poseSupplier.get().getTranslation();
-    Translation2d bestTarget =
-        (robotTrans.getDistance(leftTarget) < robotTrans.getDistance(rightTarget))
-            ? leftTarget
-            : rightTarget;
-    Logger.recordOutput("turret/PassingTargetUsed", new Pose2d(bestTarget, new Rotation2d()));
-    return bestTarget.minus(robotTrans).getAngle();
-  }
-
   public Pose3d getCameraPoseRobotSpace() {
     Pose3d turretBase =
         new Pose3d(
             robotToTurret.getX(),
             robotToTurret.getY(),
-            0.417,
+            0.407,
             new Rotation3d(0, 0, Math.PI)); // 炮塔中心相对于机器人中心的位姿，TODO: 测量确认
     Rotation3d turretRotation = new Rotation3d(0.0, 0.0, inputs.positionRads);
     Transform3d cameraOnTurret = TurretConstants.kCameraonTurretoffset;

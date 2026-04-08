@@ -189,13 +189,15 @@ public class Hood extends FullSubsystem {
       double targetVelocityRadsPerSec,
       double targetAccelation,
       double feedforwardAmps) {
+    double targetAngleRadsCoangle = (Math.PI / 2) - targetAngleRads;
     double clampedAngle =
-        MathUtil.clamp(targetAngleRads, HoodConstants.kHoodMinAngle, HoodConstants.kHoodMaxAngle);
+        MathUtil.clamp(
+            targetAngleRadsCoangle, HoodConstants.kHoodMinAngle, HoodConstants.kHoodMaxAngle);
 
     outputs.mode = HoodIOOutputMode.POSITION_FOC;
     outputs.positionRads = clampedAngle;
-    outputs.velocityRadsPerSec = targetVelocityRadsPerSec;
-    outputs.accelerationRadPerSec2 = targetAccelation;
+    outputs.velocityRadsPerSec = -targetVelocityRadsPerSec;
+    outputs.accelerationRadPerSec2 = -targetAccelation;
     outputs.feedforwardAmps = feedforwardAmps;
 
     // 计算是否到位
@@ -204,6 +206,7 @@ public class Hood extends FullSubsystem {
     // Log 目标值
     Logger.recordOutput("Hood/Profile/GoalPositionRad", clampedAngle);
     Logger.recordOutput("Hood/Profile/GoalVelocityRadPerSec", targetVelocityRadsPerSec);
+    Logger.recordOutput("Hood/Profile/PositionRad", targetAngleRads);
   }
 
   /** 更新 PID 参数 */
