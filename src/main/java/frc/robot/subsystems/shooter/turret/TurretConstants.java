@@ -6,6 +6,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
 import frc.robot.Ports;
+import frc.robot.util.Geoffrey.PhysicalJoint;
 
 public class TurretConstants {
 
@@ -16,9 +17,9 @@ public class TurretConstants {
 
   public static final double kTurretRadius = 0.20027; // TODO
 
-  public static final double kP = 1500.0; // 150
+  public static final double kP = 1800.0; // 150
   public static final double kI = 0.0;
-  public static final double kD = 200.0; // 0.0
+  public static final double kD = 80.0; // 0.0
   public static final double kG = 0.0; // 重力补偿
   public static final double kS = 0.1; // 静态前馈
   public static final double kV = 0.0; // 0.13 轨迹规划得到的目标速度8.0
@@ -33,7 +34,7 @@ public class TurretConstants {
   public static final double kTurretInitialAngle = Units.degreesToRadians(-180.0);
 
   public static final double kTurretToleranceDeg = Units.degreesToRadians(3.5); // max is 4.6
-  public static final double kTurretFixAngle = Units.degreesToRadians(90);
+  public static final double kTurretFixAngle = Units.degreesToRadians(-90.0);
 
   // 炮塔的相对于机器中心的位置
   public static final Translation2d kTurretonRobotoffset = new Translation2d(-0.158, 0);
@@ -44,12 +45,9 @@ public class TurretConstants {
   public static final Transform3d swerve2TurretOffset =
       new Transform3d(new Translation3d(-0.158, 0, 0.407), new Rotation3d(0, 0, 0.0));
 
-  public static final double kVelocityRadPerSec = Units.degreesToRadians(720.0);
+  public static final double kVelocityRadPerSec = Units.degreesToRadians(845.0);
   public static final double kAccelerationRadPerSecSq = Units.degreesToRadians(1200.0);
-  public static final double kMaxWrapVelocity = Units.degreesToRadians(180.0);
-  public static final double kMaxTurretTrackingVel = Units.radiansToDegrees(1400.0);
-  public static final double kTurretWrapAngle = Units.radiansToDegrees(20.0);
-  public static final double kMaxNormalVelocity = Units.radiansToDegrees(1000.0);
+  public static final double kMaxTurretTrackingVel = Units.radiansToDegrees(845.0);
 
   // sim
   public static final double autoStartAngle = Units.degreesToRadians(0.0); // TODO
@@ -59,4 +57,7 @@ public class TurretConstants {
 
   public static final double turret_height_meters = 0.3004;
   public static final double kMaxAngularVelocityRadpersec = Units.degreesToRadians(720); // 2 rps
+
+  public static PhysicalJoint swerve2TurretStructure =
+      PhysicalJoint.getStructureJoint(swerve2TurretOffset);
 }

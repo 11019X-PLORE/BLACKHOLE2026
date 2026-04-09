@@ -10,11 +10,11 @@ public class HoodConstants {
   public static final double kHoodRadius = 0.20193; // TODO
   public static final double hoodGearRatio = 174.0 * 44.0 * 44.0 / (14.0 * 8.0 * 10.0); // TODO
 
-  public static final double kP = 1500.0; // 100
+  public static final double kP = 1800.0; // 500.0
   public static final double kI = 0.0;
-  public static final double kD = 200.0; // 0.0;
-  public static final double kG = 0.0; // 重力补偿
-  public static final double kS = 0.6; // 静态前馈
+  public static final double kD = 90.0; // 0.0;
+  public static final double kG = 0.0; //
+  public static final double kS = 0.6; // 0.6
   public static final double kV = 0.0; // 轨迹规划得到的目标速度
   public static final double kA = 0.0; // 轨迹规划得到的目标加速度
 

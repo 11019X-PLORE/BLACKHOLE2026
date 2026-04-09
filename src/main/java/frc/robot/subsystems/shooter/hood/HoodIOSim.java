@@ -19,7 +19,9 @@ public class HoodIOSim implements HoodIO {
   private double appliedVolts = 0.0;
   private boolean currentControl = false;
 
-  public HoodIOSim() {}
+  public HoodIOSim() {
+    sim.setState(HoodConstants.kHoodInitialAngle, 0.0);
+  }
 
   @Override
   public void updateInputs(HoodIOInputs inputs) {

@@ -43,6 +43,44 @@ public interface PhysicalJoint {
         }
       };
 
+  public static PhysicalJoint getStructureJoint(Transform3d t) {
+    return new PhysicalJoint() {
+      public Transform3d transform = t;
+      private final SimpleMatrix kZeroVector = new SimpleMatrix(6, 1);
+      private PhysicalJoint base = null;
+
+      @Override
+      public void updateKinematics() {
+        // Do nothing since this is the ground joint
+      }
+
+      @Override
+      public Transform3d getForwardKinematic() {
+        return transform;
+      }
+
+      @Override
+      public SimpleMatrix getLocalVelocity() {
+        return kZeroVector;
+      }
+
+      @Override
+      public SimpleMatrix getLocalAcceleration() {
+        return kZeroVector;
+      }
+
+      @Override
+      public PhysicalJoint getParentJoint() {
+        return base;
+      }
+
+      @Override
+      public void setBase(PhysicalJoint b) {
+        this.base = b;
+      }
+    };
+  }
+
   public class kinematics {
     public Transform3d forwardKinematic;
     public SimpleMatrix localVelocity = new SimpleMatrix(6, 1);
@@ -58,6 +96,8 @@ public interface PhysicalJoint {
   SimpleMatrix getLocalAcceleration();
 
   PhysicalJoint getParentJoint();
+
+  default void setBase(PhysicalJoint base) {}
 
   default Transform3d getGlobalPose() {
     PhysicalJoint parent = getParentJoint();

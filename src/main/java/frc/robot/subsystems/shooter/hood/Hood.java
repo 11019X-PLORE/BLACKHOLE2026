@@ -150,13 +150,13 @@ public class Hood extends FullSubsystem {
               0.0);
         }
         case FIXED_ANGLE -> {
-          runPositionFOCLogic(fixedAngleRads, 0.0, 0.0, 0.0);
+          runPositionFOCLogic((Math.PI / 2) - fixedAngleRads, 0.0, 0.0, 0.0);
         }
         case TEST -> {
-          runPositionFOCLogic(kFixAngle.get(), 0.0, 0.0, 0.0);
+          runPositionFOCLogic((Math.PI / 2) - kFixAngle.get(), 0.0, 0.0, 0.0);
         }
         case ZEROING -> {
-          runPositionFOCLogic(HoodConstants.kHoodInitialAngle, 0.0, 0.0, 0.0);
+          runPositionFOCLogic((Math.PI / 2) - HoodConstants.kHoodInitialAngle, 0.0, 0.0, 0.0);
         }
       }
     }
@@ -165,24 +165,6 @@ public class Hood extends FullSubsystem {
     Logger.recordOutput("Hood/Profile/zero", hoodZeroed);
     io.applyOutputs(outputs);
   }
-
-  /** 内部位置闭环辅助方法：负责 clamp 角度、设置 output 并计算 atGoal */
-  // private void runPositionLogic(double targetAngleRads, double targetVelocityRadsPerSec) {
-  //   double clampedAngle =
-  //       MathUtil.clamp(targetAngleRads, HoodConstants.kHoodMinAngle,
-  // HoodConstants.kHoodMaxAngle);
-
-  //   outputs.mode = HoodIOOutputMode.CLOSED_LOOP;
-  //   outputs.positionRads = clampedAngle;
-  //   outputs.velocityRadsPerSec = targetVelocityRadsPerSec;
-
-  //   // 计算是否到位
-  //   atGoal = Math.abs(inputs.positionRads - clampedAngle) <= toleranceDeg.get();
-
-  //   // Log 目标值
-  //   Logger.recordOutput("Hood/Profile/GoalPositionRad", clampedAngle);
-  //   Logger.recordOutput("Hood/Profile/GoalVelocityRadPerSec", targetVelocityRadsPerSec);
-  // }
 
   private void runPositionFOCLogic(
       double targetAngleRads,
@@ -207,6 +189,7 @@ public class Hood extends FullSubsystem {
     Logger.recordOutput("Hood/Profile/GoalPositionRad", clampedAngle);
     Logger.recordOutput("Hood/Profile/GoalVelocityRadPerSec", targetVelocityRadsPerSec);
     Logger.recordOutput("Hood/Profile/PositionRad", targetAngleRads);
+    Logger.recordOutput("Hood/Profile/GoalAccelation", targetAccelation);
   }
 
   /** 更新 PID 参数 */

@@ -13,6 +13,7 @@ import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.SoftwareLimitSwitchConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
+import com.ctre.phoenix6.controls.MotionMagicExpoTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.PositionTorqueCurrentFOC;
@@ -44,6 +45,8 @@ public class TurretIOreal implements TurretIO {
   private final NeutralOut neutralControl = new NeutralOut();
   private final MotionMagicExpoVoltage mmExpoControl = new MotionMagicExpoVoltage(0.0);
   private final PositionTorqueCurrentFOC positionControl = new PositionTorqueCurrentFOC(0.0);
+  private final MotionMagicExpoTorqueCurrentFOC mmExpotorque =
+      new MotionMagicExpoTorqueCurrentFOC(0.0);
   private double currentKV = 0.0;
   private double currentKS = 0.0;
 
@@ -70,14 +73,14 @@ public class TurretIOreal implements TurretIO {
                     .withSupplyCurrentLimitEnable(true)) // 0.1s 后才真正限流
             .withTorqueCurrent(
                 new TorqueCurrentConfigs()
-                    .withPeakForwardTorqueCurrent(100.0)
-                    .withPeakReverseTorqueCurrent(-100.0))
+                    .withPeakForwardTorqueCurrent(120.0)
+                    .withPeakReverseTorqueCurrent(-120.0))
             .withSoftwareLimitSwitch(
                 new SoftwareLimitSwitchConfigs()
-                    .withForwardSoftLimitEnable(false)
+                    .withForwardSoftLimitEnable(true)
                     .withForwardSoftLimitThreshold(
                         Units.radiansToRotations(TurretConstants.kTurretMaxAngle))
-                    .withReverseSoftLimitEnable(false)
+                    .withReverseSoftLimitEnable(true)
                     .withReverseSoftLimitThreshold(
                         Units.radiansToRotations(TurretConstants.kTurretMinAngle)))
             .withMotionMagic(

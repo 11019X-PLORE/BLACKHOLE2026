@@ -161,7 +161,8 @@ public class RobotContainer {
                 TurretConstants.kTurretonRobotoffset,
                 drive::getPose,
                 drive::getFieldVelocity);
-        turret.setBase(drive);
+        TurretConstants.swerve2TurretStructure.setBase(drive);
+        turret.setBase(TurretConstants.swerve2TurretStructure);
 
         vision =
             new Vision(

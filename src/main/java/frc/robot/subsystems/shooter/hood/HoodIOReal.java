@@ -125,10 +125,11 @@ public class HoodIOReal implements HoodIO {
                     * HoodConstants.kInertiaHood
                     / HoodConstants.hoodGearRatio)
                 / HoodConstants.kT;
-        torqueControl
-            .withPosition(Units.radiansToRotations(outputs.positionRads))
-            .withVelocity(Units.radiansToRotations(outputs.velocityRadsPerSec))
-            .withFeedForward(ffAmps);
+        talon.setControl(
+            torqueControl
+                .withPosition(Units.radiansToRotations(outputs.positionRads))
+                .withVelocity(Units.radiansToRotations(outputs.velocityRadsPerSec))
+                .withFeedForward(ffAmps));
       }
     }
   }

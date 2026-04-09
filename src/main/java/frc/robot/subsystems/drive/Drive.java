@@ -438,6 +438,8 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
                 currentPose.getTranslation().getX(), currentPose.getTranslation().getY(), 0),
             new Rotation3d(0, 0, currentPose.getRotation().getRadians()));
 
+    Logger.recordOutput("Drive/forwardKinematic", kinematicsData.forwardKinematic);
+
     ChassisSpeeds currentSpeeds = getFieldVelocity();
     SimpleMatrix vel = kinematicsData.localVelocity;
     vel.set(0, currentSpeeds.vxMetersPerSecond);

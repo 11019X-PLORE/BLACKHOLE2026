@@ -190,27 +190,10 @@ public class Flywheel extends FullSubsystem {
       }
       Logger.recordOutput("Flywheel/Mode", outputs.mode);
       Logger.recordOutput("Flywheel/Setpoint", outputs.velocityRadsPerSec);
+      Logger.recordOutput("FlyWheel/GoalAcceleration", outputs.accelerationRadPerSec2);
       io.applyOutputs(outputs);
     }
   }
-
-  /** 内部速度闭环辅助方法：负责设定 output 并计算 atGoal */
-  // private void runVelocityLogic(double velocityRadsPerSec) {
-  //   outputs.mode = FlywheelIOOutputMode.VELOCITY;
-  //   outputs.velocityRadsPerSec = velocityRadsPerSec;
-  //   outputs.volts = 0.0; // 清零电压，防止干扰闭环
-
-  //   // 计算是否到达目标
-  //   boolean inTolerance =
-  //       Math.abs(inputs.velocityRadsPerSec - velocityRadsPerSec) <= velocityTolerance.get();
-
-  //   // 如果设定值过低，强制认为未就绪
-  //   if (Math.abs(velocityRadsPerSec) < 1.0) {
-  //     inTolerance = false;
-  //   }
-
-  //   atGoal = atGoalDebouncer.calculate(inTolerance);
-  // }
 
   private void runVelocityFOCLogic(
       double velocityRadsPerSec, double acelerationRadPerSec2, double feedforwardAmps) {

@@ -224,9 +224,9 @@ public class Superstructure extends SubsystemBase {
                 SuperstructureState.TEST,
                 () ->
                     Commands.parallel(
-                        turret.setGoalCommand(TurretGoal.IDLE),
-                        hood.setGoalCommand(HoodGoal.TEST),
-                        flywheel.setGoalCommand(FlywheelGoal.TEST),
+                        turret.setGoalCommand(TurretGoal.TEST),
+                        // hood.setGoalCommand(HoodGoal.TEST),
+                        // flywheel.setGoalCommand(FlywheelGoal.TEST),
                         Commands.run(
                             () -> {
                               if (isReadyToShoot()) {
