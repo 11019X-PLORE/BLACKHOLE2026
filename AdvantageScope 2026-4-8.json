@@ -54,7 +54,6 @@
             "/AdvantageKit/RealOutputs/Hood/Profile",
             "/Tuning/turret",
             "/Tuning/Hood",
-            "/AdvantageKit/turret",
             "/Tuning/Flywheel",
             "/AdvantageKit/RealOutputs/shooter",
             "/AdvantageKit/RealOutputs/Flywheel",
@@ -63,7 +62,6 @@
             "/RealOutputs/Vision",
             "/RealOutputs/Vision/Camera1/RobotPosesAccepted",
             "/RealOutputs/Intake",
-            "/AdvantageKit/RealOutputs/Odometry",
             "/AdvantageKit/RealOutputs/Vision",
             "/AdvantageKit/RealOutputs/Vision/Summary",
             "/AdvantageKit/RealOutputs/Vision/Summary/RobotPosesAccepted",
@@ -106,7 +104,6 @@
             "/AdvantageKit/RealOutputs",
             "/AdvantageKit/RealOutputs/LoggedRobot",
             "/AdvantageKit/RealOutputs/Logger",
-            "/AdvantageKit",
             "/AdvantageKit/RealOutputs/CommandEvents",
             "/FuelSim",
             "/AdvantageKit/RealOutputs/Hanger",
@@ -133,11 +130,17 @@
             "/AdvantageKit/Extension",
             "/AdvantageKit/Triggers",
             "/AdvantageKit/RealOutputs/Triggers",
-            "/AdvantageKit/RealOutputs/Extension"
+            "/AdvantageKit/RealOutputs/Extension",
+            "/AdvantageKit/RealOutputs/turret/turret",
+            "/AdvantageKit/turret",
+            "/AdvantageKit/turret/turret",
+            "/AdvantageKit",
+            "/AdvantageKit/RealOutputs/LoggedTracer",
+            "/AdvantageKit/RealOutputs/LoggedTracer/Robot"
           ]
         },
         "tabs": {
-          "selected": 2,
+          "selected": 7,
           "tabs": [
             {
               "type": 0,
@@ -257,9 +260,9 @@
                 "cameraIndex": -1,
                 "orbitFov": 50,
                 "cameraPosition": [
-                  -10.120636788179988,
-                  11.579544131101072,
-                  -5.045613486873613
+                  -14.884190686702198,
+                  18.944550393779316,
+                  -5.16095770635778
                 ],
                 "cameraTarget": [
                   -2.185293361600478,
@@ -711,7 +714,7 @@
                     "type": "stepped",
                     "logKey": "NT:/AdvantageKit/Hood/TorqueCurrentAmps",
                     "logType": "Number",
-                    "visible": true,
+                    "visible": false,
                     "options": {
                       "color": "#e48b32",
                       "size": "normal"
@@ -909,7 +912,7 @@
                     "type": "stepped",
                     "logKey": "NT:/AdvantageKit/Indexer/TorqueCurrentAmps",
                     "logType": "Number",
-                    "visible": true,
+                    "visible": false,
                     "options": {
                       "color": "#e48b32",
                       "size": "normal"
@@ -919,21 +922,21 @@
                 "rightSources": [
                   {
                     "type": "stepped",
-                    "logKey": "NT:/AdvantageKit/RealOutputs/Indexer/Setpoint",
+                    "logKey": "NT:/AdvantageKit/Indexer/VelocityRadsPerSec",
                     "logType": "Number",
                     "visible": true,
                     "options": {
-                      "color": "#af2437",
+                      "color": "#2b66a2",
                       "size": "normal"
                     }
                   },
                   {
                     "type": "stepped",
-                    "logKey": "NT:/AdvantageKit/Indexer/VelocityRadsPerSec",
+                    "logKey": "NT:/AdvantageKit/RealOutputs/Intake/Setpoint",
                     "logType": "Number",
                     "visible": true,
                     "options": {
-                      "color": "#80588e",
+                      "color": "#af2437",
                       "size": "normal"
                     }
                   }
@@ -1179,19 +1182,9 @@
                 "leftSources": [
                   {
                     "type": "stepped",
-                    "logKey": "NT:/AdvantageKit/Intake/Roller/SupplyCurrentAmps",
+                    "logKey": "NT:/AdvantageKit/Intake/TorqueCurrentAmps",
                     "logType": "Number",
-                    "visible": true,
-                    "options": {
-                      "color": "#2b66a2",
-                      "size": "normal"
-                    }
-                  },
-                  {
-                    "type": "stepped",
-                    "logKey": "NT:/AdvantageKit/Intake/Roller/TorqueCurrentAmps",
-                    "logType": "Number",
-                    "visible": true,
+                    "visible": false,
                     "options": {
                       "color": "#e5b31b",
                       "size": "normal"
@@ -1201,7 +1194,17 @@
                 "rightSources": [
                   {
                     "type": "stepped",
-                    "logKey": "NT:/AdvantageKit/Intake/Roller/TempCelsius",
+                    "logKey": "NT:/AdvantageKit/Intake/VelocityRadsPerSec",
+                    "logType": "Number",
+                    "visible": true,
+                    "options": {
+                      "color": "#2b66a2",
+                      "size": "normal"
+                    }
+                  },
+                  {
+                    "type": "stepped",
+                    "logKey": "NT:/AdvantageKit/RealOutputs/Intake/Setpoint",
                     "logType": "Number",
                     "visible": true,
                     "options": {
