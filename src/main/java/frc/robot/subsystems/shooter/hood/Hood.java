@@ -2,16 +2,21 @@ package frc.robot.subsystems.shooter.hood;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import frc.robot.FieldConstants;
 import frc.robot.Robot;
-import frc.robot.subsystems.shooter.ShotCalculator;
 import frc.robot.subsystems.shooter.hood.HoodIO.HoodIOOutputMode;
 import frc.robot.subsystems.shooter.hood.HoodIO.HoodIOOutputs;
 import frc.robot.util.FullSubsystem;
+import frc.robot.util.Geoffrey.PhysicalJoint;
+import frc.robot.util.Geoffrey.ShooterSetpoint;
+import frc.robot.util.Geoffrey.TrajectoryConfig;
 import frc.robot.util.LoggedTunableNumber;
+import frc.robot.util.geometry.AllianceFlipUtil;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -60,6 +65,7 @@ public class Hood extends FullSubsystem {
   private final HoodIO io;
   private final HoodIOInputsAutoLogged inputs = new HoodIOInputsAutoLogged();
   private final HoodIOOutputs outputs = new HoodIOOutputs();
+  private final PhysicalJoint muzzleJoint;
 
   // --- State Variables ---
   public enum HoodGoal {
@@ -69,7 +75,6 @@ public class Hood extends FullSubsystem {
     TEST, // 测试模式 (读取 kFixAngle)
     ZEROING, // 归零状态
     PASSING, // 传球角度
-    POSITION_FOC
   }
 
   @Getter @Setter @AutoLogOutput private HoodGoal goal = HoodGoal.IDLE;
@@ -90,8 +95,9 @@ public class Hood extends FullSubsystem {
   private final Alert motorDisconnectedAlert =
       new Alert("Hood motor disconnected!", Alert.AlertType.kWarning);
 
-  public Hood(HoodIO io) {
+  public Hood(HoodIO io, PhysicalJoint muzzleJoint) {
     this.io = io;
+    this.muzzleJoint = muzzleJoint;
     io.setPID(kP.get(), kI.get(), kD.get(), kS.get(), kV.get(), kA.get(), kG.get());
   }
 
@@ -121,23 +127,36 @@ public class Hood extends FullSubsystem {
           atGoal = true;
         }
         case TRACKING -> {
-          var params = ShotCalculator.getInstance().getParameters();
-          runPositionLogic(params.hoodAngle(), params.hoodVelocity());
-        }
-        case FIXED_ANGLE -> {
-          runPositionLogic(HoodConstants.kFixAngle, HoodConstants.kFixVelocity);
-        }
-        case TEST -> {
-          runPositionLogic(kFixAngle.get(), HoodConstants.kFixVelocity);
-        }
-        case ZEROING -> {
-          runPositionLogic(HoodConstants.kHoodInitialAngle, HoodConstants.kFixVelocity);
+          Translation2d target =
+              AllianceFlipUtil.apply(FieldConstants.Hub.topCenterPoint.toTranslation2d());
+          ShooterSetpoint sp =
+              ShooterSetpoint.makeSetpoint(
+                  muzzleJoint, target, FieldConstants.hMax, TrajectoryConfig.getHubConfig());
+          runPositionFOCLogic(
+              sp.hoodPositionRadians,
+              sp.hoodVelocityRadsPerSec,
+              sp.hoodAccelerationRadsPerSecSquared,
+              0.0);
         }
         case PASSING -> {
-          runPositionLogic(HoodConstants.kHoodPassingAngle, HoodConstants.kFixVelocity);
+          Translation2d target = getBestPassingTarget();
+          ShooterSetpoint sp =
+              ShooterSetpoint.makeSetpoint(
+                  muzzleJoint, target, FieldConstants.hMax, TrajectoryConfig.getPassingConfig());
+          runPositionFOCLogic(
+              sp.hoodPositionRadians,
+              sp.hoodVelocityRadsPerSec,
+              sp.hoodAccelerationRadsPerSecSquared,
+              0.0);
         }
-        case POSITION_FOC -> {
-          runPositionFOCLogic(0.0, 0.0, 0.0, 0.0);
+        case FIXED_ANGLE -> {
+          runPositionFOCLogic((Math.PI / 2) - fixedAngleRads, 0.0, 0.0, 0.0);
+        }
+        case TEST -> {
+          runPositionFOCLogic((Math.PI / 2) - kFixAngle.get(), 0.0, 0.0, 0.0);
+        }
+        case ZEROING -> {
+          runPositionFOCLogic((Math.PI / 2) - HoodConstants.kHoodInitialAngle, 0.0, 0.0, 0.0);
         }
       }
     }
@@ -147,35 +166,20 @@ public class Hood extends FullSubsystem {
     io.applyOutputs(outputs);
   }
 
-  /** 内部位置闭环辅助方法：负责 clamp 角度、设置 output 并计算 atGoal */
-  private void runPositionLogic(double targetAngleRads, double targetVelocityRadsPerSec) {
-    double clampedAngle =
-        MathUtil.clamp(targetAngleRads, HoodConstants.kHoodMinAngle, HoodConstants.kHoodMaxAngle);
-
-    outputs.mode = HoodIOOutputMode.CLOSED_LOOP;
-    outputs.positionRads = clampedAngle;
-    outputs.velocityRadsPerSec = targetVelocityRadsPerSec;
-
-    // 计算是否到位
-    atGoal = Math.abs(inputs.positionRads - clampedAngle) <= toleranceDeg.get();
-
-    // Log 目标值
-    Logger.recordOutput("Hood/Profile/GoalPositionRad", clampedAngle);
-    Logger.recordOutput("Hood/Profile/GoalVelocityRadPerSec", targetVelocityRadsPerSec);
-  }
-
   private void runPositionFOCLogic(
       double targetAngleRads,
       double targetVelocityRadsPerSec,
       double targetAccelation,
       double feedforwardAmps) {
+    double targetAngleRadsCoangle = (Math.PI / 2) - targetAngleRads;
     double clampedAngle =
-        MathUtil.clamp(targetAngleRads, HoodConstants.kHoodMinAngle, HoodConstants.kHoodMaxAngle);
+        MathUtil.clamp(
+            targetAngleRadsCoangle, HoodConstants.kHoodMinAngle, HoodConstants.kHoodMaxAngle);
 
     outputs.mode = HoodIOOutputMode.POSITION_FOC;
     outputs.positionRads = clampedAngle;
-    outputs.velocityRadsPerSec = targetVelocityRadsPerSec;
-    outputs.acelerationRadPerSec2 = targetAccelation;
+    outputs.velocityRadsPerSec = -targetVelocityRadsPerSec;
+    outputs.accelerationRadPerSec2 = -targetAccelation;
     outputs.feedforwardAmps = feedforwardAmps;
 
     // 计算是否到位
@@ -184,6 +188,8 @@ public class Hood extends FullSubsystem {
     // Log 目标值
     Logger.recordOutput("Hood/Profile/GoalPositionRad", clampedAngle);
     Logger.recordOutput("Hood/Profile/GoalVelocityRadPerSec", targetVelocityRadsPerSec);
+    Logger.recordOutput("Hood/Profile/PositionRad", targetAngleRads);
+    Logger.recordOutput("Hood/Profile/GoalAccelation", targetAccelation);
   }
 
   /** 更新 PID 参数 */
@@ -197,6 +203,15 @@ public class Hood extends FullSubsystem {
         || kG.hasChanged(hashCode())) {
       io.setPID(kP.get(), kI.get(), kD.get(), kS.get(), kV.get(), kA.get(), kG.get());
     }
+  }
+
+  private Translation2d getBestPassingTarget() {
+    Translation2d blueLeft = new Translation2d(1.874, 5.49);
+    Translation2d blueRight = new Translation2d(1.874, 2.17);
+    Translation2d left = AllianceFlipUtil.apply(blueLeft);
+    Translation2d right = AllianceFlipUtil.apply(blueRight);
+    Translation2d robot = muzzleJoint.getGlobalPose().getTranslation().toTranslation2d();
+    return (robot.getDistance(left) < robot.getDistance(right)) ? left : right;
   }
 
   public double getMeasuredAngleRad() {

@@ -19,8 +19,8 @@ public class ExtensionConstants {
   public static final double kV = 3.0; // 0.5
   public static final double kA = 0.5; // 0.2
 
-  public static final double kVelocityRadPerSec = Units.degreesToRadians(400.0); // 400
-  public static final double kAccelerationRadPerSecSq = Units.degreesToRadians(800.0); // 600
+  public static final double kVelocityRadPerSec = Units.degreesToRadians(1000.0); // 400
+  public static final double kAccelerationRadPerSecSq = Units.degreesToRadians(1500.0); // 600
 
   public static final double kExtensionMinAngle = Units.degreesToRadians(-20.0); // TODO:零位位于水平位置0.0
   public static final double kExtensionMaxAngle = Units.degreesToRadians(130.0); // 150.0

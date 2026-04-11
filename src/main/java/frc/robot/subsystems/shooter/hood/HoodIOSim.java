@@ -19,7 +19,9 @@ public class HoodIOSim implements HoodIO {
   private double appliedVolts = 0.0;
   private boolean currentControl = false;
 
-  public HoodIOSim() {}
+  public HoodIOSim() {
+    sim.setState(HoodConstants.kHoodInitialAngle, 0.0);
+  }
 
   @Override
   public void updateInputs(HoodIOInputs inputs) {
@@ -66,6 +68,11 @@ public class HoodIOSim implements HoodIO {
       case CLOSED_LOOP -> {
         // 使用 WPILib PIDController 进行计算
         // 它的 calculate 方法内部会自动处理 (Setpoint - Measurement) 的正负号逻辑
+        currentOutput = controller.calculate(sim.getAngleRads(), outputs.positionRads);
+
+        currentControl = true;
+      }
+      case POSITION_FOC -> {
         currentOutput = controller.calculate(sim.getAngleRads(), outputs.positionRads);
 
         currentControl = true;

@@ -13,6 +13,7 @@ import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.SoftwareLimitSwitchConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
+import com.ctre.phoenix6.controls.MotionMagicExpoTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.PositionTorqueCurrentFOC;
@@ -44,8 +45,10 @@ public class TurretIOreal implements TurretIO {
   private final NeutralOut neutralControl = new NeutralOut();
   private final MotionMagicExpoVoltage mmExpoControl = new MotionMagicExpoVoltage(0.0);
   private final PositionTorqueCurrentFOC positionControl = new PositionTorqueCurrentFOC(0.0);
-  private double currentKv = 0.0;
-  private double currentKs = 0.0;
+  private final MotionMagicExpoTorqueCurrentFOC mmExpotorque =
+      new MotionMagicExpoTorqueCurrentFOC(0.0);
+  private double currentKV = 0.0;
+  private double currentKS = 0.0;
 
   public TurretIOreal(int id, boolean isclockwice_Positive) {
     talon = new TalonFX(id);
@@ -53,7 +56,7 @@ public class TurretIOreal implements TurretIO {
         new TalonFXConfiguration()
             .withMotorOutput(
                 new MotorOutputConfigs()
-                    .withNeutralMode(NeutralModeValue.Brake)
+                    .withNeutralMode(NeutralModeValue.Coast)
                     .withInverted(
                         isclockwice_Positive
                             ? InvertedValue.Clockwise_Positive
@@ -70,8 +73,8 @@ public class TurretIOreal implements TurretIO {
                     .withSupplyCurrentLimitEnable(true)) // 0.1s 后才真正限流
             .withTorqueCurrent(
                 new TorqueCurrentConfigs()
-                    .withPeakForwardTorqueCurrent(100.0)
-                    .withPeakReverseTorqueCurrent(-100.0))
+                    .withPeakForwardTorqueCurrent(120.0)
+                    .withPeakReverseTorqueCurrent(-120.0))
             .withSoftwareLimitSwitch(
                 new SoftwareLimitSwitchConfigs()
                     .withForwardSoftLimitEnable(true)
@@ -143,8 +146,8 @@ public class TurretIOreal implements TurretIO {
     config.kS = kS; // static feedforward voltage
     config.kV = kV; // velocity feedforward voltage
     config.kA = kA; // acceleration feedforward voltage
-    this.currentKs = kS;
-    this.currentKv = kV;
+    this.currentKS = kS;
+    this.currentKV = kV;
     tryUntilOk(5, () -> talon.getConfigurator().apply(config));
   }
 
@@ -166,8 +169,8 @@ public class TurretIOreal implements TurretIO {
       }
       case CLOSED_LOOP -> {
         double feedForwardAmps =
-            (Math.signum(outputs.velocityRadsPerSec / (2 * Math.PI)) * currentKs)
-                + (outputs.velocityRadsPerSec / (2 * Math.PI) * currentKv);
+            (Math.signum(outputs.velocityRadsPerSec / (2 * Math.PI)) * currentKS)
+                + (outputs.velocityRadsPerSec / (2 * Math.PI) * currentKV);
         talon.setControl(
             mmExpoControl
                 .withPosition(Units.radiansToRotations(outputs.positionRads))
@@ -176,13 +179,18 @@ public class TurretIOreal implements TurretIO {
             );
       }
       case POSITION_FOC -> {
+        double ffAmps =
+            (outputs.accelerationRadPerSec2
+                    * TurretConstants.kInertiaTurret
+                    / TurretConstants.kTurretGearRatio)
+                / TurretConstants.kT;
         talon.setControl(
             positionControl
                 .withPosition(Units.radiansToRotations(outputs.positionRads)) // 目标位置 (Rotations)
                 .withVelocity(
                     Units.radiansToRotations(
                         outputs.velocityRadsPerSec)) // 目标速度 (Rotations per second)
-                .withFeedForward(outputs.feedforwardAmps)); // 前馈电流 (Amps)
+                .withFeedForward(ffAmps)); // 注入前馈电流 (Amps)
       }
     }
   }

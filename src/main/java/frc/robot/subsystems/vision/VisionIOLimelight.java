@@ -164,13 +164,20 @@ public class VisionIOLimelight implements VisionIO {
 
     // Save tag IDs to inputs objects
     inputs.tagIds = new int[tagIds.size()];
-    if(inputs.tagIds.length != 0){
-      inputs.tagIds[0] = primaryID;
-      int i = 1;
-      for (int id : tagIds) {
-        if (id == primaryID) continue;
-        inputs.tagIds[i++] = id;
-      }
+    // if (inputs.tagIds.length != 0) {
+    //   inputs.tagIds[0] = primaryID;
+    //   int i = 1;
+    //   for (int id : tagIds) {
+    //     if (id == primaryID) continue;
+    //     System.out.println(primaryID);
+    //     inputs.tagIds[i] = id;
+    //     i++;
+    //   }
+    // }
+    int i = 0;
+    for (int id : tagIds) {
+      inputs.tagIds[i] = id;
+      i++;
     }
     
   }

@@ -9,7 +9,6 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.extension.Extension;
-import frc.robot.subsystems.hanger.Hanger;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.shooter.hood.Hood;
 import frc.robot.subsystems.shooter.turret.Turret;
@@ -24,15 +23,10 @@ public class LeftAuto extends SequentialCommandGroup {
       Turret turret,
       Hood hood,
       Extension extension,
-      Hanger hanger,
       Drive drive) {
 
     addCommands(
-        Commands.parallel(
-            turret.zeroCommand(),
-            hood.zeroCommand(),
-            extension.zeroCommand(),
-            hanger.zeroCommand()),
+        Commands.parallel(turret.zeroCommand(), hood.zeroCommand(), extension.zeroCommand()),
         resetOdomToPath("L1", drive),
         Commands.parallel(
             generatePath("L1"),

@@ -19,6 +19,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.FieldConstants.AprilTagLayoutType;
 import frc.robot.autos.LeftAuto;
 import frc.robot.autos.MidAuto;
@@ -38,11 +39,6 @@ import frc.robot.subsystems.extension.Extension;
 import frc.robot.subsystems.extension.ExtensionConstants;
 import frc.robot.subsystems.extension.ExtensionIOReal;
 import frc.robot.subsystems.extension.ExtensionIOSim;
-import frc.robot.subsystems.hanger.Hanger;
-import frc.robot.subsystems.hanger.Hanger.HangerGoal;
-import frc.robot.subsystems.hanger.HangerConstants;
-import frc.robot.subsystems.hanger.HangerIOReal;
-import frc.robot.subsystems.hanger.HangerIOSim;
 import frc.robot.subsystems.indexer.Indexer;
 import frc.robot.subsystems.indexer.IndexerConstants;
 import frc.robot.subsystems.indexer.IndexerIOReal;
@@ -68,16 +64,14 @@ import frc.robot.subsystems.shooter.turret.TurretIOreal;
 import frc.robot.subsystems.superstructure.Superstructure;
 import frc.robot.subsystems.superstructure.Superstructure.SuperstructureState;
 import frc.robot.subsystems.triggers.Triggers;
+import frc.robot.subsystems.triggers.TriggersIOReal;
 import frc.robot.subsystems.triggers.TriggersIOSim;
-import frc.robot.subsystems.triggers.TriggersIOTest;
 import frc.robot.subsystems.vision.Vision;
-import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOLimelight;
 import frc.robot.subsystems.vision.VisionIOPhotonVisionSim;
 import frc.robot.util.ClimbTargetSelector;
 import frc.robot.util.Dimensions;
 import frc.robot.util.FuelSim;
-import frc.robot.util.Geoffrey.PhysicalJoint;
 import frc.robot.util.TrenchHelper;
 import frc.robot.util.geometry.AllianceFlipUtil;
 import java.util.function.BooleanSupplier;
@@ -96,7 +90,6 @@ public class RobotContainer {
   public final Flywheel flywheel;
   public final Hood hood;
   public final Vision vision;
-  public final Hanger hanger;
   public final LED led;
   public final Superstructure superstructure;
 
@@ -117,8 +110,6 @@ public class RobotContainer {
   private final Trigger shootTrigger = controller.R2();
   private final Trigger passTrigger = controller.R1();
   private final Trigger fixShootTrigger = controller.triangle();
-  private final Trigger climbTrigger = controller.povDown();
-  private final Trigger zeroClimbTrigger = controller.povUp();
   private final Trigger driveToClimb = controller.povLeft();
   private final Trigger autoTrench = controller.povRight();
   private final Trigger drivetoBump = controller.cross();
@@ -148,7 +139,7 @@ public class RobotContainer {
         intake =
             new Intake(
                 new IntakeIOReal(IntakeConstants.kIntakeId, IntakeConstants.kIntakeInverted));
-        triggers = new Triggers(new TriggersIOTest());
+        triggers = new Triggers(new TriggersIOReal());
         indexer =
             new Indexer(
                 new IndexerIOReal(IndexerConstants.kIndexerId, IndexerConstants.kIndexerInverted));
@@ -161,37 +152,30 @@ public class RobotContainer {
                 new TurretIOreal(TurretConstants.kTurretID, TurretConstants.kTurretInverted),
                 TurretConstants.kTurretonRobotoffset,
                 drive::getPose,
-                drive::getFieldVelocity,
-                "1");
+                drive::getFieldVelocity);
+        TurretConstants.swerve2TurretStructure.setBase(drive);
+        turret.setBase(TurretConstants.swerve2TurretStructure);
 
         vision =
             new Vision(
                 drive,
-                // new VisionIOLimelightTurret(
-                //     camera1Name,
-                //     turret::getCameraPoseRobotSpace,
-                //     turret::getVelocity,
-                //     VisionConstants.visionCutoffSpeed),
                 new VisionIOLimelight(
                     camera0Name,
-                    new double[] {320, 200},
+                    new double[] {640, 480},
                     drive,
                     new Transform3d(0.0, 0.0, 0.616, new Rotation3d(0.0, -0.4, 0.0))),
                 new VisionIOLimelight(
                     camera1Name,
-                    new double[] {320, 200},
+                    new double[] {640, 480},
                     turret,
-                    new Transform3d(-0.0, 0.0, 0.2, new Rotation3d(0.0, -0.4, Math.PI))));
-        // TODO: 传入实际测量的摄像头位置
+                    TurretConstants.kCameraonTurretoffset));
         flywheel =
             new Flywheel(
                 new FlywheelIOReal(
-                    FlywheelConstants.kFlywheelId, FlywheelConstants.kFlywheelInverted));
-        hood = new Hood(new HoodIOReal(HoodConstants.kHoodId, HoodConstants.kHoodInverted));
+                    FlywheelConstants.kFlywheelId, FlywheelConstants.kFlywheelInverted),
+                turret);
+        hood = new Hood(new HoodIOReal(HoodConstants.kHoodId, HoodConstants.kHoodInverted), turret);
         ShotCalculator.getInstance().robotToTurret = turret.getRobotToTurret();
-        hanger =
-            new Hanger(
-                new HangerIOReal(HangerConstants.kHangerId, HangerConstants.kHangerInverted));
         led = new LED();
         superstructure =
             new Superstructure(
@@ -202,7 +186,6 @@ public class RobotContainer {
                 extension,
                 triggers,
                 indexer,
-                hanger,
                 led,
                 drive::isInTrenchZone);
         break;
@@ -232,13 +215,12 @@ public class RobotContainer {
                 new TurretIOSim(fuelSim),
                 TurretConstants.kTurretonRobotoffset,
                 drive::getPose,
-                drive::getFieldVelocity,
-                "1");
-        flywheel = new Flywheel(new FlywheelIOSim());
+                drive::getFieldVelocity);
+        turret.setBase(drive);
+        flywheel = new Flywheel(new FlywheelIOSim(), turret);
         // upperStructure = new UpperStructure(turret, turretFR);
-        hood = new Hood(new HoodIOSim());
+        hood = new Hood(new HoodIOSim(), turret);
         ShotCalculator.getInstance().robotToTurret = turret.getRobotToTurret();
-        hanger = new Hanger(new HangerIOSim());
         led = new LED();
         superstructure =
             new Superstructure(
@@ -249,7 +231,6 @@ public class RobotContainer {
                 extension,
                 triggers,
                 indexer,
-                hanger,
                 led,
                 drive::isInTrenchZone);
         // fuel sim setup
@@ -282,24 +263,10 @@ public class RobotContainer {
         vision =
             new Vision(
                 drive,
-                new VisionIO() {
-                  public PhysicalJoint getBaseJoint() {
-                    return null;
-                  }
-
-                  public Transform3d getMountingOffset() {
-                    return null;
-                  }
-                },
-                new VisionIO() {
-                  public PhysicalJoint getBaseJoint() {
-                    return null;
-                  }
-
-                  public Transform3d getMountingOffset() {
-                    return null;
-                  }
-                });
+                new VisionIOPhotonVisionSim(
+                    camera0Name, robotToCamera0, drive, robotToCamera0, drive::getPose),
+                new VisionIOPhotonVisionSim(
+                    camera1Name, robotToCamera1, drive, robotToCamera1, drive::getPose));
         intake = new Intake(new IntakeIOSim());
         triggers = new Triggers(new TriggersIOSim());
         indexer = new Indexer(new IndexerIOSim());
@@ -309,13 +276,11 @@ public class RobotContainer {
                 new TurretIOSim(fuelSim),
                 TurretConstants.kTurretonRobotoffset,
                 drive::getPose,
-                drive::getFieldVelocity,
-                "1");
-        flywheel = new Flywheel(new FlywheelIOSim());
-        // upperStructure = new UpperStructure(turret, turretFR);
-        hood = new Hood(new HoodIOSim());
+                drive::getFieldVelocity);
+        turret.setBase(drive);
+        flywheel = new Flywheel(new FlywheelIOSim(), turret);
+        hood = new Hood(new HoodIOSim(), turret);
         ShotCalculator.getInstance().robotToTurret = turret.getRobotToTurret();
-        hanger = new Hanger(new HangerIOSim());
         led = new LED();
         superstructure =
             new Superstructure(
@@ -326,7 +291,6 @@ public class RobotContainer {
                 extension,
                 triggers,
                 indexer,
-                hanger,
                 led,
                 drive::isInTrenchZone);
         break;
@@ -337,35 +301,32 @@ public class RobotContainer {
     // Set up auto routines
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
     autoChooser.addOption(
-        "LEFT", new LeftAuto(superstructure, intake, turret, hood, extension, hanger, drive));
+        "LEFT", new LeftAuto(superstructure, intake, turret, hood, extension, drive));
     autoChooser.addOption(
-        "MID", new MidAuto(superstructure, intake, turret, hood, extension, hanger, drive));
+        "MID", new MidAuto(superstructure, intake, turret, hood, extension, drive));
     autoChooser.addOption(
-        "MIDSHORT",
-        new MidAutoShort(superstructure, intake, turret, hood, extension, hanger, drive));
+        "MIDSHORT", new MidAutoShort(superstructure, intake, turret, hood, extension, drive));
     autoChooser.addOption(
-        "RIGHT", new RightAuto(superstructure, intake, turret, hood, extension, hanger, drive));
+        "RIGHT", new RightAuto(superstructure, intake, turret, hood, extension, drive));
     autoChooser.addOption(
-        "RIGHTCYCLE",
-        new RightCycleAuto(superstructure, intake, turret, hood, extension, hanger, drive));
+        "RIGHTCYCLE", new RightCycleAuto(superstructure, intake, turret, hood, extension, drive));
     autoChooser.addDefaultOption(
-        "LEFT", new LeftAuto(superstructure, intake, turret, hood, extension, hanger, drive));
+        "LEFT", new LeftAuto(superstructure, intake, turret, hood, extension, drive));
     // Set up SysId routines
-    // autoChooser.addOption(
-    //     "Drive Wheel Radius Characterization", DriveCommands.wheelRadiusCharacterization(drive));
-    // autoChooser.addOption(
-    //     "Drive Simple FF Characterization", DriveCommands.feedforwardCharacterization(drive));
-    // autoChooser.addOption(
-    //     "Drive SysId (Quasistatic Forward)",
-    //     drive.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
-    // autoChooser.addOption(
-    //     "Drive SysId (Quasistatic Reverse)",
-    //     drive.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
-    // autoChooser.addOption(
-    //     "Drive SysId (Dynamic Forward)", drive.sysIdDynamic(SysIdRoutine.Direction.kForward));
-    // autoChooser.addOption(
-    //     "Drive SysId (Dynamic Reverse)", drive.sysIdDynamic(SysIdRoutine.Direction.kReverse));
-    // Configure the button bindings
+    autoChooser.addOption(
+        "Drive Wheel Radius Characterization", DriveCommands.wheelRadiusCharacterization(drive));
+    autoChooser.addOption(
+        "Drive Simple FF Characterization", DriveCommands.feedforwardCharacterization(drive));
+    autoChooser.addOption(
+        "Drive SysId (Quasistatic Forward)",
+        drive.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
+    autoChooser.addOption(
+        "Drive SysId (Quasistatic Reverse)",
+        drive.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
+    autoChooser.addOption(
+        "Drive SysId (Dynamic Forward)", drive.sysIdDynamic(SysIdRoutine.Direction.kForward));
+    autoChooser.addOption(
+        "Drive SysId (Dynamic Reverse)", drive.sysIdDynamic(SysIdRoutine.Direction.kReverse));
     configureButtonBindings();
   }
 
@@ -405,11 +366,7 @@ public class RobotContainer {
             () -> AllianceFlipUtil.apply(FieldConstants.Hub.topCenterPoint.toTranslation2d())));
 
     zeroSuperstructurePosition.onTrue(
-        (Commands.parallel(
-            hood.zeroCommand(),
-            extension.zeroCommand(),
-            turret.zeroCommand(),
-            hanger.zeroCommand())));
+        (Commands.parallel(hood.zeroCommand(), extension.zeroCommand(), turret.zeroCommand())));
 
     fixShootTrigger.onTrue(
         Commands.runOnce(
@@ -480,12 +437,6 @@ public class RobotContainer {
             () -> ClimbTargetSelector.getNearestClimbPose(drive::getPose),
             ClimbTargetSelector.getNearestClimbPose(drive::getPose).getRotation().getDegrees()));
 
-    climbTrigger.onTrue(
-        Commands.either(
-            hanger.setGoalCommand(HangerGoal.CLIMBING),
-            hanger.setGoalCommand(HangerGoal.EXTENDED),
-            () -> hanger.getGoal() == HangerGoal.EXTENDED));
-    zeroClimbTrigger.onTrue(hanger.setGoalCommand(HangerGoal.ZEROING));
     autoTrench.whileTrue(
         Commands.parallel(
             Commands.either(

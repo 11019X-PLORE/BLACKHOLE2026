@@ -166,6 +166,7 @@ public class FlywheelIOReal implements FlywheelIO {
       case VELOCITY_FOC -> {
         talon.setControl(
             velocityControl
+                .withAcceleration(Units.radiansToRotations(outputs.accelerationRadPerSec2))
                 .withVelocity(Units.radiansToRotations(outputs.velocityRadsPerSec))
                 .withFeedForward(outputs.feedforwardAmps));
       }

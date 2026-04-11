@@ -37,9 +37,6 @@ public class VisionConstants {
           new Rotation3d(
               Units.degreesToRadians(0), Units.degreesToRadians(30), Units.degreesToRadians(90)));
   public static double visionCutoffSpeed = Units.degreesToRadians(45);
-  // TODO:
-  //   public static final Transform3d turretToCamera =
-  //       new Transform3d(new Translation3d(0.5, 0.6, 0.0), new Rotation3d(0.0, 10, 0.0));
 
   // Basic filtering thresholds
   public static double maxAmbiguity = 0.3;
@@ -61,7 +58,7 @@ public class VisionConstants {
       };
 
   // Multipliers to apply for MegaTag 2 observations
-  public static double linearStdDevFactor = 0.5; // More stable than full 3D solve
+  public static double linearStdDevFactor = 0.000001; // More stable than full 3D solve
   public static double angularStdDevFactor = 1e9; // Don't trust heading
 
   public static double latencyStdDev = 0.02; // Seconds, for vision timestamp uncertainty

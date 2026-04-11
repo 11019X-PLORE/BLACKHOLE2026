@@ -234,12 +234,11 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
     // Update gyro alert
     gyroDisconnectedAlert.set(!gyroInputs.connected && Constants.currentMode != Mode.SIM);
     field.setRobotPose(getPose());
+    updateKinematics();
   }
 
   @Override
-  public void periodicAfterScheduler() {
-    updateKinematics();
-  }
+  public void periodicAfterScheduler() {}
 
   // --- 控制方法 ---
   public void runVelocity(ChassisSpeeds speeds) {
@@ -438,7 +437,10 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
             new Translation3d(
                 currentPose.getTranslation().getX(), currentPose.getTranslation().getY(), 0),
             new Rotation3d(0, 0, currentPose.getRotation().getRadians()));
-            
+
+
+    Logger.recordOutput("Drive/forwardKinematic", kinematicsData.forwardKinematic);
+
     ChassisSpeeds currentSpeeds = getFieldVelocity();
     SimpleMatrix vel = kinematicsData.localVelocity;
     vel.set(0, currentSpeeds.vxMetersPerSecond);
@@ -449,6 +451,7 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
     vel.set(5, currentSpeeds.omegaRadiansPerSecond);
 
     ChassisSpeeds currentAcceleration = getFieldAcceleration();
+    Logger.recordOutput("Drive/Acc", currentAcceleration);
     SimpleMatrix acc = kinematicsData.localAcceleration;
     acc.set(0, currentAcceleration.vxMetersPerSecond);
     acc.set(1, currentAcceleration.vyMetersPerSecond);
