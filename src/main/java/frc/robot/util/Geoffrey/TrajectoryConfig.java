@@ -11,6 +11,9 @@ public class TrajectoryConfig {
   public double DY = 1.2288; // 1.8288 - 0.6
   public boolean APEX_BEFORE_TARGET = true;
 
+  public double min_hMax = 0;
+  public double max_hMax = 4;
+
   // Degree-3 polynomial coefficients for aero correction
   // Features: [1, dx, hmax, dx^2, dx*hmax, hmax^2, dx^3, dx^2*hmax, dx*hmax^2, hmax^3]
   public double[] DVX_COEFFS = {
@@ -43,6 +46,8 @@ public class TrajectoryConfig {
     config.G = 9.80;
     config.DY = 1.2288; // 1.8288 - 0.6
     config.APEX_BEFORE_TARGET = true;
+    config.min_hMax = 1.3;
+    config.max_hMax = 4;
 
     config.DVX_COEFFS =
         new double[] {
@@ -78,6 +83,8 @@ public class TrajectoryConfig {
     config.G = 9.80;
     config.DY = -0.6;
     config.APEX_BEFORE_TARGET = true;
+    config.min_hMax = 0.4;
+    config.max_hMax = 4;
 
     config.DVX_COEFFS =
         new double[] {

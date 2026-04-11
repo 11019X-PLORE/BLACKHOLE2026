@@ -44,6 +44,8 @@ public class ShooterSetpoint {
       PhysicalJoint muzzleJoint,
       Translation2d targetPos2d,
       double hMax,
+      double minHoodAngleRads,
+      double maxHoodAngleRads,
       TrajectoryConfig trajConfig) {
 
     // 1. Get current Muzzle State (Pose, Vel, Accel)
@@ -61,14 +63,62 @@ public class ShooterSetpoint {
     double dx = deltaPos.getNorm();
     Rotation2d angleToTarget = deltaPos.getAngle();
 
-    double[] ballistics = TrajectoryCalculator.solve(dx, hMax, trajConfig);
-    double vH_req = ballistics[0];
-    double vZ_req = ballistics[1];
+    double validHmax = hMax;
+    double tempHmax = hMax;
 
-    // 3. Launch Vector (V_l = V_ball - V_muzzle)
-    Translation3d vBallField =
-        new Translation3d(vH_req * angleToTarget.getCos(), vH_req * angleToTarget.getSin(), vZ_req);
-    Translation3d vLaunch = vBallField.minus(vMuzzle);
+    Translation3d vLaunch = new Translation3d();
+    double vH_req = 0;
+    double vZ_req = 0;
+    double z = 0;
+    double h = 0;
+    double hoodPos = 0;
+    Translation3d vBallField = new Translation3d();
+    double high = trajConfig.max_hMax;
+    double low = trajConfig.min_hMax;
+
+    for(int i = 0; i < 10; i++) {
+        double[] ballistics = TrajectoryCalculator.solve(dx, validHmax, trajConfig);
+        vH_req = ballistics[0];
+        vZ_req = ballistics[1];
+
+        // 3. Launch Vector (V_l = V_ball - V_muzzle)
+        vBallField =
+            new Translation3d(vH_req * angleToTarget.getCos(), vH_req * angleToTarget.getSin(), vZ_req);
+        vLaunch = vBallField.minus(vMuzzle);
+
+        z = vLaunch.getZ();
+        h = vLaunch.toTranslation2d().getNorm(); // Horizontal magnitude of vLaunch
+        hoodPos = Math.atan2(z, h);
+
+        if (i==0) {
+            if(hoodPos >= minHoodAngleRads && hoodPos <= maxHoodAngleRads){
+                break; // If the initial solution is valid, no need to iterate
+            }
+            if(hoodPos < minHoodAngleRads){
+                low = tempHmax;
+            } else {
+                high = tempHmax;
+            }
+        }else{
+            if(tempHmax > hMax){
+                if(hoodPos < minHoodAngleRads){
+                    low = tempHmax;
+                } else {
+                    high = tempHmax;
+                    validHmax = tempHmax;
+                }
+            }else{
+                if(hoodPos < maxHoodAngleRads){
+                    low = tempHmax;
+                    validHmax = tempHmax;
+                } else {
+                    high = tempHmax;
+                }
+            }
+        }
+        tempHmax = (high + low) / 2.0;
+    }
+
 
     // 4. Calculate Derivatives for aLaunch
     Translation2d vRel = vMuzzle.toTranslation2d().times(-1.0);
@@ -76,7 +126,7 @@ public class ShooterSetpoint {
     double d_theta_dt = (deltaPos.getX() * vRel.getY() - deltaPos.getY() * vRel.getX()) / (dx * dx);
 
     // Calculate d[vx, vy]/dx
-    double[] ballisticsDeriv = TrajectoryCalculator.solveDerivative(dx, hMax, trajConfig);
+    double[] ballisticsDeriv = TrajectoryCalculator.solveDerivative(dx, validHmax, trajConfig);
 
     double dvH_dt = ballisticsDeriv[0] * d_dx;
     double dvZ_dt = ballisticsDeriv[1] * d_dx;
@@ -115,20 +165,20 @@ public class ShooterSetpoint {
     double turretAccel = alphaField - robotAlpha;
 
     // 6. HOOD FF (Elevation)
-    double z = vLaunch.getZ();
     double vz = aLaunch.getZ();
-    double h = vLaunch.toTranslation2d().getNorm(); // Horizontal magnitude of vLaunch
     double vh = (x * vx + y * vy) / h; // d/dt horizontal magnitude
     double denH = h * h + z * z;
 
     // Position & Velocity
-    double hoodPos = Math.atan2(z, h);
     double hoodVel = (h * vz - z * vh) / denH;
 
     // Acceleration (Derivative of hoodVel)
-    // Again, assuming z_double_dot and h_double_dot are 0 (no Jerk)
+    // Assuming z_double_dot, x_double_dot, y_double_dot are 0 (no Jerk in field frame)
+    // Note: h_double_dot (vh_dot) is NOT 0 due to centrifugal acceleration!
+    double vh_dot = (vx * vx + vy * vy - vh * vh) / h;
+    double u_prime = -z * vh_dot;
     double alphaHood =
-        ((0 - 0) * denH - (h * vz - z * vh) * (2 * h * vh + 2 * z * vz)) / (denH * denH);
+        (u_prime * denH - (h * vz - z * vh) * (2 * h * vh + 2 * z * vz)) / (denH * denH);
     double hoodAccel = alphaHood; // Hood is relative to the turret plate, usually
 
     // 7. SHOOTER FF
@@ -138,5 +188,23 @@ public class ShooterSetpoint {
 
     return new ShooterSetpoint(
         shooterVel, shooterAccel, turretPos, turretVel, turretAccel, hoodPos, hoodVel, hoodAccel);
+  }
+
+  @Override
+  public String toString() {
+      return "ShooterSetpoint:{" + 
+                "shooterVelocityMetersPerSec = " + shooterVelocityMetersPerSec +
+                "\n shooterAccelerationMetersPerSecSquared = " + shooterAccelerationMetersPerSecSquared +  
+                "\n turretPositionRadians = " + turretPositionRadians +
+                "\n turretVelocityRadsPerSec = " + turretVelocityRadsPerSec +
+                "\n turretAccelerationRadsPerSecSquared = " + turretAccelerationRadsPerSecSquared +
+                "\n hoodPositionRadians = " + hoodPositionRadians +
+                "\n hoodVelocityRadsPerSec = " + hoodVelocityRadsPerSec +
+                "\n hoodAccelerationRadsPerSecSquared = " + hoodAccelerationRadsPerSecSquared +
+                "}";
+  }
+  public static void main(String[] args) {
+    ShooterSetpoint setpoint = makeSetpoint(PhysicalJoint.ground, new Translation2d(0,3), 2.2, Math.toRadians(13), Math.toRadians(38), TrajectoryConfig.getHubConfig());
+    System.out.println(setpoint);
   }
 }

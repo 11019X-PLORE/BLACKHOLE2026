@@ -2,6 +2,13 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "type": "java",
+      "name": "ShooterSetpoint",
+      "request": "launch",
+      "mainClass": "frc.robot.util.Geoffrey.ShooterSetpoint",
+      "projectName": "hustonRobotCode2026"
+    },
+    {
       "type": "wpilib",
       "name": "WPILib Desktop Debug",
       "request": "launch",

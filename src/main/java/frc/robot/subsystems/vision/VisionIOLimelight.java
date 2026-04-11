@@ -164,7 +164,7 @@ public class VisionIOLimelight implements VisionIO {
 
     // Save tag IDs to inputs objects
     inputs.tagIds = new int[tagIds.size()];
-    if (inputs.tagIds.length != 0) {
+    if(inputs.tagIds.length != 0){
       inputs.tagIds[0] = primaryID;
       int i = 1;
       for (int id : tagIds) {
@@ -172,6 +172,7 @@ public class VisionIOLimelight implements VisionIO {
         inputs.tagIds[i++] = id;
       }
     }
+    
   }
 
   /** Parses the 3D pose from a Limelight botpose array. */

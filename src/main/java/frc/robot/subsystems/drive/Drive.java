@@ -438,7 +438,7 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
             new Translation3d(
                 currentPose.getTranslation().getX(), currentPose.getTranslation().getY(), 0),
             new Rotation3d(0, 0, currentPose.getRotation().getRadians()));
-
+            
     ChassisSpeeds currentSpeeds = getFieldVelocity();
     SimpleMatrix vel = kinematicsData.localVelocity;
     vel.set(0, currentSpeeds.vxMetersPerSecond);
@@ -456,8 +456,7 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
     acc.set(3, 0);
     acc.set(4, 0);
     acc.set(5, currentAcceleration.omegaRadiansPerSecond);
-  }
-
+  }  
   @Override
   public PhysicalJoint getParentJoint() {
     return base;

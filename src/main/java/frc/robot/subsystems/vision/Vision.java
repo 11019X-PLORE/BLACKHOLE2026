@@ -211,7 +211,7 @@ public class Vision extends FullSubsystem {
               new Pose3d(
                   new Translation3d(fieldToRobot.getX(), fieldToRobot.getY(), 0),
                   new Rotation3d(0, 0, sampleRobotPose.getRotation().getRadians()));
-          continue; // for testing
+
         } else {
           continue; // Skip unsupported observation types
         }
@@ -267,16 +267,25 @@ public class Vision extends FullSubsystem {
         stdDevMatrix.set(0, 0, linearStdDev);
         stdDevMatrix.set(1, 0, linearStdDev);
         stdDevMatrix.set(2, 0, angularStdDev);
-        drive.addVisionMeasurement(visionPose3d.toPose2d(), observation.timestamp(), stdDevMatrix);
+        drive.addVisionMeasurement(
+            visionPose3d.toPose2d(),
+            observation.timestamp(),
+            stdDevMatrix);
       }
 
       // Log camera metadata
-      Logger.recordOutput(camTagPosesKeys[cameraIndex], tagPoses.toArray(kEmptyPose3dArray));
-      Logger.recordOutput(camRobotPosesKeys[cameraIndex], robotPoses.toArray(kEmptyPose3dArray));
       Logger.recordOutput(
-          camRobotPosesAcceptedKeys[cameraIndex], robotPosesAccepted.toArray(kEmptyPose3dArray));
+          camTagPosesKeys[cameraIndex],
+          tagPoses.toArray(kEmptyPose3dArray));
       Logger.recordOutput(
-          camRobotPosesRejectedKeys[cameraIndex], robotPosesRejected.toArray(kEmptyPose3dArray));
+          camRobotPosesKeys[cameraIndex],
+          robotPoses.toArray(kEmptyPose3dArray));
+      Logger.recordOutput(
+          camRobotPosesAcceptedKeys[cameraIndex],
+          robotPosesAccepted.toArray(kEmptyPose3dArray));
+      Logger.recordOutput(
+          camRobotPosesRejectedKeys[cameraIndex],
+          robotPosesRejected.toArray(kEmptyPose3dArray));
       allTagPoses.addAll(tagPoses);
       allRobotPoses.addAll(robotPoses);
       allRobotPosesAccepted.addAll(robotPosesAccepted);
