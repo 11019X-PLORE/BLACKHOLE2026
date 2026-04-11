@@ -450,6 +450,7 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
     vel.set(5, currentSpeeds.omegaRadiansPerSecond);
 
     ChassisSpeeds currentAcceleration = getFieldAcceleration();
+    Logger.recordOutput("Drive/Acc", currentAcceleration);
     SimpleMatrix acc = kinematicsData.localAcceleration;
     acc.set(0, currentAcceleration.vxMetersPerSecond);
     acc.set(1, currentAcceleration.vyMetersPerSecond);
