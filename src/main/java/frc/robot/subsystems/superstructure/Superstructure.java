@@ -5,7 +5,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.extension.Extension;
-import frc.robot.subsystems.hanger.Hanger;
 import frc.robot.subsystems.indexer.Indexer;
 import frc.robot.subsystems.indexer.Indexer.IndexerGoal;
 import frc.robot.subsystems.intake.Intake;
@@ -34,7 +33,6 @@ public class Superstructure extends SubsystemBase {
   private final Extension extension;
   private final Triggers triggers;
   private final Indexer indexer;
-  private final Hanger hanger;
   private final LED led;
 
   public enum SuperstructureState {
@@ -65,7 +63,6 @@ public class Superstructure extends SubsystemBase {
       Extension extension,
       Triggers triggers,
       Indexer indexer,
-      Hanger hanger,
       LED led,
       BooleanSupplier inTrenchZoneSupplier) {
     this.turret = turret;
@@ -75,7 +72,6 @@ public class Superstructure extends SubsystemBase {
     this.extension = extension;
     this.triggers = triggers;
     this.indexer = indexer;
-    this.hanger = hanger;
     this.led = led;
     this.inTrenchZoneSupplier = inTrenchZoneSupplier;
 
@@ -347,15 +343,6 @@ public class Superstructure extends SubsystemBase {
       led.setGoal(LED.LEDState.INTAKING);
       return;
     }
-
-    // --- 4. 爬升状态 (主动任务) ---
-    // 将爬升放在 STOW 之前，确保即使在收起位，只要爬升架伸出去了，就显示彩虹灯
-    if (hanger.getGoal() == Hanger.HangerGoal.EXTENDED
-        || hanger.getGoal() == Hanger.HangerGoal.CLIMBING) {
-      led.setGoal(LED.LEDState.CLIMBING);
-      return;
-    }
-
     // --- 5. STOW (收起状态 - 被动) ---
     if (intake.getGoal() == Intake.IntakeGoal.STOW) {
       led.setGoal(LED.LEDState.INTAKE_STOWED);

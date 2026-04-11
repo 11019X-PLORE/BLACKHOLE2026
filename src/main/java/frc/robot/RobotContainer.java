@@ -64,8 +64,8 @@ import frc.robot.subsystems.shooter.turret.TurretIOreal;
 import frc.robot.subsystems.superstructure.Superstructure;
 import frc.robot.subsystems.superstructure.Superstructure.SuperstructureState;
 import frc.robot.subsystems.triggers.Triggers;
-import frc.robot.subsystems.triggers.TriggersIOSim;
 import frc.robot.subsystems.triggers.TriggersIOReal;
+import frc.robot.subsystems.triggers.TriggersIOSim;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.VisionIOLimelight;
 import frc.robot.subsystems.vision.VisionIOPhotonVisionSim;
@@ -305,13 +305,11 @@ public class RobotContainer {
     autoChooser.addOption(
         "MID", new MidAuto(superstructure, intake, turret, hood, extension, drive));
     autoChooser.addOption(
-        "MIDSHORT",
-        new MidAutoShort(superstructure, intake, turret, hood, extension, drive));
+        "MIDSHORT", new MidAutoShort(superstructure, intake, turret, hood, extension, drive));
     autoChooser.addOption(
-        "RIGHT", new RightAuto(superstructure, intake, turret, hood, extension,  drive));
+        "RIGHT", new RightAuto(superstructure, intake, turret, hood, extension, drive));
     autoChooser.addOption(
-        "RIGHTCYCLE",
-        new RightCycleAuto(superstructure, intake, turret, hood, extension, drive));
+        "RIGHTCYCLE", new RightCycleAuto(superstructure, intake, turret, hood, extension, drive));
     autoChooser.addDefaultOption(
         "LEFT", new LeftAuto(superstructure, intake, turret, hood, extension, drive));
     // Set up SysId routines
@@ -368,10 +366,7 @@ public class RobotContainer {
             () -> AllianceFlipUtil.apply(FieldConstants.Hub.topCenterPoint.toTranslation2d())));
 
     zeroSuperstructurePosition.onTrue(
-        (Commands.parallel(
-            hood.zeroCommand(),
-            extension.zeroCommand(),
-            turret.zeroCommand())));
+        (Commands.parallel(hood.zeroCommand(), extension.zeroCommand(), turret.zeroCommand())));
 
     fixShootTrigger.onTrue(
         Commands.runOnce(
