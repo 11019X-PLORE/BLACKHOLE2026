@@ -76,49 +76,49 @@ public class ShooterSetpoint {
     double high = trajConfig.max_hMax;
     double low = trajConfig.min_hMax;
 
-    for(int i = 0; i < 10; i++) {
-        double[] ballistics = TrajectoryCalculator.solve(dx, validHmax, trajConfig);
-        vH_req = ballistics[0];
-        vZ_req = ballistics[1];
+    for (int i = 0; i < 10; i++) {
+      double[] ballistics = TrajectoryCalculator.solve(dx, validHmax, trajConfig);
+      vH_req = ballistics[0];
+      vZ_req = ballistics[1];
 
-        // 3. Launch Vector (V_l = V_ball - V_muzzle)
-        vBallField =
-            new Translation3d(vH_req * angleToTarget.getCos(), vH_req * angleToTarget.getSin(), vZ_req);
-        vLaunch = vBallField.minus(vMuzzle);
+      // 3. Launch Vector (V_l = V_ball - V_muzzle)
+      vBallField =
+          new Translation3d(
+              vH_req * angleToTarget.getCos(), vH_req * angleToTarget.getSin(), vZ_req);
+      vLaunch = vBallField.minus(vMuzzle);
 
-        z = vLaunch.getZ();
-        h = vLaunch.toTranslation2d().getNorm(); // Horizontal magnitude of vLaunch
-        hoodPos = Math.atan2(z, h);
+      z = vLaunch.getZ();
+      h = vLaunch.toTranslation2d().getNorm(); // Horizontal magnitude of vLaunch
+      hoodPos = Math.atan2(z, h);
 
-        if (i==0) {
-            if(hoodPos >= minHoodAngleRads && hoodPos <= maxHoodAngleRads){
-                break; // If the initial solution is valid, no need to iterate
-            }
-            if(hoodPos < minHoodAngleRads){
-                low = tempHmax;
-            } else {
-                high = tempHmax;
-            }
-        }else{
-            if(tempHmax > hMax){
-                if(hoodPos < minHoodAngleRads){
-                    low = tempHmax;
-                } else {
-                    high = tempHmax;
-                    validHmax = tempHmax;
-                }
-            }else{
-                if(hoodPos < maxHoodAngleRads){
-                    low = tempHmax;
-                    validHmax = tempHmax;
-                } else {
-                    high = tempHmax;
-                }
-            }
+      if (i == 0) {
+        if (hoodPos >= minHoodAngleRads && hoodPos <= maxHoodAngleRads) {
+          break; // If the initial solution is valid, no need to iterate
         }
-        tempHmax = (high + low) / 2.0;
+        if (hoodPos < minHoodAngleRads) {
+          low = tempHmax;
+        } else {
+          high = tempHmax;
+        }
+      } else {
+        if (tempHmax > hMax) {
+          if (hoodPos < minHoodAngleRads) {
+            low = tempHmax;
+          } else {
+            high = tempHmax;
+            validHmax = tempHmax;
+          }
+        } else {
+          if (hoodPos < maxHoodAngleRads) {
+            low = tempHmax;
+            validHmax = tempHmax;
+          } else {
+            high = tempHmax;
+          }
+        }
+      }
+      tempHmax = (high + low) / 2.0;
     }
-
 
     // 4. Calculate Derivatives for aLaunch
     Translation2d vRel = vMuzzle.toTranslation2d().times(-1.0);
@@ -192,19 +192,35 @@ public class ShooterSetpoint {
 
   @Override
   public String toString() {
-      return "ShooterSetpoint:{" + 
-                "shooterVelocityMetersPerSec = " + shooterVelocityMetersPerSec +
-                "\n shooterAccelerationMetersPerSecSquared = " + shooterAccelerationMetersPerSecSquared +  
-                "\n turretPositionRadians = " + turretPositionRadians +
-                "\n turretVelocityRadsPerSec = " + turretVelocityRadsPerSec +
-                "\n turretAccelerationRadsPerSecSquared = " + turretAccelerationRadsPerSecSquared +
-                "\n hoodPositionRadians = " + hoodPositionRadians +
-                "\n hoodVelocityRadsPerSec = " + hoodVelocityRadsPerSec +
-                "\n hoodAccelerationRadsPerSecSquared = " + hoodAccelerationRadsPerSecSquared +
-                "}";
+    return "ShooterSetpoint:{"
+        + "shooterVelocityMetersPerSec = "
+        + shooterVelocityMetersPerSec
+        + "\n shooterAccelerationMetersPerSecSquared = "
+        + shooterAccelerationMetersPerSecSquared
+        + "\n turretPositionRadians = "
+        + turretPositionRadians
+        + "\n turretVelocityRadsPerSec = "
+        + turretVelocityRadsPerSec
+        + "\n turretAccelerationRadsPerSecSquared = "
+        + turretAccelerationRadsPerSecSquared
+        + "\n hoodPositionRadians = "
+        + hoodPositionRadians
+        + "\n hoodVelocityRadsPerSec = "
+        + hoodVelocityRadsPerSec
+        + "\n hoodAccelerationRadsPerSecSquared = "
+        + hoodAccelerationRadsPerSecSquared
+        + "}";
   }
+
   public static void main(String[] args) {
-    ShooterSetpoint setpoint = makeSetpoint(PhysicalJoint.ground, new Translation2d(0,3), 2.2, Math.toRadians(13), Math.toRadians(38), TrajectoryConfig.getHubConfig());
+    ShooterSetpoint setpoint =
+        makeSetpoint(
+            PhysicalJoint.ground,
+            new Translation2d(0, 3),
+            2.2,
+            Math.toRadians(13),
+            Math.toRadians(38),
+            TrajectoryConfig.getHubConfig());
     System.out.println(setpoint);
   }
 }

@@ -1,9 +1,10 @@
 package frc.robot.subsystems.superstructure;
 
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.FieldConstants;
 import frc.robot.subsystems.extension.Extension;
 import frc.robot.subsystems.indexer.Indexer;
 import frc.robot.subsystems.indexer.Indexer.IndexerGoal;
@@ -11,12 +12,21 @@ import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.led.LED;
 import frc.robot.subsystems.shooter.flywheel.Flywheel;
 import frc.robot.subsystems.shooter.flywheel.Flywheel.FlywheelGoal;
+import frc.robot.subsystems.shooter.flywheel.FlywheelConstants;
 import frc.robot.subsystems.shooter.hood.Hood;
 import frc.robot.subsystems.shooter.hood.Hood.HoodGoal;
+import frc.robot.subsystems.shooter.hood.HoodConstants;
 import frc.robot.subsystems.shooter.turret.Turret;
 import frc.robot.subsystems.shooter.turret.Turret.TurretGoal;
+import frc.robot.subsystems.shooter.turret.TurretConstants;
 import frc.robot.subsystems.triggers.Triggers;
 import frc.robot.subsystems.triggers.Triggers.TriggersGoal;
+import frc.robot.util.FullSubsystem;
+import frc.robot.util.Geoffrey.PhysicalJoint;
+import frc.robot.util.Geoffrey.ShooterSetpoint;
+import frc.robot.util.Geoffrey.TrajectoryCalculator;
+import frc.robot.util.Geoffrey.TrajectoryConfig;
+import frc.robot.util.geometry.AllianceFlipUtil;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
@@ -24,7 +34,7 @@ import lombok.Getter;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
-public class Superstructure extends SubsystemBase {
+public class Superstructure extends FullSubsystem {
 
   private final Turret turret;
   private final Hood hood;
@@ -140,8 +150,36 @@ public class Superstructure extends SubsystemBase {
                         flywheel.setGoalCommand(FlywheelGoal.ACTIVE),
                         Commands.run(
                             () -> {
+                              Translation2d targetPos =
+                                  AllianceFlipUtil.apply(
+                                      FieldConstants.Hub.topCenterPoint.toTranslation2d());
+                              ShooterSetpoint sp =
+                                  ShooterSetpoint.makeSetpoint(
+                                      TurretConstants.swerve2TurretStructure,
+                                      targetPos,
+                                      FieldConstants.hMax,
+                                      HoodConstants.kHoodMinAngle,
+                                      HoodConstants.kHoodMaxAngle,
+                                      TrajectoryConfig.getHubConfig());
+
+                              turret.runPositionFOCLogic(
+                                  sp.turretPositionRadians,
+                                  sp.turretVelocityRadsPerSec,
+                                  sp.turretAccelerationRadsPerSecSquared,
+                                  0.0);
+
                               triggers.setGoal(TriggersGoal.STOP);
                               indexer.setGoal(IndexerGoal.STOP);
+
+                              Logger.recordOutput(
+                                  "shooterSetpoint/turretPositionRadians",
+                                  sp.turretPositionRadians);
+                              Logger.recordOutput(
+                                  "shooterSetpoint/turretVelocityRadsPerSec",
+                                  sp.turretVelocityRadsPerSec);
+                              Logger.recordOutput(
+                                  "shooterSetpoint/turretAccelerationRadsPerSecSquared",
+                                  sp.turretAccelerationRadsPerSecSquared);
                             },
                             triggers,
                             indexer))),
@@ -154,6 +192,42 @@ public class Superstructure extends SubsystemBase {
                         flywheel.setGoalCommand(FlywheelGoal.TRACKING),
                         Commands.run(
                             () -> {
+                              Translation2d targetPos =
+                                  AllianceFlipUtil.apply(
+                                      FieldConstants.Hub.topCenterPoint.toTranslation2d());
+                              ShooterSetpoint sp =
+                                  ShooterSetpoint.makeSetpoint(
+                                      TurretConstants.swerve2TurretStructure,
+                                      targetPos,
+                                      FieldConstants.hMax,
+                                      HoodConstants.kHoodMinAngle,
+                                      HoodConstants.kHoodMaxAngle,
+                                      TrajectoryConfig.getHubConfig());
+
+                              turret.runPositionFOCLogic(
+                                  sp.turretPositionRadians,
+                                  sp.turretVelocityRadsPerSec,
+                                  sp.turretAccelerationRadsPerSecSquared,
+                                  // 0,
+                                  // 0,
+                                  0.0);
+                              hood.runPositionFOCLogic(
+                                  sp.hoodPositionRadians,
+                                  sp.hoodVelocityRadsPerSec,
+                                  sp.hoodAccelerationRadsPerSecSquared,
+                                  0.0);
+
+                              double radPerSec =
+                                  TrajectoryCalculator.getFlywheelSetpoint(
+                                          sp.shooterVelocityMetersPerSec)
+                                      / FlywheelConstants.kFlywheelRadius;
+                              double radPerSec2 =
+                                  TrajectoryCalculator.getFlywheelAcceleration(
+                                          sp.shooterVelocityMetersPerSec,
+                                          sp.shooterAccelerationMetersPerSecSquared)
+                                      / FlywheelConstants.kFlywheelRadius;
+                              flywheel.runVelocityFOCLogic(radPerSec, radPerSec2, 0.0);
+
                               if (isReadyToShoot()) {
                                 triggers.setGoal(TriggersGoal.SHOOT);
                                 indexer.setGoal(IndexerGoal.SHOOT);
@@ -161,6 +235,24 @@ public class Superstructure extends SubsystemBase {
                                 triggers.setGoal(TriggersGoal.STOP);
                                 indexer.setGoal(IndexerGoal.STOP);
                               }
+
+                              Logger.recordOutput(
+                                  "shooterSetpoint/turretPositionRadians",
+                                  sp.turretPositionRadians);
+                              Logger.recordOutput(
+                                  "shooterSetpoint/turretVelocityRadsPerSec",
+                                  sp.turretVelocityRadsPerSec);
+                              Logger.recordOutput(
+                                  "shooterSetpoint/turretAccelerationRadsPerSecSquared",
+                                  sp.turretAccelerationRadsPerSecSquared);
+                              Logger.recordOutput(
+                                  "shooterSetpoint/hoodPositionRadians", sp.hoodPositionRadians);
+                              Logger.recordOutput(
+                                  "shooterSetpoint/hoodVelocityRadsPerSec",
+                                  sp.hoodVelocityRadsPerSec);
+                              Logger.recordOutput(
+                                  "shooterSetpoint/hoodAccelerationRadsPerSecSquared",
+                                  sp.hoodAccelerationRadsPerSecSquared);
                             },
                             triggers,
                             indexer))),
@@ -192,13 +284,48 @@ public class Superstructure extends SubsystemBase {
                         flywheel.setGoalCommand(FlywheelGoal.PASSING),
                         Commands.run(
                             () -> {
+                              Translation2d targetPos = getBestPassingTarget(TurretConstants.swerve2TurretStructure);
+                              ShooterSetpoint sp =
+                                  ShooterSetpoint.makeSetpoint(
+                                      TurretConstants.swerve2TurretStructure,
+                                      targetPos,
+                                      FieldConstants.hMax,
+                                      HoodConstants.kHoodMinAngle,
+                                      HoodConstants.kHoodMaxAngle,
+                                      TrajectoryConfig.getHubConfig());
+
+                              turret.runPositionFOCLogic(
+                                  sp.turretPositionRadians,
+                                  sp.turretVelocityRadsPerSec,
+                                  sp.turretAccelerationRadsPerSecSquared,
+                                  // 0,
+                                  // 0,
+                                  0.0);
+                              hood.runPositionFOCLogic(
+                                  sp.hoodPositionRadians,
+                                  sp.hoodVelocityRadsPerSec,
+                                  sp.hoodAccelerationRadsPerSecSquared,
+                                  0.0);
+
+                              double radPerSec =
+                                  TrajectoryCalculator.getFlywheelSetpoint(
+                                          sp.shooterVelocityMetersPerSec)
+                                      / FlywheelConstants.kFlywheelRadius;
+                              double radPerSec2 =
+                                  TrajectoryCalculator.getFlywheelAcceleration(
+                                          sp.shooterVelocityMetersPerSec,
+                                          sp.shooterAccelerationMetersPerSecSquared)
+                                      / FlywheelConstants.kFlywheelRadius;
+                              flywheel.runVelocityFOCLogic(radPerSec, radPerSec2, 0.0);
+
                               if (isReadyToShoot()) {
-                                indexer.setGoal(IndexerGoal.SHOOT);
                                 triggers.setGoal(TriggersGoal.SHOOT);
+                                indexer.setGoal(IndexerGoal.SHOOT);
                               } else {
-                                indexer.setGoal(IndexerGoal.STOP);
                                 triggers.setGoal(TriggersGoal.STOP);
+                                indexer.setGoal(IndexerGoal.STOP);
                               }
+
                             },
                             triggers,
                             indexer))),
@@ -350,5 +477,17 @@ public class Superstructure extends SubsystemBase {
     }
     // --- 6. 默认状态 (IDLE / 联盟色) ---
     led.setGoal(LED.LEDState.INITIAL);
+  }
+
+  //TODO move it to where it belong
+  private Translation2d getBestPassingTarget(PhysicalJoint base) {
+    Translation2d blueLeft = new Translation2d(1.874, 5.49);
+    Translation2d blueRight = new Translation2d(1.874, 2.17);
+    Translation2d left = AllianceFlipUtil.apply(blueLeft);
+    Translation2d right = AllianceFlipUtil.apply(blueRight);
+
+    // 从物理关节获取当前机器人在场地的位置
+    Translation2d robotPos = base.getGlobalPose().getTranslation().toTranslation2d();
+    return (robotPos.getDistance(left) < robotPos.getDistance(right)) ? left : right;
   }
 }

@@ -17,12 +17,12 @@ public class TurretConstants {
 
   public static final double kTurretRadius = 0.20027; // TODO
 
-  public static final double kP = 1800.0; // 150
+  public static final double kP = 3000.0; // 150
   public static final double kI = 0.0;
   public static final double kD = 80.0; // 0.0
   public static final double kG = 0.0; // 重力补偿
   public static final double kS = 0.1; // 静态前馈
-  public static final double kV = 0.0; // 0.13 轨迹规划得到的目标速度8.0
+  public static final double kV = 115; // 0.13 轨迹规划得到的目标速度8.0
   public static final double kA = 0.0; // 轨迹规划得到的目标加速度
 
   public static final double kInertiaTurret = 0.1; // TODO

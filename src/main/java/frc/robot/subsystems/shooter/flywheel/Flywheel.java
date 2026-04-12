@@ -11,6 +11,7 @@ import frc.robot.FieldConstants;
 import frc.robot.Robot;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO.FlywheelIOOutputMode;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO.FlywheelIOOutputs;
+import frc.robot.subsystems.shooter.hood.HoodConstants;
 import frc.robot.util.FullSubsystem;
 import frc.robot.util.Geoffrey.PhysicalJoint;
 import frc.robot.util.Geoffrey.ShooterSetpoint;
@@ -107,7 +108,7 @@ public class Flywheel extends FullSubsystem {
   }
 
   @Override
-  public void periodic() {
+  public void updateInputsPeriodic() {
     // 1. 读取输入
     io.updateInputs(inputs);
     Logger.processInputs("Flywheel", inputs);
@@ -118,7 +119,7 @@ public class Flywheel extends FullSubsystem {
   }
 
   @Override
-  public void periodicAfterScheduler() {
+  public void periodic() {
     // 3. 核心状态机逻辑
     if (DriverStation.isDisabled()) {
       outputs.mode = FlywheelIOOutputMode.COAST;
@@ -134,40 +135,55 @@ public class Flywheel extends FullSubsystem {
           atGoal = false;
         }
         case TRACKING -> {
-          Translation2d target =
-              AllianceFlipUtil.apply(FieldConstants.Hub.topCenterPoint.toTranslation2d());
-          ShooterSetpoint sp =
-              ShooterSetpoint.makeSetpoint(
-                  muzzleJoint, target, FieldConstants.hMax, TrajectoryConfig.getHubConfig());
-          double radPerSec =
-              TrajectoryCalculator.getFlywheelSetpoint(sp.shooterVelocityMetersPerSec)
-                  / FlywheelConstants.kFlywheelRadius;
-          double radPerSec2 =
-              TrajectoryCalculator.getFlywheelAcceleration(
-                      sp.shooterVelocityMetersPerSec, sp.shooterAccelerationMetersPerSecSquared)
-                  / FlywheelConstants.kFlywheelRadius;
-          runVelocityFOCLogic(radPerSec, radPerSec2, 0.0);
+          // Translation2d target =
+          //     AllianceFlipUtil.apply(FieldConstants.Hub.topCenterPoint.toTranslation2d());
+          // ShooterSetpoint sp =
+          //     ShooterSetpoint.makeSetpoint(
+          //         muzzleJoint,
+          //         target,
+          //         FieldConstants.hMax,
+          //         HoodConstants.kHoodMinAngle,
+          //         HoodConstants.kHoodMaxAngle,
+          //         TrajectoryConfig.getHubConfig());
+          // double radPerSec =
+          //     TrajectoryCalculator.getFlywheelSetpoint(sp.shooterVelocityMetersPerSec)
+          //         / FlywheelConstants.kFlywheelRadius;
+          // double radPerSec2 =
+          //     TrajectoryCalculator.getFlywheelAcceleration(
+          //             sp.shooterVelocityMetersPerSec, sp.shooterAccelerationMetersPerSecSquared)
+          //         / FlywheelConstants.kFlywheelRadius;
+          // runVelocityFOCLogic(radPerSec, radPerSec2, 0.0);
         }
         case PASSING -> {
-          Translation2d target = getBestPassingTarget();
-          ShooterSetpoint sp =
-              ShooterSetpoint.makeSetpoint(
-                  muzzleJoint, target, FieldConstants.hMax, TrajectoryConfig.getPassingConfig());
-          double radPerSec =
-              TrajectoryCalculator.getFlywheelSetpoint(sp.shooterVelocityMetersPerSec)
-                  / FlywheelConstants.kFlywheelRadius;
-          double radPerSec2 =
-              TrajectoryCalculator.getFlywheelAcceleration(
-                      sp.shooterVelocityMetersPerSec, sp.shooterAccelerationMetersPerSecSquared)
-                  / FlywheelConstants.kFlywheelRadius;
-          runVelocityFOCLogic(radPerSec, radPerSec2, 0.0);
+          // Translation2d target = getBestPassingTarget();
+          // ShooterSetpoint sp =
+          //     ShooterSetpoint.makeSetpoint(
+          //         muzzleJoint,
+          //         target,
+          //         FieldConstants.hMax,
+          //         HoodConstants.kHoodMinAngle,
+          //         HoodConstants.kHoodMaxAngle,
+          //         TrajectoryConfig.getPassingConfig());
+          // double radPerSec =
+          //     TrajectoryCalculator.getFlywheelSetpoint(sp.shooterVelocityMetersPerSec)
+          //         / FlywheelConstants.kFlywheelRadius;
+          // double radPerSec2 =
+          //     TrajectoryCalculator.getFlywheelAcceleration(
+          //             sp.shooterVelocityMetersPerSec, sp.shooterAccelerationMetersPerSecSquared)
+          //         / FlywheelConstants.kFlywheelRadius;
+          // runVelocityFOCLogic(radPerSec, radPerSec2, 0.0);
         }
         case ACTIVE -> {
           Translation2d target =
               AllianceFlipUtil.apply(FieldConstants.Hub.topCenterPoint.toTranslation2d());
           ShooterSetpoint sp =
               ShooterSetpoint.makeSetpoint(
-                  muzzleJoint, target, FieldConstants.hMax, TrajectoryConfig.getHubConfig());
+                  muzzleJoint,
+                  target,
+                  FieldConstants.hMax,
+                  HoodConstants.kHoodMinAngle,
+                  HoodConstants.kHoodMaxAngle,
+                  TrajectoryConfig.getHubConfig());
           double radPerSec =
               (TrajectoryCalculator.getFlywheelSetpoint(sp.shooterVelocityMetersPerSec)
                       / FlywheelConstants.kFlywheelRadius)
@@ -188,14 +204,18 @@ public class Flywheel extends FullSubsystem {
           runVelocityFOCLogic(FlywheelConstants.kOutTakeVelocity, 0.0, 0.0);
         }
       }
-      Logger.recordOutput("Flywheel/Mode", outputs.mode);
-      Logger.recordOutput("Flywheel/Setpoint", outputs.velocityRadsPerSec);
-      Logger.recordOutput("FlyWheel/GoalAcceleration", outputs.accelerationRadPerSec2);
-      io.applyOutputs(outputs);
     }
   }
 
-  private void runVelocityFOCLogic(
+  @Override
+  public void executePeriodic() {
+    Logger.recordOutput("Flywheel/Mode", outputs.mode);
+    Logger.recordOutput("Flywheel/Setpoint", outputs.velocityRadsPerSec);
+    Logger.recordOutput("FlyWheel/GoalAcceleration", outputs.accelerationRadPerSec2);
+    io.applyOutputs(outputs);
+  }
+
+  public void runVelocityFOCLogic(
       double velocityRadsPerSec, double acelerationRadPerSec2, double feedforwardAmps) {
     outputs.mode = FlywheelIOOutputMode.VELOCITY_FOC;
     outputs.velocityRadsPerSec = velocityRadsPerSec;
@@ -216,16 +236,6 @@ public class Flywheel extends FullSubsystem {
     atGoal = atGoalDebouncer.calculate(inTolerance);
   }
 
-  private Translation2d getBestPassingTarget() {
-    Translation2d blueLeft = new Translation2d(1.874, 5.49);
-    Translation2d blueRight = new Translation2d(1.874, 2.17);
-    Translation2d left = AllianceFlipUtil.apply(blueLeft);
-    Translation2d right = AllianceFlipUtil.apply(blueRight);
-
-    // 从物理关节获取当前机器人在场地的位置
-    Translation2d robotPos = muzzleJoint.getGlobalPose().getTranslation().toTranslation2d();
-    return (robotPos.getDistance(left) < robotPos.getDistance(right)) ? left : right;
-  }
 
   /** 更新可调参数 */
   private void updateTunables() {

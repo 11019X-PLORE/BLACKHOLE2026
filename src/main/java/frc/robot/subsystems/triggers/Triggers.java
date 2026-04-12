@@ -98,7 +98,7 @@ public class Triggers extends FullSubsystem {
   }
 
   @Override
-  public void periodic() {
+  public void updateInputsPeriodic() {
     // 1. 读取输入
     io.updateInputs(inputs);
     Logger.processInputs("Triggers", inputs);
@@ -109,7 +109,7 @@ public class Triggers extends FullSubsystem {
   }
 
   @Override
-  public void periodicAfterScheduler() {
+  public void periodic() {
     if (DriverStation.isDisabled()) {
       outputs.mode = TriggersIOOutputMode.COAST;
       outputs.velocityRadsPerSec = 0.0;
@@ -134,6 +134,10 @@ public class Triggers extends FullSubsystem {
         }
       }
     }
+  }
+
+  @Override
+  public void executePeriodic() {
     Logger.recordOutput("Triggers/Mode", outputs.mode);
     Logger.recordOutput("Triggers/Setpoint", outputs.velocityRadsPerSec);
     io.applyOutputs(outputs);

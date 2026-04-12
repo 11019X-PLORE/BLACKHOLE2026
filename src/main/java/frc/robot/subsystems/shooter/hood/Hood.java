@@ -102,7 +102,7 @@ public class Hood extends FullSubsystem {
   }
 
   @Override
-  public void periodic() {
+  public void updateInputsPeriodic() {
     // 1. 读取输入
     io.updateInputs(inputs);
     Logger.processInputs("Hood", inputs);
@@ -113,41 +113,51 @@ public class Hood extends FullSubsystem {
   }
 
   @Override
-  public void periodicAfterScheduler() {
+  public void periodic() {
     if (DriverStation.isDisabled() || !hoodZeroed) {
-      outputs.mode = HoodIOOutputMode.BRAKE;
+      outputs.mode = HoodIOOutputMode.COAST;
       outputs.velocityRadsPerSec = 0.0;
       atGoal = false;
     } else {
       switch (goal) {
         case IDLE -> {
           // 这里可以设为 COAST 或 BRAKE，视你的物理结构是否需要保持力
-          outputs.mode = HoodIOOutputMode.BRAKE;
+          outputs.mode = HoodIOOutputMode.COAST;
           outputs.velocityRadsPerSec = 0.0;
           atGoal = true;
         }
         case TRACKING -> {
-          Translation2d target =
-              AllianceFlipUtil.apply(FieldConstants.Hub.topCenterPoint.toTranslation2d());
-          ShooterSetpoint sp =
-              ShooterSetpoint.makeSetpoint(
-                  muzzleJoint, target, FieldConstants.hMax, TrajectoryConfig.getHubConfig());
-          runPositionFOCLogic(
-              sp.hoodPositionRadians,
-              sp.hoodVelocityRadsPerSec,
-              sp.hoodAccelerationRadsPerSecSquared,
-              0.0);
+          // Translation2d target =
+          //     AllianceFlipUtil.apply(FieldConstants.Hub.topCenterPoint.toTranslation2d());
+          // ShooterSetpoint sp =
+          //     ShooterSetpoint.makeSetpoint(
+          //         muzzleJoint,
+          //         target,
+          //         FieldConstants.hMax,
+          //         HoodConstants.kHoodMinAngle,
+          //         HoodConstants.kHoodMaxAngle,
+          //         TrajectoryConfig.getHubConfig());
+          // runPositionFOCLogic(
+          //     sp.hoodPositionRadians,
+          //     sp.hoodVelocityRadsPerSec,
+          //     sp.hoodAccelerationRadsPerSecSquared,
+          //     0.0);
         }
         case PASSING -> {
-          Translation2d target = getBestPassingTarget();
-          ShooterSetpoint sp =
-              ShooterSetpoint.makeSetpoint(
-                  muzzleJoint, target, FieldConstants.hMax, TrajectoryConfig.getPassingConfig());
-          runPositionFOCLogic(
-              sp.hoodPositionRadians,
-              sp.hoodVelocityRadsPerSec,
-              sp.hoodAccelerationRadsPerSecSquared,
-              0.0);
+          // Translation2d target = getBestPassingTarget();
+          // ShooterSetpoint sp =
+          //     ShooterSetpoint.makeSetpoint(
+          //         muzzleJoint,
+          //         target,
+          //         FieldConstants.hMax,
+          //         HoodConstants.kHoodMinAngle,
+          //         HoodConstants.kHoodMaxAngle,
+          //         TrajectoryConfig.getPassingConfig());
+          // runPositionFOCLogic(
+          //     sp.hoodPositionRadians,
+          //     sp.hoodVelocityRadsPerSec,
+          //     sp.hoodAccelerationRadsPerSecSquared,
+          //     0.0);
         }
         case FIXED_ANGLE -> {
           runPositionFOCLogic((Math.PI / 2) - fixedAngleRads, 0.0, 0.0, 0.0);
@@ -160,13 +170,17 @@ public class Hood extends FullSubsystem {
         }
       }
     }
+  }
+
+  @Override
+  public void executePeriodic() {
     // 4. 应用输出
     Logger.recordOutput("Hood/Profile/mode", outputs.mode);
     Logger.recordOutput("Hood/Profile/zero", hoodZeroed);
     io.applyOutputs(outputs);
   }
 
-  private void runPositionFOCLogic(
+  public void runPositionFOCLogic(
       double targetAngleRads,
       double targetVelocityRadsPerSec,
       double targetAccelation,
@@ -205,14 +219,7 @@ public class Hood extends FullSubsystem {
     }
   }
 
-  private Translation2d getBestPassingTarget() {
-    Translation2d blueLeft = new Translation2d(1.874, 5.49);
-    Translation2d blueRight = new Translation2d(1.874, 2.17);
-    Translation2d left = AllianceFlipUtil.apply(blueLeft);
-    Translation2d right = AllianceFlipUtil.apply(blueRight);
-    Translation2d robot = muzzleJoint.getGlobalPose().getTranslation().toTranslation2d();
-    return (robot.getDistance(left) < robot.getDistance(right)) ? left : right;
-  }
+  
 
   public double getMeasuredAngleRad() {
     return inputs.positionRads;

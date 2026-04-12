@@ -182,7 +182,7 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
   }
 
   @Override
-  public void periodic() {
+  public void updateInputsPeriodic() {
     odometryLock.lock();
     gyroIO.updateInputs(gyroInputs);
     Logger.processInputs("Drive/Gyro", gyroInputs);
@@ -238,7 +238,7 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
   }
 
   @Override
-  public void periodicAfterScheduler() {}
+  public void periodic() {}
 
   // --- 控制方法 ---
   public void runVelocity(ChassisSpeeds speeds) {
@@ -346,11 +346,12 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
   }
 
   public ChassisSpeeds getFieldAcceleration() {
-    double[] currentForces = getChassisForces();
-    return new ChassisSpeeds(
-        currentForces[0] / ROBOT_MASS_KG,
-        currentForces[1] / ROBOT_MASS_KG,
-        currentForces[2] / ROBOT_MOI);
+    // double[] currentForces = getChassisForces();
+    // return new ChassisSpeeds(
+    //     currentForces[0] / ROBOT_MASS_KG,
+    //     currentForces[1] / ROBOT_MASS_KG,
+    //     currentForces[2] / ROBOT_MOI);
+    return new ChassisSpeeds(0, 0, 0);
   }
 
   public double[] getWheelRadiusCharacterizationPositions() {
@@ -438,10 +439,9 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
                 currentPose.getTranslation().getX(), currentPose.getTranslation().getY(), 0),
             new Rotation3d(0, 0, currentPose.getRotation().getRadians()));
 
-
     Logger.recordOutput("Drive/forwardKinematic", kinematicsData.forwardKinematic);
 
-    ChassisSpeeds currentSpeeds = getFieldVelocity();
+    ChassisSpeeds currentSpeeds = getChassisSpeeds();
     SimpleMatrix vel = kinematicsData.localVelocity;
     vel.set(0, currentSpeeds.vxMetersPerSecond);
     vel.set(1, currentSpeeds.vyMetersPerSecond);
@@ -459,7 +459,8 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
     acc.set(3, 0);
     acc.set(4, 0);
     acc.set(5, currentAcceleration.omegaRadiansPerSecond);
-  }  
+  }
+
   @Override
   public PhysicalJoint getParentJoint() {
     return base;

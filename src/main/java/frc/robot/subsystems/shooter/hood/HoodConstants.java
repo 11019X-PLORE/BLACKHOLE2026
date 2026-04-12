@@ -24,7 +24,7 @@ public class HoodConstants {
   public static final double kHoodMinAngle = Units.degreesToRadians(13.703874); // TODO:
   public static final double kHoodMaxAngle = Units.degreesToRadians(38.703874);
   public static final double kHoodInitialAngle = Units.degreesToRadians(13.703874);
-  public static final double kHoodPassingAngle = Units.degreesToRadians(38.0);
+  public static final double kHoodPassingAngle = Units.degreesToRadians(32.0);
   public static final double kHoodTrenchAngle = Units.degreesToRadians(0.0);
 
   public static final double kInertiaHood = 0.125; // TODO

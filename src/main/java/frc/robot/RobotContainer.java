@@ -48,7 +48,6 @@ import frc.robot.subsystems.intake.IntakeConstants;
 import frc.robot.subsystems.intake.IntakeIOReal;
 import frc.robot.subsystems.intake.IntakeIOSim;
 import frc.robot.subsystems.led.LED;
-import frc.robot.subsystems.shooter.ShotCalculator;
 import frc.robot.subsystems.shooter.flywheel.Flywheel;
 import frc.robot.subsystems.shooter.flywheel.FlywheelConstants;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOReal;
@@ -103,12 +102,12 @@ public class RobotContainer {
   // Bindings
   private final Trigger zeroSuperstructurePosition = controller.square();
   private final Trigger zeroGyro = controller.button(13);
-  private final Trigger intakeTrigger = controller.L2();
-  private final Trigger outtakeTrigger = controller.L1();
+  private final Trigger intakeTrigger = controller.R1();
+  private final Trigger outtakeTrigger = controller.L2();
   private final Trigger shakeStowTrigger = controller.circle();
   private final Trigger stowTrigger = controller.button(10);
   private final Trigger shootTrigger = controller.R2();
-  private final Trigger passTrigger = controller.R1();
+  private final Trigger passTrigger = controller.L1();
   private final Trigger fixShootTrigger = controller.triangle();
   private final Trigger driveToClimb = controller.povLeft();
   private final Trigger autoTrench = controller.povRight();
@@ -175,7 +174,6 @@ public class RobotContainer {
                     FlywheelConstants.kFlywheelId, FlywheelConstants.kFlywheelInverted),
                 turret);
         hood = new Hood(new HoodIOReal(HoodConstants.kHoodId, HoodConstants.kHoodInverted), turret);
-        ShotCalculator.getInstance().robotToTurret = turret.getRobotToTurret();
         led = new LED();
         superstructure =
             new Superstructure(
@@ -216,11 +214,11 @@ public class RobotContainer {
                 TurretConstants.kTurretonRobotoffset,
                 drive::getPose,
                 drive::getFieldVelocity);
-        turret.setBase(drive);
+        TurretConstants.swerve2TurretStructure.setBase(drive);
+        turret.setBase(TurretConstants.swerve2TurretStructure);
         flywheel = new Flywheel(new FlywheelIOSim(), turret);
         // upperStructure = new UpperStructure(turret, turretFR);
         hood = new Hood(new HoodIOSim(), turret);
-        ShotCalculator.getInstance().robotToTurret = turret.getRobotToTurret();
         led = new LED();
         superstructure =
             new Superstructure(
@@ -277,10 +275,10 @@ public class RobotContainer {
                 TurretConstants.kTurretonRobotoffset,
                 drive::getPose,
                 drive::getFieldVelocity);
-        turret.setBase(drive);
+        TurretConstants.swerve2TurretStructure.setBase(drive);
+        turret.setBase(TurretConstants.swerve2TurretStructure);
         flywheel = new Flywheel(new FlywheelIOSim(), turret);
         hood = new Hood(new HoodIOSim(), turret);
-        ShotCalculator.getInstance().robotToTurret = turret.getRobotToTurret();
         led = new LED();
         superstructure =
             new Superstructure(
@@ -295,8 +293,6 @@ public class RobotContainer {
                 drive::isInTrenchZone);
         break;
     }
-
-    ShotCalculator.getInstance().init(drive);
 
     // Set up auto routines
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());

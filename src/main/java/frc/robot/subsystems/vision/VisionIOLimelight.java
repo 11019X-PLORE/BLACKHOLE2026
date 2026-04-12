@@ -179,7 +179,6 @@ public class VisionIOLimelight implements VisionIO {
       inputs.tagIds[i] = id;
       i++;
     }
-    
   }
 
   /** Parses the 3D pose from a Limelight botpose array. */

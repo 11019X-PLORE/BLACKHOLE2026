@@ -85,7 +85,7 @@ public class Extension extends FullSubsystem {
   }
 
   @Override
-  public void periodic() {
+  public void updateInputsPeriodic() {
     // 1. 读取输入
     io.updateInputs(inputs);
     Logger.processInputs("Extension", inputs);
@@ -96,7 +96,7 @@ public class Extension extends FullSubsystem {
   }
 
   @Override
-  public void periodicAfterScheduler() {
+  public void periodic() {
     if (DriverStation.isDisabled() || !ExtensionZeroed) {
       outputs.mode = ExtensionIOOutputMode.COAST;
       outputs.velocityRadsPerSec = 0.0;
@@ -137,6 +137,11 @@ public class Extension extends FullSubsystem {
         }
       }
     }
+  }
+
+  @Override
+  public void executePeriodic() {
+    io.applyOutputs(outputs);
   }
 
   /** 内部位置闭环辅助方法：负责 clamp 角度、设置 output 并计算 atGoal */

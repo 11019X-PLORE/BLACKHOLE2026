@@ -20,6 +20,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.FieldConstants;
 import frc.robot.Robot;
+import frc.robot.subsystems.shooter.hood.HoodConstants;
 import frc.robot.subsystems.shooter.turret.Turret.TurretGoal;
 import frc.robot.subsystems.shooter.turret.TurretIO.TurretIOOutputMode;
 import frc.robot.subsystems.shooter.turret.TurretIO.TurretIOOutputs;
@@ -131,7 +132,7 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
   }
 
   @Override
-  public void periodic() {
+  public void updateInputsPeriodic() {
     io.updateInputs(inputs);
     Logger.processInputs("turret", inputs);
     disconnected.set(!motorConnectedDebouncer.calculate(inputs.turretMotorConnected));
@@ -141,7 +142,7 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
   }
 
   @Override
-  public void periodicAfterScheduler() {
+  public void periodic() {
 
     if (DriverStation.isDisabled() || !turretZeroed) {
       outputs.mode = TurretIOOutputMode.COAST;
@@ -157,33 +158,38 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
           atGoal = true;
         }
         case TRACKING -> {
-          Translation2d targetPos =
-              AllianceFlipUtil.apply(FieldConstants.Hub.topCenterPoint.toTranslation2d());
-          ShooterSetpoint sp =
-              ShooterSetpoint.makeSetpoint(
-                  TurretConstants.swerve2TurretStructure,
-                  targetPos,
-                  FieldConstants.hMax,
-                  TrajectoryConfig.getHubConfig());
-          runPositionFOCLogic(
-              sp.turretPositionRadians,
-              sp.turretVelocityRadsPerSec,
-              sp.turretAccelerationRadsPerSecSquared,
-              0.0);
+          // Translation2d targetPos =
+          //     AllianceFlipUtil.apply(FieldConstants.Hub.topCenterPoint.toTranslation2d());
+          // ShooterSetpoint sp =
+          //     ShooterSetpoint.makeSetpoint(
+          //         TurretConstants.swerve2TurretStructure,
+          //         targetPos,
+          //         FieldConstants.hMax,
+          //         HoodConstants.kHoodMinAngle,
+          //         HoodConstants.kHoodMaxAngle,
+          //         TrajectoryConfig.getHubConfig());
+
+          // runPositionFOCLogic(
+          //     sp.turretPositionRadians,
+          //     sp.turretVelocityRadsPerSec,
+          //     sp.turretAccelerationRadsPerSecSquared,
+          //     0.0);
         }
         case PASSING -> {
-          Translation2d passTarget = getBestPassingTarget();
-          ShooterSetpoint sp =
-              ShooterSetpoint.makeSetpoint(
-                  TurretConstants.swerve2TurretStructure,
-                  passTarget,
-                  FieldConstants.hMax,
-                  TrajectoryConfig.getPassingConfig());
-          runPositionFOCLogic(
-              sp.turretPositionRadians,
-              sp.turretVelocityRadsPerSec,
-              sp.turretAccelerationRadsPerSecSquared,
-              0.0);
+          // Translation2d passTarget = getBestPassingTarget();
+          // ShooterSetpoint sp =
+          //     ShooterSetpoint.makeSetpoint(
+          //         TurretConstants.swerve2TurretStructure,
+          //         passTarget,
+          //         FieldConstants.hMax,
+          //         HoodConstants.kHoodMinAngle,
+          //         HoodConstants.kHoodMaxAngle,
+          //         TrajectoryConfig.getPassingConfig());
+          // runPositionFOCLogic(
+          //     sp.turretPositionRadians,
+          //     sp.turretVelocityRadsPerSec,
+          //     sp.turretAccelerationRadsPerSecSquared,
+          //     0.0);
         }
         case FIXED_ANGLE -> {
           var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
@@ -206,13 +212,16 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
         }
       }
     }
+  }
 
+  @Override
+  public void executePeriodic() {
     io.applyOutputs(outputs);
     Logger.recordOutput("turret/atGoal", atGoal);
     Logger.recordOutput("turret/mode", outputs.mode);
   }
 
-  private void runPositionFOCLogic(
+  public void runPositionFOCLogic(
       double targetFieldAngleRad, double targetVel, double targetAccel, double feedforwardAmps) {
     double targetRads = targetFieldAngleRad;
     // 1. 寻找 [-270, 90] 物理限位内最近的等效点
@@ -255,21 +264,14 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
     Logger.recordOutput("turret/GoalAccelerationRadPerSec2", targetAccel);
   }
 
-  /** 计算并返回最近的传球点坐标 */
-  private Translation2d getBestPassingTarget() {
-    Translation2d blueLeft = new Translation2d(1.874, 5.49);
-    Translation2d blueRight = new Translation2d(1.874, 2.17);
-    Translation2d left = AllianceFlipUtil.apply(blueLeft);
-    Translation2d right = AllianceFlipUtil.apply(blueRight);
-    Translation2d robot = poseSupplier.get().getTranslation();
-    return (robot.getDistance(left) < robot.getDistance(right)) ? left : right;
-  }
-
   private void updateTunables() {
     if (kP.hasChanged(hashCode())
         || kD.hasChanged(hashCode())
         || kA.hasChanged(hashCode())
-        || kV.hasChanged(hashCode())) {
+        || kV.hasChanged(hashCode())
+        || kS.hasChanged(hashCode())
+        || kI.hasChanged(hashCode())
+        || kG.hasChanged(hashCode())) {
       io.setPID(kP.get(), kI.get(), kD.get(), kS.get(), kV.get(), kA.get(), kG.get());
     }
   }
