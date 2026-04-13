@@ -40,7 +40,7 @@ public class VisionConstants {
 
   // Basic filtering thresholds
   public static double maxAmbiguity = 0.4;
-  public static double maxZError = 1.2;
+  public static double maxZError = 0.75;
 
   public static double maxYawDifference = Math.toRadians(10);
 

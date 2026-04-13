@@ -106,7 +106,10 @@ public class TrajectoryCalculator {
    * @return flywheel surface speed (m/s)
    */
   public static double getFlywheelSetpoint(double v) {
-    return 1.1 * 4.40309 * Math.pow(1.17819, v);
+    if (v > 7.3) {
+      return 4.74446 * Math.pow(1.17377, v);
+    }
+    return 15;
     // return 4.62907 * Math.pow(1.18664, v); // placeholder for testing
     // return 3.44691 * v - 9.06894;
   }

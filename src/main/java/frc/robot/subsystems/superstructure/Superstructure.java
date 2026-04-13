@@ -26,6 +26,7 @@ import frc.robot.util.Geoffrey.PhysicalJoint;
 import frc.robot.util.Geoffrey.ShooterSetpoint;
 import frc.robot.util.Geoffrey.TrajectoryCalculator;
 import frc.robot.util.Geoffrey.TrajectoryConfig;
+import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.geometry.AllianceFlipUtil;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
@@ -65,6 +66,9 @@ public class Superstructure extends FullSubsystem {
   private final Map<SuperstructureState, Supplier<Command>> stateMap;
   private final BooleanSupplier inTrenchZoneSupplier;
 
+  private static final LoggedTunableNumber kMeasureShootV =
+      new LoggedTunableNumber("Flywheel/kMeasureVelocity");
+
   public Superstructure(
       Turret turret,
       Hood hood,
@@ -84,6 +88,8 @@ public class Superstructure extends FullSubsystem {
     this.indexer = indexer;
     this.led = led;
     this.inTrenchZoneSupplier = inTrenchZoneSupplier;
+
+    kMeasureShootV.initDefault(0);
 
     stateMap =
         Map.ofEntries(
@@ -204,22 +210,30 @@ public class Superstructure extends FullSubsystem {
                                       HoodConstants.kHoodMaxAngle,
                                       TrajectoryConfig.getHubConfig());
 
+                              double lookAheadTime = 0.02;
                               turret.runPositionFOCLogic(
-                                  sp.turretPositionRadians,
-                                  sp.turretVelocityRadsPerSec,
+                                  sp.turretPositionRadians
+                                      + (lookAheadTime * sp.turretVelocityRadsPerSec),
+                                  sp.turretVelocityRadsPerSec
+                                      + (lookAheadTime * sp.turretAccelerationRadsPerSecSquared),
                                   sp.turretAccelerationRadsPerSecSquared,
                                   // 0,
                                   // 0,
                                   0.0);
                               hood.runPositionFOCLogic(
-                                  sp.hoodPositionRadians,
-                                  sp.hoodVelocityRadsPerSec,
+                                  sp.hoodPositionRadians
+                                      + (lookAheadTime * sp.hoodVelocityRadsPerSec),
+                                  sp.hoodVelocityRadsPerSec
+                                      + (lookAheadTime * sp.hoodAccelerationRadsPerSecSquared),
                                   sp.hoodAccelerationRadsPerSecSquared,
                                   0.0);
 
                               double radPerSec =
                                   TrajectoryCalculator.getFlywheelSetpoint(
-                                          sp.shooterVelocityMetersPerSec)
+                                          sp.shooterVelocityMetersPerSec
+                                              + (lookAheadTime
+                                                  * sp.shooterAccelerationMetersPerSecSquared))
+                                      // kMeasureShootV.get()
                                       / FlywheelConstants.kFlywheelRadius;
                               double radPerSec2 =
                                   TrajectoryCalculator.getFlywheelAcceleration(
@@ -236,6 +250,9 @@ public class Superstructure extends FullSubsystem {
                                 indexer.setGoal(IndexerGoal.STOP);
                               }
 
+                              Logger.recordOutput(
+                                  "shooterSetpoint/shooterVelocityMetersPerSec",
+                                  sp.shooterVelocityMetersPerSec);
                               Logger.recordOutput(
                                   "shooterSetpoint/turretPositionRadians",
                                   sp.turretPositionRadians);
@@ -284,7 +301,8 @@ public class Superstructure extends FullSubsystem {
                         flywheel.setGoalCommand(FlywheelGoal.PASSING),
                         Commands.run(
                             () -> {
-                              Translation2d targetPos = getBestPassingTarget(TurretConstants.swerve2TurretStructure);
+                              Translation2d targetPos =
+                                  getBestPassingTarget(TurretConstants.swerve2TurretStructure);
                               ShooterSetpoint sp =
                                   ShooterSetpoint.makeSetpoint(
                                       TurretConstants.swerve2TurretStructure,
@@ -325,7 +343,6 @@ public class Superstructure extends FullSubsystem {
                                 triggers.setGoal(TriggersGoal.STOP);
                                 indexer.setGoal(IndexerGoal.STOP);
                               }
-
                             },
                             triggers,
                             indexer))),
@@ -479,7 +496,7 @@ public class Superstructure extends FullSubsystem {
     led.setGoal(LED.LEDState.INITIAL);
   }
 
-  //TODO move it to where it belong
+  // TODO move it to where it belong
   private Translation2d getBestPassingTarget(PhysicalJoint base) {
     Translation2d blueLeft = new Translation2d(1.874, 5.49);
     Translation2d blueRight = new Translation2d(1.874, 2.17);

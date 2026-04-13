@@ -22,7 +22,7 @@ public class TurretConstants {
   public static final double kD = 80.0; // 0.0
   public static final double kG = 0.0; // 重力补偿
   public static final double kS = 0.1; // 静态前馈
-  public static final double kV = 115; // 0.13 轨迹规划得到的目标速度8.0
+  public static final double kV = 120; // 0.13 轨迹规划得到的目标速度8.0
   public static final double kA = 0.0; // 轨迹规划得到的目标加速度
 
   public static final double kInertiaTurret = 0.1; // TODO
@@ -31,9 +31,9 @@ public class TurretConstants {
   // ========== 角度限制 ==========
   public static final double kTurretMinAngle = Units.degreesToRadians(-270); // radius
   public static final double kTurretMaxAngle = Units.degreesToRadians(90.0); // radius
-  public static final double kTurretInitialAngle = Units.degreesToRadians(-180.0);
+  public static final double kTurretInitialAngle = Units.degreesToRadians(0);
 
-  public static final double kTurretToleranceDeg = Units.degreesToRadians(3.5); // max is 4.6
+  public static final double kTurretToleranceDeg = Units.degreesToRadians(10); // max is 4.6
   public static final double kTurretFixAngle = Units.degreesToRadians(-90.0);
 
   // 炮塔的相对于机器中心的位置

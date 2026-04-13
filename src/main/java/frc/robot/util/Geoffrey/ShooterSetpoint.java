@@ -216,7 +216,7 @@ public class ShooterSetpoint {
     ShooterSetpoint setpoint =
         makeSetpoint(
             PhysicalJoint.ground,
-            new Translation2d(0, 3),
+            new Translation2d(6, 0),
             2.2,
             Math.toRadians(13),
             Math.toRadians(38),

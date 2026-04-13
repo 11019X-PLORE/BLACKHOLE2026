@@ -236,7 +236,6 @@ public class Flywheel extends FullSubsystem {
     atGoal = atGoalDebouncer.calculate(inTolerance);
   }
 
-
   /** 更新可调参数 */
   private void updateTunables() {
     if (atGoalDebounce.hasChanged(hashCode())) {

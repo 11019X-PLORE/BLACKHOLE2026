@@ -2,21 +2,16 @@ package frc.robot.subsystems.shooter.hood;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import frc.robot.FieldConstants;
 import frc.robot.Robot;
 import frc.robot.subsystems.shooter.hood.HoodIO.HoodIOOutputMode;
 import frc.robot.subsystems.shooter.hood.HoodIO.HoodIOOutputs;
 import frc.robot.util.FullSubsystem;
 import frc.robot.util.Geoffrey.PhysicalJoint;
-import frc.robot.util.Geoffrey.ShooterSetpoint;
-import frc.robot.util.Geoffrey.TrajectoryConfig;
 import frc.robot.util.LoggedTunableNumber;
-import frc.robot.util.geometry.AllianceFlipUtil;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -218,8 +213,6 @@ public class Hood extends FullSubsystem {
       io.setPID(kP.get(), kI.get(), kD.get(), kS.get(), kV.get(), kA.get(), kG.get());
     }
   }
-
-  
 
   public double getMeasuredAngleRad() {
     return inputs.positionRads;

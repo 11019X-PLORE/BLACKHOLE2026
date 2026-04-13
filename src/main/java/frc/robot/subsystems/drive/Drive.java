@@ -351,7 +351,22 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
     //     currentForces[0] / ROBOT_MASS_KG,
     //     currentForces[1] / ROBOT_MASS_KG,
     //     currentForces[2] / ROBOT_MOI);
-    return new ChassisSpeeds(0, 0, 0);
+    try {
+      double domega = 0.0;
+
+      domega =
+          gyroInputs.odometryYawVelocities[gyroInputs.odometryYawVelocities.length - 1]
+              - gyroInputs.odometryYawVelocities[gyroInputs.odometryYawVelocities.length - 2];
+
+      return ChassisSpeeds.fromRobotRelativeSpeeds(
+          new ChassisSpeeds(
+              gyroInputs.odometryAccelY[gyroInputs.odometryAccelY.length - 1],
+              -gyroInputs.odometryAccelX[gyroInputs.odometryAccelX.length - 1],
+              -domega * ODOMETRY_FREQUENCY),
+          getRotation());
+    } catch (Exception e) {
+    }
+    return new ChassisSpeeds();
   }
 
   public double[] getWheelRadiusCharacterizationPositions() {
