@@ -7,6 +7,9 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Filesystem;
+import frc.robot.util.Geoffrey.PhysicalJoint;
+import frc.robot.util.geometry.AllianceFlipUtil;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import lombok.Getter;
@@ -347,5 +350,15 @@ public class FieldConstants {
       }
       return layoutString;
     }
+  }
+  public static Translation2d getBestPassingTarget(PhysicalJoint base) {
+    Translation2d blueLeft = new Translation2d(1.874, 5.49);
+    Translation2d blueRight = new Translation2d(1.874, 2.17);
+    Translation2d left = AllianceFlipUtil.apply(blueLeft);
+    Translation2d right = AllianceFlipUtil.apply(blueRight);
+
+    // 从物理关节获取当前机器人在场地的位置
+    Translation2d robotPos = base.getGlobalPose().getTranslation().toTranslation2d();
+    return (robotPos.getDistance(left) < robotPos.getDistance(right)) ? left : right;
   }
 }

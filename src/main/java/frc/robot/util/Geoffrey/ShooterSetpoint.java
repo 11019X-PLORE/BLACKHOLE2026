@@ -190,6 +190,70 @@ public class ShooterSetpoint {
         shooterVel, shooterAccel, turretPos, turretVel, turretAccel, hoodPos, hoodVel, hoodAccel);
   }
 
+  /**
+   * Creates a simple setpoint that locks the turret to point at the target (hub) with a fixed hood
+   * angle and shooter speed. This is useful for vision tracking where the turret needs to
+   * continuously face the hub so the camera can always see the AprilTags.
+   *
+   * @param muzzleJoint The physical joint representing the muzzle position
+   * @param targetPos2d The 2D position of the target (hub) on the field
+   * @param hoodAngleRads The fixed hood angle in radians
+   * @param shooterSpeed The fixed shooter speed (0 if not shooting, just tracking)
+   * @return A ShooterSetpoint with turret tracking and fixed hood/shooter values
+   */
+  public static ShooterSetpoint makeSetpoint(
+      PhysicalJoint muzzleJoint,
+      Translation2d targetPos2d,
+      double hoodAngleRads,
+      double shooterSpeed) {
+
+    // 1. Get current Muzzle State (Pose, Vel, Accel)
+    Translation3d muzzlePos = muzzleJoint.getGlobalPose().getTranslation();
+    SimpleMatrix muzzleV6 = muzzleJoint.getGlobalVelocity();
+    SimpleMatrix muzzleA6 = muzzleJoint.getGlobalAcceleration();
+
+    Translation3d vMuzzle = new Translation3d(muzzleV6.get(0), muzzleV6.get(1), muzzleV6.get(2));
+    double robotOmega = muzzleV6.get(5);
+    double robotAlpha = muzzleA6.get(5);
+
+    // 2. Calculate vector from muzzle to target
+    Translation2d deltaPos = targetPos2d.minus(muzzlePos.toTranslation2d());
+    Rotation2d angleToTarget = deltaPos.getAngle();
+
+    // 3. Calculate turret position (angle to target relative to robot heading)
+    double turretPos =
+        MathUtil.angleModulus(
+            angleToTarget
+                .minus(muzzleJoint.getGlobalPose().getRotation().toRotation2d())
+                .getRadians());
+
+    // 4. Calculate turret velocity feedforward
+    // d_theta_dt is the rate of change of the angle to target in field frame
+    Translation2d vRel =
+        vMuzzle.toTranslation2d().times(-1.0); // Relative velocity of target w.r.t. muzzle
+    double dx = deltaPos.getNorm();
+    double d_theta_dt = (deltaPos.getX() * vRel.getY() - deltaPos.getY() * vRel.getX()) / (dx * dx);
+    double turretVel = d_theta_dt - robotOmega;
+
+    // 5. Calculate turret acceleration feedforward
+    // Using the derivative of the angular velocity
+    double x = deltaPos.getX();
+    double y = deltaPos.getY();
+    double vx = vRel.getX();
+    double vy = vRel.getY();
+    double denT = x * x + y * y;
+
+    // alphaField = d/dt(d_theta_dt), assuming no acceleration of muzzle in XY plane for simplicity
+    double alphaField = -(x * vy - y * vx) * (2 * x * vx + 2 * y * vy) / (denT * denT);
+    double turretAccel = alphaField - robotAlpha;
+
+    // Return setpoint with turret tracking, fixed hood angle, and fixed shooter speed
+    // Hood velocity and acceleration are 0 since we're holding a fixed angle
+    // Shooter acceleration is 0 since we're holding a fixed speed
+    return new ShooterSetpoint(
+        shooterSpeed, 0, turretPos, turretVel, turretAccel, hoodAngleRads, 0, 0);
+  }
+
   @Override
   public String toString() {
     return "ShooterSetpoint:{"

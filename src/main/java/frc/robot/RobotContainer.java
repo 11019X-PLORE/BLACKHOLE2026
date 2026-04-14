@@ -60,8 +60,7 @@ import frc.robot.subsystems.shooter.turret.Turret;
 import frc.robot.subsystems.shooter.turret.TurretConstants;
 import frc.robot.subsystems.shooter.turret.TurretIOSim;
 import frc.robot.subsystems.shooter.turret.TurretIOreal;
-import frc.robot.subsystems.superstructure.Superstructure;
-import frc.robot.subsystems.superstructure.Superstructure.SuperstructureState;
+import frc.robot.subsystems.superstructure.SuperstructureFactory;
 import frc.robot.subsystems.triggers.Triggers;
 import frc.robot.subsystems.triggers.TriggersIOReal;
 import frc.robot.subsystems.triggers.TriggersIOSim;
@@ -90,7 +89,6 @@ public class RobotContainer {
   public final Hood hood;
   public final Vision vision;
   public final LED led;
-  public final Superstructure superstructure;
 
   public Dimensions dimensions;
   public FuelSim fuelSim = new FuelSim("FuelSim"); // creates a new fuelSim of FuelSim
@@ -175,17 +173,6 @@ public class RobotContainer {
                 turret);
         hood = new Hood(new HoodIOReal(HoodConstants.kHoodId, HoodConstants.kHoodInverted), turret);
         led = new LED();
-        superstructure =
-            new Superstructure(
-                turret,
-                hood,
-                flywheel,
-                intake,
-                extension,
-                triggers,
-                indexer,
-                led,
-                drive::isInTrenchZone);
         break;
 
       case SIM:
@@ -220,17 +207,6 @@ public class RobotContainer {
         // upperStructure = new UpperStructure(turret, turretFR);
         hood = new Hood(new HoodIOSim(), turret);
         led = new LED();
-        superstructure =
-            new Superstructure(
-                turret,
-                hood,
-                flywheel,
-                intake,
-                extension,
-                triggers,
-                indexer,
-                led,
-                drive::isInTrenchZone);
         // fuel sim setup
         fuelSim.spawnStartingFuel();
         // 2. 调用你写的配置方法 (确保传入 intake 的状态判定)
@@ -280,34 +256,16 @@ public class RobotContainer {
         flywheel = new Flywheel(new FlywheelIOSim(), turret);
         hood = new Hood(new HoodIOSim(), turret);
         led = new LED();
-        superstructure =
-            new Superstructure(
-                turret,
-                hood,
-                flywheel,
-                intake,
-                extension,
-                triggers,
-                indexer,
-                led,
-                drive::isInTrenchZone);
         break;
     }
-
     // Set up auto routines
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
-    autoChooser.addOption(
-        "LEFT", new LeftAuto(superstructure, intake, turret, hood, extension, drive));
-    autoChooser.addOption(
-        "MID", new MidAuto(superstructure, intake, turret, hood, extension, drive));
-    autoChooser.addOption(
-        "MIDSHORT", new MidAutoShort(superstructure, intake, turret, hood, extension, drive));
-    autoChooser.addOption(
-        "RIGHT", new RightAuto(superstructure, intake, turret, hood, extension, drive));
-    autoChooser.addOption(
-        "RIGHTCYCLE", new RightCycleAuto(superstructure, intake, turret, hood, extension, drive));
-    autoChooser.addDefaultOption(
-        "LEFT", new LeftAuto(superstructure, intake, turret, hood, extension, drive));
+    autoChooser.addOption("LEFT", new LeftAuto(this));
+    autoChooser.addOption("MID", new MidAuto(this));
+    autoChooser.addOption("MIDSHORT", new MidAutoShort(this));
+    autoChooser.addOption("RIGHT", new RightAuto(this));
+    autoChooser.addOption("RIGHTCYCLE", new RightCycleAuto(this));
+    autoChooser.addDefaultOption("LEFT", new LeftAuto(this));
     // Set up SysId routines
     autoChooser.addOption(
         "Drive Wheel Radius Characterization", DriveCommands.wheelRadiusCharacterization(drive));
@@ -324,6 +282,42 @@ public class RobotContainer {
     autoChooser.addOption(
         "Drive SysId (Dynamic Reverse)", drive.sysIdDynamic(SysIdRoutine.Direction.kReverse));
     configureButtonBindings();
+  }
+
+  public Turret getTurret() {
+    return turret;
+  }
+
+  public Hood getHood() {
+    return hood;
+  }
+
+  public Flywheel getFlywheel() {
+    return flywheel;
+  }
+
+  public Intake getIntake() {
+    return intake;
+  }
+
+  public Extension getExtension() {
+    return extension;
+  }
+
+  public Triggers getTriggers() {
+    return triggers;
+  }
+
+  public Indexer getIndexer() {
+    return indexer;
+  }
+
+  public LED getLED() {
+    return led;
+  }
+
+  public Drive getDrive() {
+    return drive;
   }
 
   private void configureButtonBindings() {
@@ -368,45 +362,45 @@ public class RobotContainer {
         Commands.runOnce(
             () -> {
               if (isTestMode) {
-                superstructure.setGoal(SuperstructureState.IDLE).schedule();
+                SuperstructureFactory.idle(this).schedule();
                 isTestMode = false;
               } else {
-                superstructure.setGoal(SuperstructureState.TEST).schedule();
+                SuperstructureFactory.test(this).schedule();
                 isTestMode = true;
               }
             }));
 
     shootTrigger
-        .onTrue(superstructure.setGoal(SuperstructureState.SHOOTING))
-        .onFalse(superstructure.setGoal(SuperstructureState.ACTIVESHOOTING));
+        .whileTrue(SuperstructureFactory.shoot(this))
+        .onFalse(SuperstructureFactory.activeShooting(this));
 
     passTrigger
-        .onTrue(superstructure.setGoal(SuperstructureState.PASSING))
-        .onFalse(superstructure.setGoal(SuperstructureState.ACTIVESHOOTING));
+        .whileTrue(SuperstructureFactory.pass(this))
+        .onFalse(SuperstructureFactory.activeShooting(this));
 
     intakeTrigger
         .onTrue(
             Commands.parallel(
                 intake.setGoalCommand(Intake.IntakeGoal.INTAKE),
                 extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED),
-                superstructure.setGoal(SuperstructureState.INTAKE)))
+                SuperstructureFactory.runIndexerIntake(this)))
         .onFalse(
             Commands.parallel(
                 intake.setGoalCommand(Intake.IntakeGoal.STOP),
                 extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED),
-                superstructure.setGoal(SuperstructureState.SPITSTOP)));
+                SuperstructureFactory.stopFeeding(this)));
 
     outtakeTrigger
         .onTrue(
             Commands.parallel(
                 intake.setGoalCommand(Intake.IntakeGoal.OUTTAKE),
                 extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED),
-                superstructure.setGoal(SuperstructureState.SPIT)))
+                SuperstructureFactory.spit(this)))
         .onFalse(
             Commands.parallel(
                 intake.setGoalCommand(Intake.IntakeGoal.STOP),
                 extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED),
-                superstructure.setGoal(SuperstructureState.SPITSTOP)));
+                SuperstructureFactory.stopFeeding(this)));
 
     shakeStowTrigger
         .onTrue(
@@ -424,8 +418,8 @@ public class RobotContainer {
             extension.setGoalCommand(Extension.ExtensionGoal.STOWED)));
 
     shootouttakTrigger
-        .onTrue(superstructure.setGoal(SuperstructureState.SHOOTSPIT))
-        .onFalse(superstructure.setGoal(SuperstructureState.ACTIVESHOOTING));
+        .onTrue(SuperstructureFactory.shootSpit(this))
+        .onFalse(SuperstructureFactory.activeShooting(this));
 
     driveToClimb.whileTrue(
         new AutoAlignCommand(
@@ -435,10 +429,7 @@ public class RobotContainer {
 
     autoTrench.whileTrue(
         Commands.parallel(
-            Commands.either(
-                Commands.none(),
-                superstructure.setGoal(SuperstructureState.TRENCH),
-                () -> superstructure.getCurrentState() == SuperstructureState.TRENCH),
+            SuperstructureFactory.trench(this),
             Commands.defer(
                 () ->
                     DriveCommands.autoPathfindToPose(
@@ -521,31 +512,24 @@ public class RobotContainer {
     if (!Robot.isSimulation()) {
       return;
     }
-    // 1. 只有处于要求开火的状态时，才允许发射
-    boolean isShootingState =
-        superstructure.getCurrentState() == SuperstructureState.SHOOTING
-            || superstructure.getCurrentState() == SuperstructureState.SHOOTING_FIXED
-            || superstructure.getCurrentState() == SuperstructureState.TEST;
 
-    // 2. 检查所有射击机构是否到位
-    // 注意：如果是 TEST 模式，可能不需要严格检查 atGoal，这里视你的需求而定
+    // 检查所有射击机构是否到位
     boolean isReadyToShoot = flywheel.atGoal() && hood.atGoal() && turret.atGoal();
 
     // 记录状态供 Dashboard/AdvantageScope 查看
-    Logger.recordOutput("Superstructure/IsShootingState", isShootingState);
     Logger.recordOutput("Superstructure/ReadyToShoot", isReadyToShoot);
 
-    // 3. 执行发射判定
-    if (isShootingState && isReadyToShoot) {
+    // 执行发射判定 - 当所有机构就位时发射
+    if (isReadyToShoot) {
 
-      // 4. 严格控制射频：每 0.25 秒最多只能发射一颗球
+      // 严格控制射频：每 0.25 秒最多只能发射一颗球
       if (simShootTimer.hasElapsed(0.25)) {
         simShootTimer.restart();
 
-        // 5. 计算出球线速度 (v = ω * r)
+        // 计算出球线速度 (v = ω * r)
         double linearVelMetersPerSec = flywheel.getVelocity() * FlywheelConstants.kFlywheelRadius;
 
-        // 6. 调用模拟器发射
+        // 调用模拟器发射
         fuelSim.launchFuel(
             MetersPerSecond.of(linearVelMetersPerSec),
             Radians.of(hood.getMeasuredAngleRad()),
