@@ -9,7 +9,6 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Filesystem;
 import frc.robot.util.Geoffrey.PhysicalJoint;
 import frc.robot.util.geometry.AllianceFlipUtil;
-
 import java.io.IOException;
 import java.nio.file.Path;
 import lombok.Getter;
@@ -351,6 +350,7 @@ public class FieldConstants {
       return layoutString;
     }
   }
+
   public static Translation2d getBestPassingTarget(PhysicalJoint base) {
     Translation2d blueLeft = new Translation2d(1.874, 5.49);
     Translation2d blueRight = new Translation2d(1.874, 2.17);

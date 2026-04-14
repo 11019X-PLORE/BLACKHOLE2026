@@ -81,6 +81,24 @@ public final class SuperstructureFactory {
         .withName("Superstructure.Idle");
   }
 
+  public static Command feeding(RobotContainer c) {
+    Triggers triggers = c.getTriggers();
+    Indexer indexer = c.getIndexer();
+
+    return Commands.run(
+            () -> {
+              if (isReadyToShoot(c)) {
+                triggers.setGoal(TriggersGoal.SHOOT);
+                indexer.setGoal(IndexerGoal.SHOOT);
+              } else {
+                triggers.setGoal(TriggersGoal.STOP);
+                indexer.setGoal(IndexerGoal.STOP);
+              }
+            },
+            triggers,
+            indexer)
+        .withName("Superstructure.StopFeeding");
+  }
   /**
    * Stops triggers and indexer without changing shooter state. Used as a "release" action for
    * intake/outtake.
@@ -180,11 +198,7 @@ public final class SuperstructureFactory {
                       sp.turretVelocityRadsPerSec,
                       sp.turretAccelerationRadsPerSecSquared,
                       0.0);
-
-                },
-                turret,
-                hood,
-                flywheel))
+                }))
         .withName("Superstructure.ActiveShooting");
   }
 
@@ -209,8 +223,6 @@ public final class SuperstructureFactory {
     Turret turret = c.getTurret();
     Hood hood = c.getHood();
     Flywheel flywheel = c.getFlywheel();
-    Triggers triggers = c.getTriggers();
-    Indexer indexer = c.getIndexer();
 
     return Commands.parallel(
             turret.setGoalCommand(TurretGoal.TRACKING),
@@ -237,7 +249,8 @@ public final class SuperstructureFactory {
                       sp.turretAccelerationRadsPerSecSquared,
                       0.0);
                   hood.runPositionFOCLogic(
-                      sp.hoodPositionRadians + (lookAheadTime * sp.hoodVelocityRadsPerSec),
+                      TrajectoryCalculator.getHoodSetpoint(
+                          sp.hoodPositionRadians + (lookAheadTime * sp.hoodVelocityRadsPerSec)),
                       sp.hoodVelocityRadsPerSec
                           + (lookAheadTime * sp.hoodAccelerationRadsPerSecSquared),
                       sp.hoodAccelerationRadsPerSecSquared,
@@ -254,14 +267,6 @@ public final class SuperstructureFactory {
                               sp.shooterAccelerationMetersPerSecSquared)
                           / FlywheelConstants.kFlywheelRadius;
                   flywheel.runVelocityFOCLogic(radPerSec, radPerSec2, 0.0);
-
-                  if (isReadyToShoot(c)) {
-                    triggers.setGoal(TriggersGoal.SHOOT);
-                    indexer.setGoal(IndexerGoal.SHOOT);
-                  } else {
-                    triggers.setGoal(TriggersGoal.STOP);
-                    indexer.setGoal(IndexerGoal.STOP);
-                  }
 
                   Logger.recordOutput(
                       "shooterSetpoint/shooterVelocityMetersPerSec",
@@ -280,12 +285,7 @@ public final class SuperstructureFactory {
                   Logger.recordOutput(
                       "shooterSetpoint/hoodAccelerationRadsPerSecSquared",
                       sp.hoodAccelerationRadsPerSecSquared);
-                },
-                turret,
-                hood,
-                flywheel,
-                triggers,
-                indexer))
+                }))
         .withName(commandName);
   }
 
@@ -333,12 +333,7 @@ public final class SuperstructureFactory {
                     triggers.setGoal(TriggersGoal.STOP);
                     indexer.setGoal(IndexerGoal.STOP);
                   }
-                },
-                turret,
-                hood,
-                flywheel,
-                triggers,
-                indexer))
+                }))
         .withName("Superstructure.ShootFixed");
   }
 
@@ -361,9 +356,6 @@ public final class SuperstructureFactory {
                   triggers.setGoal(TriggersGoal.STOP);
                   indexer.setGoal(IndexerGoal.STOP);
                 },
-                turret,
-                hood,
-                flywheel,
                 triggers,
                 indexer))
         .withName("Superstructure.Trench");
@@ -389,7 +381,6 @@ public final class SuperstructureFactory {
                     indexer.setGoal(IndexerGoal.STOP);
                   }
                 },
-                turret,
                 triggers,
                 indexer))
         .withName("Superstructure.Test");

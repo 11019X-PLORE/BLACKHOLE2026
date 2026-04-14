@@ -354,16 +354,20 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
     try {
       double domega = 0.0;
 
+      double omega = -gyroInputs.odometryYawVelocities[gyroInputs.odometryYawVelocities.length - 1];
       domega =
-          gyroInputs.odometryYawVelocities[gyroInputs.odometryYawVelocities.length - 1]
-              - gyroInputs.odometryYawVelocities[gyroInputs.odometryYawVelocities.length - 2];
+          omega - (-gyroInputs.odometryYawVelocities[gyroInputs.odometryYawVelocities.length - 2]);
 
-      return ChassisSpeeds.fromRobotRelativeSpeeds(
-          new ChassisSpeeds(
-              gyroInputs.odometryAccelY[gyroInputs.odometryAccelY.length - 1],
-              -gyroInputs.odometryAccelX[gyroInputs.odometryAccelX.length - 1],
-              -domega * ODOMETRY_FREQUENCY),
-          getRotation());
+      double[] r = {
+        TunerConstants.pigeonMountingOffset.getX(), TunerConstants.pigeonMountingOffset.getY()
+      };
+      double alpha = domega * ODOMETRY_FREQUENCY;
+      double ax = gyroInputs.odometryAccelY[gyroInputs.odometryAccelY.length - 1];
+      double ay = -gyroInputs.odometryAccelX[gyroInputs.odometryAccelX.length - 1];
+
+      ax += -(r[1] * alpha) - (r[0] * omega);
+      ay += (r[0] * alpha) - (r[1] * omega);
+      return ChassisSpeeds.fromRobotRelativeSpeeds(new ChassisSpeeds(ax, ay, alpha), getRotation());
     } catch (Exception e) {
     }
     return new ChassisSpeeds();

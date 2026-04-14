@@ -17,15 +17,16 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.FieldConstants.AprilTagLayoutType;
 import frc.robot.autos.LeftAuto;
 import frc.robot.autos.MidAuto;
 import frc.robot.autos.MidAutoShort;
 import frc.robot.autos.RightAuto;
 import frc.robot.autos.RightCycleAuto;
+import frc.robot.autos.Test;
 import frc.robot.commands.AutoAlignCommand;
 import frc.robot.commands.DriveCommands;
 import frc.robot.generated.TunerConstants;
@@ -265,22 +266,23 @@ public class RobotContainer {
     autoChooser.addOption("MIDSHORT", new MidAutoShort(this));
     autoChooser.addOption("RIGHT", new RightAuto(this));
     autoChooser.addOption("RIGHTCYCLE", new RightCycleAuto(this));
+    autoChooser.addOption("TEST", new Test(this));
     autoChooser.addDefaultOption("LEFT", new LeftAuto(this));
     // Set up SysId routines
-    autoChooser.addOption(
-        "Drive Wheel Radius Characterization", DriveCommands.wheelRadiusCharacterization(drive));
-    autoChooser.addOption(
-        "Drive Simple FF Characterization", DriveCommands.feedforwardCharacterization(drive));
-    autoChooser.addOption(
-        "Drive SysId (Quasistatic Forward)",
-        drive.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
-    autoChooser.addOption(
-        "Drive SysId (Quasistatic Reverse)",
-        drive.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
-    autoChooser.addOption(
-        "Drive SysId (Dynamic Forward)", drive.sysIdDynamic(SysIdRoutine.Direction.kForward));
-    autoChooser.addOption(
-        "Drive SysId (Dynamic Reverse)", drive.sysIdDynamic(SysIdRoutine.Direction.kReverse));
+    // autoChooser.addOption(
+    //     "Drive Wheel Radius Characterization", DriveCommands.wheelRadiusCharacterization(drive));
+    // autoChooser.addOption(
+    //     "Drive Simple FF Characterization", DriveCommands.feedforwardCharacterization(drive));
+    // autoChooser.addOption(
+    //     "Drive SysId (Quasistatic Forward)",
+    //     drive.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
+    // autoChooser.addOption(
+    //     "Drive SysId (Quasistatic Reverse)",
+    //     drive.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
+    // autoChooser.addOption(
+    //     "Drive SysId (Dynamic Forward)", drive.sysIdDynamic(SysIdRoutine.Direction.kForward));
+    // autoChooser.addOption(
+    //     "Drive SysId (Dynamic Reverse)", drive.sysIdDynamic(SysIdRoutine.Direction.kReverse));
     configureButtonBindings();
   }
 
@@ -371,11 +373,14 @@ public class RobotContainer {
             }));
 
     shootTrigger
-        .whileTrue(SuperstructureFactory.shoot(this))
+        .onTrue(SuperstructureFactory.shoot(this))
         .onFalse(SuperstructureFactory.activeShooting(this));
+    shootTrigger
+        .onTrue(SuperstructureFactory.feeding(this))
+        .onFalse(SuperstructureFactory.stopFeeding(this));
 
     passTrigger
-        .whileTrue(SuperstructureFactory.pass(this))
+        .onTrue(SuperstructureFactory.pass(this))
         .onFalse(SuperstructureFactory.activeShooting(this));
 
     intakeTrigger
@@ -383,12 +388,18 @@ public class RobotContainer {
             Commands.parallel(
                 intake.setGoalCommand(Intake.IntakeGoal.INTAKE),
                 extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED),
-                SuperstructureFactory.runIndexerIntake(this)))
+                new ConditionalCommand(
+                    SuperstructureFactory.feeding(this),
+                    SuperstructureFactory.runIndexerIntake(this),
+                    shootTrigger.or(passTrigger))))
         .onFalse(
             Commands.parallel(
                 intake.setGoalCommand(Intake.IntakeGoal.STOP),
                 extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED),
-                SuperstructureFactory.stopFeeding(this)));
+                new ConditionalCommand(
+                    SuperstructureFactory.feeding(this),
+                    SuperstructureFactory.stopFeeding(this),
+                    shootTrigger.or(passTrigger))));
 
     outtakeTrigger
         .onTrue(
