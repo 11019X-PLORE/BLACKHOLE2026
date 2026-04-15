@@ -112,7 +112,6 @@ public class Flywheel extends FullSubsystem {
     // 1. 读取输入
     io.updateInputs(inputs);
     Logger.processInputs("Flywheel", inputs);
-
     // 2. 更新 Tunables 和 硬件报警
     updateTunables();
     disconnected.set(!motorConnectedDebouncer.calculate(inputs.connected));
@@ -213,6 +212,11 @@ public class Flywheel extends FullSubsystem {
     Logger.recordOutput("Flywheel/Setpoint", outputs.velocityRadsPerSec);
     Logger.recordOutput("FlyWheel/GoalAcceleration", outputs.accelerationRadPerSec2);
     io.applyOutputs(outputs);
+    Robot.batteryLogger.reportCurrentUsage(
+        "shooter/Flywheel",
+        false,
+        inputs.connected ? inputs.supplyCurrentAmps : 0.0,
+        inputs.secondconnected ? inputs.secondsupplyCurrentAmps : 0.0);
   }
 
   public void runVelocityFOCLogic(

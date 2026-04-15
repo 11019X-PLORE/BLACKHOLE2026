@@ -171,4 +171,11 @@ public class Module {
   public double getSlipCurrent() {
     return constants.SlipCurrent;
   }
+  public double getDriveCurrentAmps() {
+    return inputs.driveSupplyCurrentAmps;
+  }
+
+  public double getSteerCurrentAmps() {
+    return inputs.turnSupplyCurrentAmps;
+  }
 }

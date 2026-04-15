@@ -10,7 +10,10 @@ import frc.robot.Constants;
 public class FlywheelIOSim implements FlywheelIO {
   private static final DCMotor motorModel = DCMotor.getKrakenX60(1);
   private static final DCMotorSim sim =
-      new DCMotorSim(LinearSystemId.createDCMotorSystem(motorModel, .025, 1), motorModel);
+      new DCMotorSim(
+          LinearSystemId.createDCMotorSystem(
+              motorModel, .025, FlywheelConstants.kFlywheelGearRatio),
+          motorModel);
 
   private PIDController controller = new PIDController(0.5, 0, 0, Constants.loopPeriodSecs);
   private double currentOutput = 0.0;

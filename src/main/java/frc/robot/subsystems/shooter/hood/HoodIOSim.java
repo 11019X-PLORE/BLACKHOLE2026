@@ -11,7 +11,14 @@ public class HoodIOSim implements HoodIO {
   private static final DCMotor motorModel = DCMotor.getKrakenX44(1);
   private final SingleJointedArmSim sim =
       new SingleJointedArmSim(
-          motorModel, 1.0, .004, .33, -1.0, Units.degreesToRadians(60), false, 0);
+          motorModel,
+          HoodConstants.kHoodGearRatio,
+          .004,
+          .33,
+          -1.0,
+          Units.degreesToRadians(60),
+          false,
+          0);
 
   private final PIDController controller = new PIDController(5.0, 0, 0, Constants.loopPeriodSecs);
 
@@ -35,7 +42,7 @@ public class HoodIOSim implements HoodIO {
     sim.setInputVoltage(MathUtil.clamp(appliedVolts, -12.0, 12.0));
     sim.update(Constants.loopPeriodSecs);
 
-    inputs.motorConnected = true;
+    inputs.connected = true;
     inputs.positionRads = sim.getAngleRads();
     inputs.velocityRadsPerSec = sim.getVelocityRadPerSec();
     inputs.appliedVolts = appliedVolts;

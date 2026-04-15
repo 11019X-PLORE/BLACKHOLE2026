@@ -130,7 +130,7 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
   public void updateInputsPeriodic() {
     io.updateInputs(inputs);
     Logger.processInputs("turret", inputs);
-    disconnected.set(!motorConnectedDebouncer.calculate(inputs.turretMotorConnected));
+    disconnected.set(!motorConnectedDebouncer.calculate(inputs.connected));
     updateTunables();
     calculateTurretPose();
     updateKinematics();
@@ -212,6 +212,8 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
   @Override
   public void executePeriodic() {
     io.applyOutputs(outputs);
+    Robot.batteryLogger.reportCurrentUsage(
+        "shooter/Turret", false, inputs.connected ? inputs.turretSupplyCurrent : 0.0);
     Logger.recordOutput("turret/atGoal", atGoal);
     Logger.recordOutput("turret/mode", outputs.mode);
   }

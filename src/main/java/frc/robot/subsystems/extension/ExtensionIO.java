@@ -7,7 +7,7 @@ public interface ExtensionIO {
   @AutoLog
   public static class ExtensionIOInputs {
     // TODO: add encoder
-    boolean motorConnected = false;
+    boolean connected = false;
     double positionRads = 0.0;
     double velocityRadsPerSec = 0.0;
     double appliedVolts = 0.0;
