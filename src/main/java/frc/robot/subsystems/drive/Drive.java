@@ -182,7 +182,7 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
   }
 
   @Override
-  public void periodic() {
+  public void updateInputsPeriodic() {
     odometryLock.lock();
     gyroIO.updateInputs(gyroInputs);
     Logger.processInputs("Drive/Gyro", gyroInputs);
@@ -238,7 +238,7 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
   }
 
   @Override
-  public void periodicAfterScheduler() {}
+  public void periodic() {}
 
   // --- 控制方法 ---
   public void runVelocity(ChassisSpeeds speeds) {
@@ -346,11 +346,31 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
   }
 
   public ChassisSpeeds getFieldAcceleration() {
-    double[] currentForces = getChassisForces();
-    return new ChassisSpeeds(
-        currentForces[0] / ROBOT_MASS_KG,
-        currentForces[1] / ROBOT_MASS_KG,
-        currentForces[2] / ROBOT_MOI);
+    // double[] currentForces = getChassisForces();
+    // return new ChassisSpeeds(
+    //     currentForces[0] / ROBOT_MASS_KG,
+    //     currentForces[1] / ROBOT_MASS_KG,
+    //     currentForces[2] / ROBOT_MOI);
+    try {
+      double domega = 0.0;
+
+      double omega = -gyroInputs.odometryYawVelocities[gyroInputs.odometryYawVelocities.length - 1];
+      domega =
+          omega - (-gyroInputs.odometryYawVelocities[gyroInputs.odometryYawVelocities.length - 2]);
+
+      double[] r = {
+        TunerConstants.pigeonMountingOffset.getX(), TunerConstants.pigeonMountingOffset.getY()
+      };
+      double alpha = domega * ODOMETRY_FREQUENCY;
+      double ax = gyroInputs.odometryAccelY[gyroInputs.odometryAccelY.length - 1];
+      double ay = -gyroInputs.odometryAccelX[gyroInputs.odometryAccelX.length - 1];
+
+      ax += -(r[1] * alpha) - (r[0] * omega);
+      ay += (r[0] * alpha) - (r[1] * omega);
+      return ChassisSpeeds.fromRobotRelativeSpeeds(new ChassisSpeeds(ax, ay, alpha), getRotation());
+    } catch (Exception e) {
+    }
+    return new ChassisSpeeds();
   }
 
   public double[] getWheelRadiusCharacterizationPositions() {
@@ -440,7 +460,7 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
 
     Logger.recordOutput("Drive/forwardKinematic", kinematicsData.forwardKinematic);
 
-    ChassisSpeeds currentSpeeds = getFieldVelocity();
+    ChassisSpeeds currentSpeeds = getChassisSpeeds();
     SimpleMatrix vel = kinematicsData.localVelocity;
     vel.set(0, currentSpeeds.vxMetersPerSecond);
     vel.set(1, currentSpeeds.vyMetersPerSecond);

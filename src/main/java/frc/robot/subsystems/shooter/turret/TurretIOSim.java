@@ -95,31 +95,31 @@ public class TurretIOSim implements TurretIO {
     fuelStored++;
   }
 
-  // called repeatedly
-  // TurretIOSim.java
-  public void launchFuel() {
-    if (fuelStored == 0) return;
+  // // called repeatedly
+  // // TurretIOSim.java
+  // public void launchFuel() {
+  //   if (fuelStored == 0) return;
 
-    // 1. 获取射击参数
-    ShotCalculator.ShootingParameters params = ShotCalculator.getInstance().getParameters();
-    if (params == null) return; // 必须判空
+  //   // 1. 获取射击参数
+  //   ShotCalculator.ShootingParameters params = ShotCalculator.getInstance().getParameters();
+  //   if (params == null) return; // 必须判空
 
-    // 2. 燃料库存减少
-    fuelStored--;
+  //   // 2. 燃料库存减少
+  //   fuelStored--;
 
-    // 3. 物理量转换
-    // 假设你的飞轮半径是 0.05m (2英寸左右)，线速度 = 角速度 * 半径
-    // 注意：params.flywheelSpeed() 的单位需确认是 Rad/s 还是 RPS
-    double linearVelMps = params.flywheelSpeed() * 0.03;
+  //   // 3. 物理量转换
+  //   // 假设你的飞轮半径是 0.05m (2英寸左右)，线速度 = 角速度 * 半径
+  //   // 注意：params.flywheelSpeed() 的单位需确认是 Rad/s 还是 RPS
+  //   double linearVelMps = params.flywheelSpeed() * 0.03;
 
-    // 4. 调用发射
-    // 注意：TurretAngle 应该是 Field-Relative (场地相对角度)
-    fuelSim.launchFuel(
-        MetersPerSecond.of(linearVelMps), // 初速度
-        Radians.of(params.hoodAngle() + 0.6), // 俯仰角 (仰角)
-        // Radians.of(0), // 水平朝向 (Rotation2d)
-        Radians.of(params.turretAngle().getRadians()), // 水平朝向 (Rotation2d)
-        Meters.of(TurretConstants.turret_height_meters) // 发射高度
-        );
-  }
+  //   // 4. 调用发射
+  //   // 注意：TurretAngle 应该是 Field-Relative (场地相对角度)
+  //   fuelSim.launchFuel(
+  //       MetersPerSecond.of(linearVelMps), // 初速度
+  //       Radians.of(params.hoodAngle() + 0.6), // 俯仰角 (仰角)
+  //       // Radians.of(0), // 水平朝向 (Rotation2d)
+  //       Radians.of(params.turretAngle().getRadians()), // 水平朝向 (Rotation2d)
+  //       Meters.of(TurretConstants.turret_height_meters) // 发射高度
+  //       );
+  // }
 }

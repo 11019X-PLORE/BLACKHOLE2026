@@ -11,23 +11,22 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import frc.robot.RobotContainer;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.extension.Extension;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.shooter.hood.Hood;
 import frc.robot.subsystems.shooter.turret.Turret;
-import frc.robot.subsystems.superstructure.Superstructure;
-import frc.robot.subsystems.superstructure.Superstructure.SuperstructureState;
+import frc.robot.subsystems.superstructure.SuperstructureFactory;
 import frc.robot.util.geometry.AllianceFlipUtil;
 
 public class MidAutoShort extends SequentialCommandGroup {
-  public MidAutoShort(
-      Superstructure superstructure,
-      Intake intake,
-      Turret turret,
-      Hood hood,
-      Extension extension,
-      Drive drive) {
+  public MidAutoShort(RobotContainer c) {
+    Intake intake = c.getIntake();
+    Turret turret = c.getTurret();
+    Hood hood = c.getHood();
+    Extension extension = c.getExtension();
+    Drive drive = c.getDrive();
 
     addCommands(
         Commands.parallel(turret.zeroCommand(), hood.zeroCommand(), extension.zeroCommand()),
@@ -36,15 +35,15 @@ public class MidAutoShort extends SequentialCommandGroup {
             generatePath("M1"),
             intake.setGoalCommand(Intake.IntakeGoal.INTAKE),
             extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED)),
-        superstructure.setGoal(SuperstructureState.SHOOTING).withTimeout(2.5),
-        superstructure.setGoal(SuperstructureState.ACTIVESHOOTING).withTimeout(0.2),
-        Commands.parallel(generatePath("M2"), superstructure.setGoal(SuperstructureState.INTAKE)),
-        superstructure.setGoal(SuperstructureState.SHOOTING).withTimeout(2.0),
+        SuperstructureFactory.shoot(c).withTimeout(2.5),
+        SuperstructureFactory.activeShooting(c).withTimeout(0.2),
+        Commands.parallel(generatePath("M2"), SuperstructureFactory.runIndexerIntake(c)),
+        SuperstructureFactory.shoot(c).withTimeout(2.0),
         Commands.parallel(
                 intake.setGoalCommand(Intake.IntakeGoal.STOW),
                 extension.setGoalCommand(Extension.ExtensionGoal.SHAKE))
             .withTimeout(0.2),
-        superstructure.setGoal(SuperstructureState.SHOOTING).withTimeout(1.0),
+        SuperstructureFactory.shoot(c).withTimeout(1.0),
         Commands.parallel(
                 intake.setGoalCommand(Intake.IntakeGoal.STOP),
                 extension.setGoalCommand(Extension.ExtensionGoal.STOWED))

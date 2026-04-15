@@ -51,7 +51,7 @@ public class HoodIOReal implements HoodIO {
         new TalonFXConfiguration()
             .withMotorOutput(
                 new MotorOutputConfigs()
-                    .withNeutralMode(NeutralModeValue.Brake)
+                    .withNeutralMode(NeutralModeValue.Coast)
                     .withInverted(
                         isclockwice_Positive
                             ? InvertedValue.Clockwise_Positive

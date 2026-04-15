@@ -103,7 +103,7 @@ public class Indexer extends FullSubsystem {
   }
 
   @Override
-  public void periodic() {
+  public void updateInputsPeriodic() {
     // 1. 读取输入
     io.updateInputs(inputs);
     Logger.processInputs("Indexer", inputs);
@@ -114,7 +114,7 @@ public class Indexer extends FullSubsystem {
   }
 
   @Override
-  public void periodicAfterScheduler() {
+  public void periodic() {
     if (DriverStation.isDisabled()) {
       outputs.mode = IndexerIOOutputMode.COAST;
       outputs.velocityRadsPerSec = 0.0;
@@ -142,6 +142,10 @@ public class Indexer extends FullSubsystem {
         }
       }
     }
+  }
+
+  @Override
+  public void executePeriodic() {
     Logger.recordOutput("Indexer/Mode", outputs.mode);
     Logger.recordOutput("Indexer/Setpoint", outputs.velocityRadsPerSec);
     io.applyOutputs(outputs);

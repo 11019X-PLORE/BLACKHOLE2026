@@ -9,6 +9,9 @@ import com.ctre.phoenix6.signals.*;
 import com.ctre.phoenix6.swerve.*;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants.*;
 import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.units.measure.*;
@@ -86,6 +89,10 @@ public class TunerConstants {
   // Configs for the Pigeon 2; leave this null to skip applying Pigeon 2 configs
   private static final Pigeon2Configuration pigeonConfigs = null;
 
+  public static final Transform3d pigeonMountingOffset =
+      new Transform3d(
+          new Translation3d(0.118865, -0.195835, 0.094), new Rotation3d(Math.PI, 0.0, 0.0));
+
   // CAN bus that the devices are located on;
   // All swerve devices must share the same CAN bus
   public static final CANBus kCANBus = new CANBus("main", "./logs/example.hoot");
@@ -100,7 +107,7 @@ public class TunerConstants {
 
   private static final double kDriveGearRatio = 7.15;
   private static final double kSteerGearRatio = 18;
-  private static final Distance kWheelRadius = Inches.of(1.94625);
+  private static final Distance kWheelRadius = Meters.of(0.048);
 
   private static final boolean kInvertLeftSide = false;
   private static final boolean kInvertRightSide = true;
@@ -161,7 +168,7 @@ public class TunerConstants {
   private static final int kFrontRightDriveMotorId = 5;
   private static final int kFrontRightSteerMotorId = 6;
   private static final int kFrontRightEncoderId = 4;
-  private static final Angle kFrontRightEncoderOffset = Rotations.of(-0.07373046875);
+  private static final Angle kFrontRightEncoderOffset = Rotations.of(-0.0771);
   private static final boolean kFrontRightSteerMotorInverted = true;
   private static final boolean kFrontRightEncoderInverted = false;
 

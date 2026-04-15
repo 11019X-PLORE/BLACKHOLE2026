@@ -65,7 +65,7 @@ public class FlywheelIOReal implements FlywheelIO {
                     .withSensorToMechanismRatio(FlywheelConstants.kFlywheelGearRatio))
             .withCurrentLimits(
                 new CurrentLimitsConfigs()
-                    .withStatorCurrentLimit(Amps.of(120.0))
+                    .withStatorCurrentLimit(Amps.of(60.0))
                     .withStatorCurrentLimitEnable(true)
                     .withSupplyCurrentLimit(Amps.of(40))
                     .withSupplyCurrentLimitEnable(true)

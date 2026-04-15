@@ -5,13 +5,13 @@ import edu.wpi.first.wpilibj.AddressableLEDBuffer;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.util.Color;
+import frc.robot.util.FullSubsystem;
 import frc.robot.util.LoggedTracer;
-import frc.robot.util.VirtualSubsystem;
 import lombok.Getter;
 import lombok.Setter;
 import org.littletonrobotics.junction.AutoLogOutput;
 
-public class LED extends VirtualSubsystem {
+public class LED extends FullSubsystem {
   // 硬件接口
   private final AddressableLED leds = new AddressableLED(LEDConstants.LEDPort);
   private final AddressableLEDBuffer buffer = new AddressableLEDBuffer(LEDConstants.length);

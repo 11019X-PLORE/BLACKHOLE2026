@@ -113,15 +113,16 @@ public class Vision extends FullSubsystem {
   }
 
   @Override
-  public void periodic() {}
-
-  @Override
-  public void periodicAfterScheduler() {
-
+  public void updateInputsPeriodic() {
     for (int i = 0; i < io.length; i++) {
       io[i].updateInputs(inputs[i]);
       Logger.processInputs("Vision/Camera" + Integer.toString(i), inputs[i]);
+    }
+  }
 
+  @Override
+  public void periodic() {
+    for (int i = 0; i < io.length; i++) {
       // Compute the camera pose in the robot (base) frame:
       //   T_robot_to_camera = T_world_to_robot^-1 ⊕ T_world_to_camera
       // where T_world_to_camera = mountingEnd.globalTip ⊕ mountingOffset

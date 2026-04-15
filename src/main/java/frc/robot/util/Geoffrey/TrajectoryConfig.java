@@ -11,6 +11,9 @@ public class TrajectoryConfig {
   public double DY = 1.2288; // 1.8288 - 0.6
   public boolean APEX_BEFORE_TARGET = true;
 
+  public double min_hMax = 0;
+  public double max_hMax = 4;
+
   // Degree-3 polynomial coefficients for aero correction
   // Features: [1, dx, hmax, dx^2, dx*hmax, hmax^2, dx^3, dx^2*hmax, dx*hmax^2, hmax^3]
   public double[] DVX_COEFFS = {
@@ -43,32 +46,34 @@ public class TrajectoryConfig {
     config.G = 9.80;
     config.DY = 1.2288; // 1.8288 - 0.6
     config.APEX_BEFORE_TARGET = true;
+    config.min_hMax = config.DY + 0.1;
+    config.max_hMax = config.DY + 2.0;
 
     config.DVX_COEFFS =
         new double[] {
-          -0.08450618093881918,
-          -0.009837347218053185,
-          0.13674748925075123,
-          -0.0030658470551465714,
-          0.018822387782098767,
-          -0.018255996814091676,
-          -0.00011147978768855354,
-          0.0010860553848757643,
-          -0.003321669210630178,
-          0.0036514134394532915
+          -0.672604149319971,
+          -0.12523885947465568,
+          1.1429452132790001,
+          -0.01730658231810331,
+          0.16196173975038952,
+          -0.558202322863543,
+          -0.00044776800707148345,
+          0.007798732800023807,
+          -0.04108483280408105,
+          0.09408565327243135
         };
     config.DVY_COEFFS =
         new double[] {
-          -0.07230402829128711,
-          -0.028479659883815272,
-          0.088710520507098,
-          -0.001715989222679634,
-          0.003342169837324043,
-          -0.018125628513105257,
-          -0.00013078819069747838,
-          0.0007362494446703192,
-          -0.0015496733072326574,
-          0.0024913578085115125
+          -0.27876808179911616,
+          -0.07942959185985503,
+          0.45371945694506044,
+          -0.005719163724021431,
+          0.056404022433119747,
+          -0.2118689165662379,
+          -0.00017011962531746083,
+          0.002382015759355805,
+          -0.014074614593874608,
+          0.03417079016246524
         };
     return config;
   }
@@ -78,6 +83,8 @@ public class TrajectoryConfig {
     config.G = 9.80;
     config.DY = -0.6;
     config.APEX_BEFORE_TARGET = true;
+    config.min_hMax = 0.4;
+    config.max_hMax = 4;
 
     config.DVX_COEFFS =
         new double[] {
