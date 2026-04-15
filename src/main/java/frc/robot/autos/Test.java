@@ -25,7 +25,7 @@ public class Test extends SequentialCommandGroup {
 
     addCommands(
         Commands.parallel(turret.zeroCommand(), hood.zeroCommand(), extension.zeroCommand()),
-        resetOdomToPath("L1", drive),
+        resetOdomToPath("Test1", drive),
         generatePath("Test1"));
   }
 
