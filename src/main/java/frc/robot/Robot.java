@@ -62,17 +62,21 @@ public class Robot extends LoggedRobot {
     // Start AdvantageKit logger
     Logger.start();
 
-     CommandScheduler.getInstance().onCommandInitialize(command -> 
-        Logger.recordOutput("CommandEvents/LastEvent", "Started: " + command.getName())
-    );
+    CommandScheduler.getInstance()
+        .onCommandInitialize(
+            command ->
+                Logger.recordOutput("CommandEvents/LastEvent", "Started: " + command.getName()));
 
-    CommandScheduler.getInstance().onCommandInterrupt(command -> 
-        Logger.recordOutput("CommandEvents/LastEvent", "Interrupted: " + command.getName())
-    );
+    CommandScheduler.getInstance()
+        .onCommandInterrupt(
+            command ->
+                Logger.recordOutput(
+                    "CommandEvents/LastEvent", "Interrupted: " + command.getName()));
 
-    CommandScheduler.getInstance().onCommandFinish(command -> 
-        Logger.recordOutput("CommandEvents/LastEvent", "Finished: " + command.getName())
-    );
+    CommandScheduler.getInstance()
+        .onCommandFinish(
+            command ->
+                Logger.recordOutput("CommandEvents/LastEvent", "Finished: " + command.getName()));
 
     robotContainer = new RobotContainer();
   }
