@@ -13,10 +13,11 @@ import frc.robot.subsystems.extension.Extension;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.shooter.hood.Hood;
 import frc.robot.subsystems.shooter.turret.Turret;
+import frc.robot.subsystems.superstructure.SuperstructureFactory;
 import frc.robot.util.geometry.AllianceFlipUtil;
 
-public class Test extends SequentialCommandGroup {
-  public Test(RobotContainer c) {
+public class L1 extends SequentialCommandGroup {
+  public L1(RobotContainer c) {
     Intake intake = c.getIntake();
     Turret turret = c.getTurret();
     Hood hood = c.getHood();
@@ -25,8 +26,34 @@ public class Test extends SequentialCommandGroup {
 
     addCommands(
         Commands.parallel(turret.zeroCommand(), hood.zeroCommand(), extension.zeroCommand()),
-        resetOdomToPath("Test1", drive),
-        generatePath("Test1"));
+        resetOdomToPath("L1", drive),
+        Commands.parallel(
+            generatePath("L1"),
+            intake.setGoalCommand(Intake.IntakeGoal.INTAKE),
+            extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED),
+            SuperstructureFactory.runIndexerIntake(c)),
+        SuperstructureFactory.activeShooting(c).withTimeout(0.1),
+        generatePath("L2"),
+        intake.setGoalCommand(Intake.IntakeGoal.STOP).withTimeout(0.1),
+        Commands.deadline(
+            SuperstructureFactory.shoot(c).withTimeout(4.0), SuperstructureFactory.feeding(c)),
+        SuperstructureFactory.activeShooting(c).withTimeout(0.1),
+        SuperstructureFactory.stopFeeding(c).withTimeout(0.1),
+        Commands.parallel(
+            generatePath("L3"),
+            intake.setGoalCommand(Intake.IntakeGoal.INTAKE),
+            extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED),
+            SuperstructureFactory.runIndexerIntake(c)),
+        intake.setGoalCommand(Intake.IntakeGoal.STOP).withTimeout(0.1),
+        Commands.parallel(
+            Commands.deadline(
+                generatePath("L5"),
+                SuperstructureFactory.shoot(c),
+                SuperstructureFactory.feeding(c)),
+            intake.setGoalCommand(Intake.IntakeGoal.STOW),
+            extension.setGoalCommand(Extension.ExtensionGoal.SHAKE)),
+        SuperstructureFactory.activeShooting(c).withTimeout(0.1),
+        SuperstructureFactory.stopFeeding(c).withTimeout(0.1));
   }
 
   public static Command resetOdomToPath(String pathName, Drive drive) {

@@ -21,7 +21,9 @@ import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.FieldConstants.AprilTagLayoutType;
-import frc.robot.autos.LeftAuto;
+import frc.robot.autos.L1;
+import frc.robot.autos.L2;
+import frc.robot.autos.L3;
 import frc.robot.autos.MidAuto;
 import frc.robot.autos.MidAutoShort;
 import frc.robot.autos.RightAuto;
@@ -261,13 +263,15 @@ public class RobotContainer {
     }
     // Set up auto routines
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
-    autoChooser.addOption("LEFT", new LeftAuto(this));
+    autoChooser.addOption("L1", new L1(this));
+    autoChooser.addOption("L2", new L2(this));
+    autoChooser.addOption("L3", new L3(this));
     autoChooser.addOption("MID", new MidAuto(this));
     autoChooser.addOption("MIDSHORT", new MidAutoShort(this));
     autoChooser.addOption("RIGHT", new RightAuto(this));
     autoChooser.addOption("RIGHTCYCLE", new RightCycleAuto(this));
     autoChooser.addOption("TEST", new Test(this));
-    autoChooser.addDefaultOption("LEFT", new LeftAuto(this));
+    autoChooser.addDefaultOption("L1", new L1(this));
     // Set up SysId routines
     // autoChooser.addOption(
     //     "Drive Wheel Radius Characterization", DriveCommands.wheelRadiusCharacterization(drive));
