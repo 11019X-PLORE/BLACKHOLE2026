@@ -7,7 +7,7 @@ public interface TurretIO {
   @AutoLog
   public static class TurretIOInputs {
 
-    public boolean turretMotorConnected = false;
+    public boolean connected = false;
     public double positionRads = 0.0;
     public double velocityRadsPerSec = 0.0;
     public double turretAlphaRadsPerSecSquared = 0.0;

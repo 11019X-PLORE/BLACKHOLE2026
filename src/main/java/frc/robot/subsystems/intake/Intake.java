@@ -149,6 +149,8 @@ public class Intake extends FullSubsystem {
     Logger.recordOutput("Intake/Mode", outputs.mode);
     Logger.recordOutput("Intake/Setpoint", outputs.velocityRadsPerSec);
     io.applyOutputs(outputs);
+    Robot.batteryLogger.reportCurrentUsage(
+        "Intake", false, inputs.connected ? inputs.supplyCurrentAmps : 0.0);
   }
 
   /** 内部速度闭环辅助方法：负责设定 output 并计算 atGoal */

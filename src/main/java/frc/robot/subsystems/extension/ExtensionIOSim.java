@@ -40,7 +40,7 @@ public class ExtensionIOSim implements ExtensionIO {
     sim.setInputVoltage(MathUtil.clamp(appliedVolts, -12.0, 12.0));
     sim.update(Constants.loopPeriodSecs);
 
-    inputs.motorConnected = true;
+    inputs.connected = true;
     inputs.positionRads = sim.getAngleRads();
     inputs.velocityRadsPerSec = sim.getVelocityRadPerSec();
     inputs.appliedVolts = appliedVolts;

@@ -16,9 +16,11 @@ import frc.robot.subsystems.shooter.*;
 import frc.robot.util.FuelSim;
 
 public class TurretIOSim implements TurretIO {
-  private final DCMotor gearbox = DCMotor.getKrakenX60Foc(1);
+  private final DCMotor gearbox = DCMotor.getKrakenX60(1);
   private final DCMotorSim sim =
-      new DCMotorSim(LinearSystemId.createDCMotorSystem(gearbox, 0.001, 100.0), gearbox);
+      new DCMotorSim(
+          LinearSystemId.createDCMotorSystem(gearbox, 0.1, TurretConstants.kTurretGearRatio),
+          gearbox);
   private final PIDController controller = new PIDController(0.003, 0, 0, Constants.loopPeriodSecs);
   // TODO ProfiledPIDController
   private double currentOutput = 0.0;
@@ -45,7 +47,7 @@ public class TurretIOSim implements TurretIO {
     sim.setInputVoltage(MathUtil.clamp(appliedVoltage, -12.0, 12.0));
     sim.update(Constants.loopPeriodSecs);
 
-    inputs.turretMotorConnected = true;
+    inputs.connected = true;
     inputs.positionRads = sim.getAngularPositionRad();
     inputs.velocityRadsPerSec = sim.getAngularVelocityRadPerSec();
     inputs.turretAppliedVolts = appliedVoltage;

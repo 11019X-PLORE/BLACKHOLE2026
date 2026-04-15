@@ -1,10 +1,10 @@
 {
   "hubs": [
     {
-      "x": -8,
-      "y": -8,
-      "width": 1552,
-      "height": 832,
+      "x": -2569,
+      "y": 80,
+      "width": 2578,
+      "height": 1410,
       "state": {
         "sidebar": {
           "width": 328,
@@ -116,7 +116,6 @@
             "/AdvantageKit/Indexer/Roller",
             "/AdvantageKit/RealOutputs/Hanger/Profile",
             "/AdvantageKit/RealOutputs/ShotCalculator",
-            "/AdvantageKit/RealOutputs/Drive",
             "/AdvantageKit/RealOutputs/Vision/Camera0/RobotPosesAccepted",
             "/AdvantageKit/RealOutputs/Vision/Camera1/RobotPoses",
             "/AdvantageKit/Drive",
@@ -134,13 +133,27 @@
             "/AdvantageKit/RealOutputs/turret/turret",
             "/AdvantageKit/turret",
             "/AdvantageKit/turret/turret",
-            "/AdvantageKit",
             "/AdvantageKit/RealOutputs/LoggedTracer",
-            "/AdvantageKit/RealOutputs/LoggedTracer/Robot"
+            "/AdvantageKit/RealOutputs/LoggedTracer/Robot",
+            "/AdvantageKit/RealOutputs/Drive/forwardKinematic",
+            "/AdvantageKit/RealOutputs/Drive/forwardKinematic/rotation",
+            "/AdvantageKit/RealOutputs/Drive/forwardKinematic/translation",
+            "/AdvantageKit/RealOutputs/Drive/forwardKinematic/rotation/q",
+            "/AdvantageKit/RealOutputs/Turret/forwardKinematic",
+            "/AdvantageKit/RealOutputs/Turret/forwardKinematic/rotation",
+            "/AdvantageKit/RealOutputs/Turret/forwardKinematic/rotation/q",
+            "/AdvantageKit/RealOutputs/Drive/Acc",
+            "/AdvantageKit",
+            "/AdvantageKit/BatteryLogger",
+            "/AdvantageKit/RealOutputs/EnergyLogger",
+            "/AdvantageKit/RealOutputs/EnergyLogger/Power",
+            "/AdvantageKit/RealOutputs/EnergyLogger/Power/Drive",
+            "/AdvantageKit/RealOutputs/EnergyLogger/Power/shooter",
+            "/AdvantageKit/RealOutputs/EnergyLogger/Power/Controls"
           ]
         },
         "tabs": {
-          "selected": 7,
+          "selected": 4,
           "tabs": [
             {
               "type": 0,
@@ -251,6 +264,16 @@
                     "options": {
                       "variant": "Fuel"
                     }
+                  },
+                  {
+                    "type": "ghost",
+                    "logKey": "NT:/AdvantageKit/RealOutputs/Vision/Summary/RobotPosesRejected",
+                    "logType": "Pose3d[]",
+                    "visible": true,
+                    "options": {
+                      "model": "2026 KitBot",
+                      "color": "#ff0000"
+                    }
                   }
                 ],
                 "game": "FRC:2026 Field"
@@ -260,9 +283,9 @@
                 "cameraIndex": -1,
                 "orbitFov": 50,
                 "cameraPosition": [
-                  -14.884190686702198,
-                  18.944550393779316,
-                  -5.16095770635778
+                  -14.244357106938612,
+                  9.930589773025499,
+                  -3.0612199872403396
                 ],
                 "cameraTarget": [
                   -2.185293361600478,
@@ -380,7 +403,7 @@
                   },
                   {
                     "type": "stripes",
-                    "logKey": "NT:/AdvantageKit/RealOutputs/turret/turret1/atGoal",
+                    "logKey": "NT:/AdvantageKit/RealOutputs/Turret/AtGoal",
                     "logType": "Boolean",
                     "visible": true,
                     "options": {
@@ -420,6 +443,130 @@
                 "rightFilter": 0
               },
               "controllerUUID": "n09za248n3e57f2g11kfz1wguhd9wkor",
+              "renderer": null,
+              "controlsHeight": 200
+            },
+            {
+              "type": 5,
+              "title": "Commad",
+              "controller": "NT:/AdvantageKit/RealOutputs/CommandEvents/LastEvent",
+              "controllerUUID": "yrg1dutvtpqnhh8hp4aa1dz2x7e6w2sv",
+              "renderer": {
+                "highlight": false
+              },
+              "controlsHeight": 0
+            },
+            {
+              "type": 1,
+              "title": "Emergy",
+              "controller": {
+                "leftSources": [
+                  {
+                    "type": "stepped",
+                    "logKey": "NT:/AdvantageKit/RealOutputs/EnergyLogger/Power/Drive",
+                    "logType": "Number",
+                    "visible": true,
+                    "options": {
+                      "color": "#2b66a2",
+                      "size": "normal"
+                    }
+                  },
+                  {
+                    "type": "stepped",
+                    "logKey": "NT:/AdvantageKit/RealOutputs/EnergyLogger/Energy",
+                    "logType": "Number",
+                    "visible": true,
+                    "options": {
+                      "color": "#e5b31b",
+                      "size": "normal"
+                    }
+                  },
+                  {
+                    "type": "stepped",
+                    "logKey": "NT:/AdvantageKit/RealOutputs/EnergyLogger/Power/shooter",
+                    "logType": "Number",
+                    "visible": true,
+                    "options": {
+                      "color": "#af2437",
+                      "size": "normal"
+                    }
+                  }
+                ],
+                "rightSources": [
+                  {
+                    "type": "stepped",
+                    "logKey": "NT:/AdvantageKit/RealOutputs/EnergyLogger/Power/shooter/Flywheel",
+                    "logType": "Number",
+                    "visible": true,
+                    "options": {
+                      "color": "#858584",
+                      "size": "normal"
+                    }
+                  },
+                  {
+                    "type": "stepped",
+                    "logKey": "NT:/AdvantageKit/RealOutputs/EnergyLogger/Power/shooter/Turret",
+                    "logType": "Number",
+                    "visible": true,
+                    "options": {
+                      "color": "#3b875a",
+                      "size": "normal"
+                    }
+                  },
+                  {
+                    "type": "stepped",
+                    "logKey": "NT:/AdvantageKit/RealOutputs/EnergyLogger/Power/shooter/Hood",
+                    "logType": "Number",
+                    "visible": true,
+                    "options": {
+                      "color": "#d993aa",
+                      "size": "normal"
+                    }
+                  }
+                ],
+                "discreteSources": [
+                  {
+                    "type": "stripes",
+                    "logKey": "NT:/AdvantageKit/RealOutputs/EnergyLogger/Power/Extension",
+                    "logType": "Number",
+                    "visible": true,
+                    "options": {
+                      "color": "#80588e"
+                    }
+                  },
+                  {
+                    "type": "stripes",
+                    "logKey": "NT:/AdvantageKit/RealOutputs/EnergyLogger/Power/Indexer",
+                    "logType": "Number",
+                    "visible": true,
+                    "options": {
+                      "color": "#e48b32"
+                    }
+                  },
+                  {
+                    "type": "stripes",
+                    "logKey": "NT:/AdvantageKit/RealOutputs/EnergyLogger/Power/Intake",
+                    "logType": "Number",
+                    "visible": true,
+                    "options": {
+                      "color": "#c0b487"
+                    }
+                  }
+                ],
+                "leftLockedRange": null,
+                "rightLockedRange": null,
+                "leftUnitConversion": {
+                  "autoTarget": null,
+                  "preset": null
+                },
+                "rightUnitConversion": {
+                  "autoTarget": null,
+                  "preset": null
+                },
+                "leftFilter": 0,
+                "rightFilter": 0
+              },
+              "controllerUUID": "x3l9aj73pduiym3yblf0dpil0vfty7rx",
               "renderer": null,
               "controlsHeight": 200
             },
@@ -579,41 +726,9 @@
                 "leftSources": [
                   {
                     "type": "stepped",
-                    "logKey": "NT:/AdvantageKit/turret/turret1/TurretTorqueCurrent",
+                    "logKey": "NT:/AdvantageKit/turret/TurretTorqueCurrent",
                     "logType": "Number",
                     "visible": false,
-                    "options": {
-                      "color": "#e48b32",
-                      "size": "normal"
-                    }
-                  },
-                  {
-                    "type": "stepped",
-                    "logKey": "NT:/AdvantageKit/turret/turret1/VelocityRadsPerSec",
-                    "logType": "Number",
-                    "visible": false,
-                    "options": {
-                      "color": "#2b66a2",
-                      "size": "normal"
-                    }
-                  },
-                  {
-                    "type": "stepped",
-                    "logKey": "NT:/AdvantageKit/RealOutputs/ShotCalculator/TurretToTargetDistance",
-                    "logType": "Number",
-                    "visible": false,
-                    "options": {
-                      "color": "#80588e",
-                      "size": "normal"
-                    }
-                  }
-                ],
-                "rightSources": [
-                  {
-                    "type": "stepped",
-                    "logKey": "NT:/AdvantageKit/turret/turret1/PositionRads",
-                    "logType": "Number",
-                    "visible": true,
                     "options": {
                       "color": "#e5b31b",
                       "size": "normal"
@@ -621,7 +736,39 @@
                   },
                   {
                     "type": "stepped",
-                    "logKey": "NT:/AdvantageKit/RealOutputs/turret/turret1/GoalPositionRad",
+                    "logKey": "NT:/AdvantageKit/turret/VelocityRadsPerSec",
+                    "logType": "Number",
+                    "visible": false,
+                    "options": {
+                      "color": "#af2437",
+                      "size": "normal"
+                    }
+                  },
+                  {
+                    "type": "stepped",
+                    "logKey": "NT:/AdvantageKit/RealOutputs/turret/GoalAccelerationRadPerSec2",
+                    "logType": "Number",
+                    "visible": false,
+                    "options": {
+                      "color": "#3b875a",
+                      "size": "normal"
+                    }
+                  }
+                ],
+                "rightSources": [
+                  {
+                    "type": "stepped",
+                    "logKey": "NT:/AdvantageKit/turret/PositionRads",
+                    "logType": "Number",
+                    "visible": true,
+                    "options": {
+                      "color": "#2b66a2",
+                      "size": "normal"
+                    }
+                  },
+                  {
+                    "type": "stepped",
+                    "logKey": "NT:/AdvantageKit/RealOutputs/turret/SetpointPositionRad",
                     "logType": "Number",
                     "visible": true,
                     "options": {
@@ -631,11 +778,11 @@
                   },
                   {
                     "type": "stepped",
-                    "logKey": "NT:/AdvantageKit/RealOutputs/turret/turret1/SetpointPositionRad",
+                    "logKey": "NT:/AdvantageKit/RealOutputs/turret/GoalPositionRad",
                     "logType": "Number",
                     "visible": true,
                     "options": {
-                      "color": "#d993aa",
+                      "color": "#e48b32",
                       "size": "normal"
                     }
                   }
@@ -661,20 +808,20 @@
                   },
                   {
                     "type": "stripes",
-                    "logKey": "NT:/AdvantageKit/turret/turret1/TurretMotorConnected",
-                    "logType": "Boolean",
-                    "visible": true,
-                    "options": {
-                      "color": "#3b875a"
-                    }
-                  },
-                  {
-                    "type": "stripes",
                     "logKey": "NT:/AdvantageKit/RealOutputs/Turret/AtGoal",
                     "logType": "Boolean",
                     "visible": true,
                     "options": {
                       "color": "#2b66a2"
+                    }
+                  },
+                  {
+                    "type": "stripes",
+                    "logKey": "NT:/AdvantageKit/RealOutputs/Turret/Goal",
+                    "logType": "String",
+                    "visible": true,
+                    "options": {
+                      "color": "#80588e"
                     }
                   }
                 ],
@@ -770,6 +917,15 @@
                     "options": {
                       "color": "#2b66a2"
                     }
+                  },
+                  {
+                    "type": "stripes",
+                    "logKey": "NT:/AdvantageKit/RealOutputs/Hood/Goal",
+                    "logType": "String",
+                    "visible": true,
+                    "options": {
+                      "color": "#e5b31b"
+                    }
                   }
                 ],
                 "leftLockedRange": null,
@@ -798,7 +954,7 @@
                     "type": "stepped",
                     "logKey": "NT:/AdvantageKit/Flywheel/TorqueCurrentAmps",
                     "logType": "Number",
-                    "visible": true,
+                    "visible": false,
                     "options": {
                       "color": "#2b66a2",
                       "size": "normal"

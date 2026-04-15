@@ -101,9 +101,8 @@ public class Hood extends FullSubsystem {
     // 1. 读取输入
     io.updateInputs(inputs);
     Logger.processInputs("Hood", inputs);
-
     // 2. 更新硬件报警与 Tunables
-    motorDisconnectedAlert.set(!motorConnectedDebouncer.calculate(inputs.motorConnected));
+    motorDisconnectedAlert.set(!motorConnectedDebouncer.calculate(inputs.connected));
     updateTunables();
   }
 
@@ -173,6 +172,8 @@ public class Hood extends FullSubsystem {
     Logger.recordOutput("Hood/Profile/mode", outputs.mode);
     Logger.recordOutput("Hood/Profile/zero", hoodZeroed);
     io.applyOutputs(outputs);
+    Robot.batteryLogger.reportCurrentUsage(
+        "shooter/Hood", false, inputs.connected ? inputs.supplyCurrentAmps : 0.0);
   }
 
   public void runPositionFOCLogic(

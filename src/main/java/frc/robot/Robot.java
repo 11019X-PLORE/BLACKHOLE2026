@@ -1,9 +1,12 @@
 package frc.robot;
 
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.util.BatteryLogger;
 import frc.robot.util.FullSubsystem;
 import frc.robot.util.LoggedTracer;
+import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
@@ -20,6 +23,9 @@ import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 public class Robot extends LoggedRobot {
   private Command autonomousCommand;
   private RobotContainer robotContainer;
+
+  public static final BatteryLogger batteryLogger = new BatteryLogger();
+  private final BatteryIOInputsAutoLogged batteryInputs = new BatteryIOInputsAutoLogged();
   // Thread m_visionThread;
 
   public Robot() {
@@ -84,12 +90,21 @@ public class Robot extends LoggedRobot {
   /** This function is called periodically during all modes. */
   @Override
   public void robotPeriodic() {
+    // Update battery inputs
+    batteryInputs.batteryVoltage = RobotController.getBatteryVoltage();
+    batteryInputs.rioCurrent = RobotController.getInputCurrent();
+    batteryInputs.macMiniCurrent = 0.0;
+    Logger.processInputs("BatteryLogger", batteryInputs);
+    batteryLogger.setBatteryVoltage(batteryInputs.batteryVoltage);
+    batteryLogger.setRioCurrent(batteryInputs.rioCurrent);
+    batteryLogger.setMacMiniCurrent(batteryInputs.macMiniCurrent);
+    LoggedTracer.record("BatteryLogger/Periodic");
 
     FullSubsystem.runAllUpdateInputsPeriodic();
     CommandScheduler.getInstance().run();
     FullSubsystem.runAllPeriodicAfterScheduler();
     FullSubsystem.runAllExecutePeriodic();
-
+    batteryLogger.periodicAfterScheduler();
     LoggedTracer.record("Robot/AfterScheduler");
   }
 
@@ -144,5 +159,12 @@ public class Robot extends LoggedRobot {
   @Override
   public void simulationPeriodic() {
     robotContainer.fuelSim.updateSim();
+  }
+
+  @AutoLog
+  public static class BatteryIOInputs {
+    public double batteryVoltage = 12.0;
+    public double rioCurrent = 0.0;
+    public double macMiniCurrent = 0.0;
   }
 }

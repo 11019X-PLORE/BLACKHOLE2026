@@ -43,6 +43,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
 import frc.robot.Constants.Mode;
+import frc.robot.Robot;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.vision.VisionConstants;
 import frc.robot.util.FullSubsystem;
@@ -240,6 +241,16 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
   @Override
   public void periodic() {}
 
+  @Override
+  public void executePeriodic() {
+    for (int i = 0; i < 4; i++) {
+      Robot.batteryLogger.reportCurrentUsage(
+          "Drive/Module" + i,
+          true,
+          modules[i].getDriveCurrentAmps(),
+          modules[i].getSteerCurrentAmps());
+    }
+  }
   // --- 控制方法 ---
   public void runVelocity(ChassisSpeeds speeds) {
     ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);

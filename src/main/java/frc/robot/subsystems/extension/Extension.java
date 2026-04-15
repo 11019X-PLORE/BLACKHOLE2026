@@ -91,7 +91,7 @@ public class Extension extends FullSubsystem {
     Logger.processInputs("Extension", inputs);
 
     // 2. 更新硬件报警与 Tunables
-    motorDisconnectedAlert.set(!motorConnectedDebouncer.calculate(inputs.motorConnected));
+    motorDisconnectedAlert.set(!motorConnectedDebouncer.calculate(inputs.connected));
     updateTunables();
   }
 
@@ -142,6 +142,8 @@ public class Extension extends FullSubsystem {
   @Override
   public void executePeriodic() {
     io.applyOutputs(outputs);
+    Robot.batteryLogger.reportCurrentUsage(
+        "Extension", false, inputs.connected ? inputs.supplyCurrentAmps : 0.0);
   }
 
   /** 内部位置闭环辅助方法：负责 clamp 角度、设置 output 并计算 atGoal */

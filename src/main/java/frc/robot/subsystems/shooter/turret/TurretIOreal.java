@@ -116,7 +116,7 @@ public class TurretIOreal implements TurretIO {
 
   @Override
   public void updateInputs(TurretIOInputs inputs) {
-    inputs.turretMotorConnected =
+    inputs.connected =
         BaseStatusSignal.refreshAll(
                 turretPosition,
                 turretVelocity,

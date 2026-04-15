@@ -101,7 +101,7 @@ public class ExtensionIOReal implements ExtensionIO {
   @Override
   public void updateInputs(ExtensionIOInputs inputs) {
     // 刷新所有信号
-    inputs.motorConnected =
+    inputs.connected =
         BaseStatusSignal.refreshAll(
                 position, velocity, appliedVolts, supplyCurrent, torqueCurrent, temp)
             .isOK();

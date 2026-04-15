@@ -57,7 +57,7 @@ public class HoodIOReal implements HoodIO {
                             ? InvertedValue.Clockwise_Positive
                             : InvertedValue.CounterClockwise_Positive))
             .withFeedback(
-                new FeedbackConfigs().withSensorToMechanismRatio(HoodConstants.hoodGearRatio))
+                new FeedbackConfigs().withSensorToMechanismRatio(HoodConstants.kHoodGearRatio))
             .withCurrentLimits(
                 new CurrentLimitsConfigs()
                     .withStatorCurrentLimit(Amps.of(120))
@@ -93,7 +93,7 @@ public class HoodIOReal implements HoodIO {
   @Override
   public void updateInputs(HoodIOInputs inputs) {
     // 刷新所有信号
-    inputs.motorConnected =
+    inputs.connected =
         BaseStatusSignal.refreshAll(
                 position, velocity, appliedVolts, supplyCurrent, torqueCurrent, temp)
             .isOK();
@@ -123,7 +123,7 @@ public class HoodIOReal implements HoodIO {
         double ffAmps =
             (outputs.accelerationRadPerSec2
                     * HoodConstants.kInertiaHood
-                    / HoodConstants.hoodGearRatio)
+                    / HoodConstants.kHoodGearRatio)
                 / HoodConstants.kT;
         talon.setControl(
             torqueControl
