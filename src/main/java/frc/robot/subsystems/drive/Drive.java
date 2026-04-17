@@ -70,9 +70,15 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
               Math.hypot(TunerConstants.BackRight.LocationX, TunerConstants.BackRight.LocationY)));
 
   // PathPlanner 配置
-  private static final double ROBOT_MASS_KG = 60.0;
-  private static final double ROBOT_MOI = 6.883;
+  private static final double ROBOT_MASS_KG = 75.0;
+  private static final double ROBOT_MOI = 8;
   private static final double WHEEL_COF = 1.2;
+
+  // Motor model constants for acceleration estimation
+  private static final DCMotor DRIVE_MOTOR = DCMotor.getKrakenX60Foc(1);
+  private static final double STALL_TORQUE_NM = DRIVE_MOTOR.stallTorqueNewtonMeters;
+  private static final double FREE_SPEED_RAD_PER_SEC = DRIVE_MOTOR.freeSpeedRadPerSec;
+
   private static final RobotConfig PP_CONFIG =
       new RobotConfig(
           ROBOT_MASS_KG,
@@ -356,32 +362,110 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
     return forces;
   }
 
+  /**
+   * Estimates the robot's field-relative acceleration using a motor torque model based on the
+   * velocity setpoints and measured module speeds.
+   *
+   * <p>The motor torque model uses the DC motor torque-speed relationship:
+   *
+   * <ul>
+   *   <li><b>Acceleration</b> (motor drives in direction of motion): available torque = τ_stall ×
+   *       (1 − |ω| / ω_free). Starts at τ_stall at v=0, linearly to 0 at free speed.
+   *   <li><b>Deceleration</b> (motor brakes against motion): available torque = τ_stall × (1 + |ω|
+   *       / ω_free). Starts at τ_stall at v=0, linearly to 2×τ_stall at free speed.
+   * </ul>
+   *
+   * Both are clamped by the stator current limit × kT. The velocity PID (kP=80 in TorqueCurrentFOC
+   * mode) is aggressive enough that when a velocity error exists, the motor will command the
+   * maximum available torque to close the gap. Per-module forces are summed to get robot-frame
+   * acceleration (F/m, τ/I), then converted to field-relative.
+   *
+   * <p>This estimation is valid during normal driving with gradual acceleration profiles. It may be
+   * inaccurate during sudden large steering changes.
+   */
   public ChassisSpeeds getFieldAcceleration() {
-    // double[] currentForces = getChassisForces();
-    // return new ChassisSpeeds(
-    //     currentForces[0] / ROBOT_MASS_KG,
-    //     currentForces[1] / ROBOT_MASS_KG,
-    //     currentForces[2] / ROBOT_MOI);
-    try {
-      double domega = 0.0;
+    Translation2d[] modulePositions = kinematics.getModules();
+    double totalFx = 0.0;
+    double totalFy = 0.0;
+    double totalTorque = 0.0;
 
-      double omega = -gyroInputs.odometryYawVelocities[gyroInputs.odometryYawVelocities.length - 1];
-      domega =
-          omega - (-gyroInputs.odometryYawVelocities[gyroInputs.odometryYawVelocities.length - 2]);
+    for (int i = 0; i < 4; i++) {
+      Module module = modules[i];
+      SwerveModuleState setpoint = module.getSetpointState();
+      SwerveModuleState measured = module.getState();
 
-      double[] r = {
-        TunerConstants.pigeonMountingOffset.getX(), TunerConstants.pigeonMountingOffset.getY()
-      };
-      double alpha = domega * ODOMETRY_FREQUENCY;
-      double ax = gyroInputs.odometryAccelY[gyroInputs.odometryAccelY.length - 1];
-      double ay = -gyroInputs.odometryAccelX[gyroInputs.odometryAccelX.length - 1];
+      double setpointSpeed = setpoint.speedMetersPerSecond;
+      double measuredSpeed = measured.speedMetersPerSecond;
 
-      ax += -(r[1] * alpha) - (r[0] * omega);
-      ay += (r[0] * alpha) - (r[1] * omega);
-      return ChassisSpeeds.fromRobotRelativeSpeeds(new ChassisSpeeds(ax, ay, alpha), getRotation());
-    } catch (Exception e) {
+      // Motor properties
+      double kT = module.getDriveKt();
+      double gearRatio = module.getDriveGearRatio();
+      double wheelRadius = module.getWheelRadius();
+      double statorCurrentLimit = module.getSlipCurrent();
+
+      // Convert measured wheel speed to motor speed (rad/s)
+      double motorSpeedRadPerSec = Math.abs(measuredSpeed) / wheelRadius * gearRatio;
+
+      // Speed fraction [0, 1], clamped
+      double speedFraction = Math.min(motorSpeedRadPerSec / FREE_SPEED_RAD_PER_SEC, 1.0);
+
+      // Determine if motor is accelerating or decelerating
+      // Accelerating: setpoint pushes further in direction of motion (or from rest)
+      // Decelerating: setpoint opposes current motion
+      boolean isDecelerating =
+          (Math.abs(setpointSpeed) < Math.abs(measuredSpeed))
+              || (setpointSpeed * measuredSpeed < 0);
+
+      // Motor torque model (at the motor shaft, before gear reduction):
+      // Accel:  τ = τ_stall × (1 - speedFraction)  [stall→0 as v goes 0→free]
+      // Decel:  τ = τ_stall × (1 + speedFraction)  [stall→2×stall as v goes 0→free]
+      double availableMotorTorque;
+      if (isDecelerating) {
+        availableMotorTorque = STALL_TORQUE_NM * (1.0 + speedFraction);
+      } else {
+        availableMotorTorque = STALL_TORQUE_NM * (1.0 - speedFraction);
+      }
+
+      // Clamp by stator current limit: max motor torque = currentLimit × kT
+      double currentLimitTorque = statorCurrentLimit * kT;
+      availableMotorTorque = Math.min(availableMotorTorque, currentLimitTorque);
+
+      // Torque at wheel after gear reduction, then force at contact patch
+      double wheelForce = availableMotorTorque * gearRatio / wheelRadius;
+
+      // Velocity error determines force direction
+      double velocityError = setpointSpeed - measuredSpeed;
+
+      // The aggressive velocity PID will command max available torque when error exists.
+      // For small errors, scale linearly to avoid discontinuity at the setpoint.
+      double forceThreshold = 0.3; // m/s - below this error, scale force proportionally
+      double forceMagnitude;
+      if (Math.abs(velocityError) > forceThreshold) {
+        forceMagnitude = wheelForce * Math.signum(velocityError);
+      } else {
+        forceMagnitude = wheelForce * (velocityError / forceThreshold);
+      }
+
+      // Force direction is along the module's setpoint steering angle
+      double forceAngle = setpoint.angle.getRadians();
+      double Fx = forceMagnitude * Math.cos(forceAngle);
+      double Fy = forceMagnitude * Math.sin(forceAngle);
+
+      totalFx += Fx;
+      totalFy += Fy;
+      // Torque about robot center: r × F
+      totalTorque += -Fx * modulePositions[i].getY() + Fy * modulePositions[i].getX();
     }
-    return new ChassisSpeeds();
+
+    // Robot-relative acceleration: a = F/m, α = τ/I
+    double ax = 0.5 * totalFx / ROBOT_MASS_KG;
+    double ay = 0.5 * totalFy / ROBOT_MASS_KG;
+    double alpha = 0.5 * totalTorque / ROBOT_MOI;
+
+    Logger.recordOutput("Drive/EstimatedAccel", new double[] {ax, ay, alpha});
+
+    // Convert to field-relative
+    return ChassisSpeeds.fromRobotRelativeSpeeds(new ChassisSpeeds(ax, ay, alpha), getRotation());
   }
 
   public double[] getWheelRadiusCharacterizationPositions() {

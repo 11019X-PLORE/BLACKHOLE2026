@@ -379,13 +379,13 @@ public class RobotContainer {
     shootTrigger
         .onTrue(SuperstructureFactory.shoot(this))
         .onFalse(SuperstructureFactory.activeShooting(this));
-    shootTrigger
-        .onTrue(SuperstructureFactory.feeding(this))
-        .onFalse(SuperstructureFactory.stopFeeding(this));
-
     passTrigger
         .onTrue(SuperstructureFactory.pass(this))
         .onFalse(SuperstructureFactory.activeShooting(this));
+    shootTrigger
+        .or(passTrigger)
+        .onTrue(SuperstructureFactory.feeding(this))
+        .onFalse(SuperstructureFactory.stopFeeding(this));
 
     intakeTrigger
         .onTrue(

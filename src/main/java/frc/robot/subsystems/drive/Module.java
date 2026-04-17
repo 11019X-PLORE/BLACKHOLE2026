@@ -23,6 +23,7 @@ public class Module {
   private final Alert turnDisconnectedAlert;
   private final Alert turnEncoderDisconnectedAlert;
   private SwerveModulePosition[] odometryPositions = new SwerveModulePosition[] {};
+  private SwerveModuleState lastSetpointState = new SwerveModuleState();
 
   public Module(
       ModuleIO io,
@@ -69,6 +70,9 @@ public class Module {
     // Optimize velocity setpoint
     state.optimize(getAngle());
     state.cosineScale(inputs.turnPosition);
+
+    // Store setpoint for acceleration estimation
+    lastSetpointState = state;
 
     // Apply setpoints
     io.setDriveVelocity(state.speedMetersPerSecond / constants.WheelRadius);
@@ -141,6 +145,31 @@ public class Module {
   /** Returns the module velocity in rotations/sec (Phoenix native units). */
   public double getFFCharacterizationVelocity() {
     return Units.radiansToRotations(inputs.driveVelocityRadPerSec);
+  }
+
+  /** Returns the last commanded setpoint state for this module. */
+  public SwerveModuleState getSetpointState() {
+    return lastSetpointState;
+  }
+
+  /** Returns the kT (torque constant) reported by the drive motor in Nm/A. */
+  public double getDriveKt() {
+    return inputs.driveKt;
+  }
+
+  /** Returns the drive motor gear ratio (motor rotations per wheel rotation). */
+  public double getDriveGearRatio() {
+    return constants.DriveMotorGearRatio;
+  }
+
+  /** Returns the wheel radius in meters. */
+  public double getWheelRadius() {
+    return constants.WheelRadius;
+  }
+
+  /** Returns the stator current limit (slip current) in Amps. */
+  public double getSlipCurrent() {
+    return constants.SlipCurrent;
   }
 
   public double getDriveCurrentAmps() {
