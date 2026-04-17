@@ -1,3 +1,7 @@
+// Copyright (c) FIRST and other WPILib contributors.
+// Open Source Software; you can modify and/or share it under the terms of
+// the WPILib BSD license file in the root directory of this project.
+
 package frc.robot.autos;
 
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -11,8 +15,8 @@ import frc.robot.subsystems.shooter.turret.Turret;
 import frc.robot.subsystems.superstructure.SuperstructureFactory;
 import java.util.function.Supplier;
 
-public class L2 extends SequentialCommandGroup {
-  public L2(RobotContainer c, Supplier<Boolean> isRightSide) {
+public class M2 extends SequentialCommandGroup {
+  public M2(RobotContainer c, Supplier<Boolean> isRightSide) {
     Intake intake = c.getIntake();
     Turret turret = c.getTurret();
     Hood hood = c.getHood();
@@ -22,37 +26,24 @@ public class L2 extends SequentialCommandGroup {
     addCommands(
         Commands.runOnce(() -> drive.setYFlipped(isRightSide)),
         Commands.parallel(turret.zeroCommand(), hood.zeroCommand(), extension.zeroCommand()),
-        drive.resetOdomToPath("L4"),
+        drive.resetOdomToPath("M1"),
         Commands.deadline(
-            drive.generatePath("L4"),
+            drive.generatePath("M1"),
             intake.setGoalCommand(Intake.IntakeGoal.INTAKE),
-            extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED),
-            SuperstructureFactory.runIndexerIntake(c)),
-        Commands.parallel(
-                SuperstructureFactory.activeShooting(c),
-                intake.setGoalCommand(Intake.IntakeGoal.STOP))
-            .withTimeout(0.1),
-        Commands.parallel(
-            Commands.deadline(
-                drive.generatePath("L5"),
-                SuperstructureFactory.shoot(c),
-                SuperstructureFactory.feeding(c)),
-            intake.setGoalCommand(Intake.IntakeGoal.STOW),
-            extension.setGoalCommand(Extension.ExtensionGoal.SHAKE)),
+            extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED)),
+        Commands.deadline(
+            SuperstructureFactory.shoot(c).withTimeout(3.0), SuperstructureFactory.feeding(c)),
         Commands.parallel(
                 SuperstructureFactory.activeShooting(c), SuperstructureFactory.stopFeeding(c))
             .withTimeout(0.1),
         Commands.deadline(
-            drive.generatePath("L6"),
+            drive.generatePath("M2"),
             intake.setGoalCommand(Intake.IntakeGoal.INTAKE),
             extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED),
             SuperstructureFactory.runIndexerIntake(c)),
-        intake.setGoalCommand(Intake.IntakeGoal.STOP).withTimeout(0.1),
         Commands.parallel(
             Commands.deadline(
-                drive.generatePath("L5"),
-                SuperstructureFactory.shoot(c),
-                SuperstructureFactory.feeding(c)),
+                SuperstructureFactory.shoot(c).withTimeout(4.0), SuperstructureFactory.feeding(c)),
             intake.setGoalCommand(Intake.IntakeGoal.STOW),
             extension.setGoalCommand(Extension.ExtensionGoal.SHAKE)),
         Commands.parallel(

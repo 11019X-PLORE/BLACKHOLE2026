@@ -1,10 +1,5 @@
 package frc.robot.autos;
 
-import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.path.PathPlannerPath;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import frc.robot.RobotContainer;
@@ -14,10 +9,10 @@ import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.shooter.hood.Hood;
 import frc.robot.subsystems.shooter.turret.Turret;
 import frc.robot.subsystems.superstructure.SuperstructureFactory;
-import frc.robot.util.geometry.AllianceFlipUtil;
+import java.util.function.Supplier;
 
 public class L1 extends SequentialCommandGroup {
-  public L1(RobotContainer c) {
+  public L1(RobotContainer c, Supplier<Boolean> isRightSide) {
     Intake intake = c.getIntake();
     Turret turret = c.getTurret();
     Hood hood = c.getHood();
@@ -25,62 +20,37 @@ public class L1 extends SequentialCommandGroup {
     Drive drive = c.getDrive();
 
     addCommands(
+        Commands.runOnce(() -> drive.setYFlipped(isRightSide)),
         Commands.parallel(turret.zeroCommand(), hood.zeroCommand(), extension.zeroCommand()),
-        resetOdomToPath("L1", drive),
+        drive.resetOdomToPath("L1"),
         Commands.parallel(
-            generatePath("L1"),
+            drive.generatePath("L1"),
             intake.setGoalCommand(Intake.IntakeGoal.INTAKE),
             extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED),
             SuperstructureFactory.runIndexerIntake(c)),
         SuperstructureFactory.activeShooting(c).withTimeout(0.1),
-        generatePath("L2"),
+        drive.generatePath("L2"),
         intake.setGoalCommand(Intake.IntakeGoal.STOP).withTimeout(0.1),
         Commands.deadline(
             SuperstructureFactory.shoot(c).withTimeout(4.0), SuperstructureFactory.feeding(c)),
-        SuperstructureFactory.activeShooting(c).withTimeout(0.1),
-        SuperstructureFactory.stopFeeding(c).withTimeout(0.1),
+        Commands.parallel(
+                SuperstructureFactory.activeShooting(c), SuperstructureFactory.stopFeeding(c))
+            .withTimeout(0.1),
         Commands.deadline(
-            generatePath("L3"),
+            drive.generatePath("L3"),
             intake.setGoalCommand(Intake.IntakeGoal.INTAKE),
             extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED),
             SuperstructureFactory.runIndexerIntake(c)),
         intake.setGoalCommand(Intake.IntakeGoal.STOP).withTimeout(0.1),
         Commands.parallel(
             Commands.deadline(
-                generatePath("L5"),
+                drive.generatePath("L5"),
                 SuperstructureFactory.shoot(c),
                 SuperstructureFactory.feeding(c)),
             intake.setGoalCommand(Intake.IntakeGoal.STOW),
             extension.setGoalCommand(Extension.ExtensionGoal.SHAKE)),
-        SuperstructureFactory.activeShooting(c).withTimeout(0.1),
-        SuperstructureFactory.stopFeeding(c).withTimeout(0.1));
-  }
-
-  public static Command resetOdomToPath(String pathName, Drive drive) {
-    return Commands.runOnce(
-        () -> {
-          try {
-            PathPlannerPath path = PathPlannerPath.fromChoreoTrajectory(pathName);
-            // 获取起点并从 Optional 中取出，然后应用红蓝翻转
-            Pose2d startPose = path.getStartingHolonomicPose().orElse(new Pose2d());
-            drive.setPose(AllianceFlipUtil.apply(startPose));
-          } catch (Exception e) {
-            DriverStation.reportError(
-                "Failed to reset odom for path: " + pathName, e.getStackTrace());
-          }
-        },
-        drive);
-  }
-
-  public static Command generatePath(String pathName) {
-    PathPlannerPath path;
-    try {
-      path = PathPlannerPath.fromChoreoTrajectory(pathName);
-    } catch (Exception e) {
-      DriverStation.reportError("Failed to load path: " + pathName, e.getStackTrace());
-      return Commands.none();
-    }
-
-    return AutoBuilder.followPath(path);
+        Commands.parallel(
+                SuperstructureFactory.activeShooting(c), SuperstructureFactory.stopFeeding(c))
+            .withTimeout(0.1));
   }
 }

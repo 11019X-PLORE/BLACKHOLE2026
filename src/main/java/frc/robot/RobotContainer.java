@@ -24,10 +24,11 @@ import frc.robot.FieldConstants.AprilTagLayoutType;
 import frc.robot.autos.L1;
 import frc.robot.autos.L2;
 import frc.robot.autos.L3;
-import frc.robot.autos.MidAuto;
-import frc.robot.autos.MidAutoShort;
-import frc.robot.autos.RightAuto;
-import frc.robot.autos.RightCycleAuto;
+import frc.robot.autos.L4;
+import frc.robot.autos.M1;
+import frc.robot.autos.M2;
+import frc.robot.autos.M3;
+import frc.robot.autos.M4;
 import frc.robot.autos.Test;
 import frc.robot.commands.AutoAlignCommand;
 import frc.robot.commands.DriveCommands;
@@ -121,6 +122,7 @@ public class RobotContainer {
       new Alert("controller disconnected (port 0).", AlertType.kWarning);
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
+  private final LoggedDashboardChooser<Boolean> sideChooser;
   private final Timer simShootTimer = new Timer();
   private boolean isTestMode = false;
 
@@ -263,30 +265,19 @@ public class RobotContainer {
     }
     // Set up auto routines
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
-    autoChooser.addOption("L1", new L1(this));
-    autoChooser.addOption("L2", new L2(this));
-    autoChooser.addOption("L3", new L3(this));
-    autoChooser.addOption("MID", new MidAuto(this));
-    autoChooser.addOption("MIDSHORT", new MidAutoShort(this));
-    autoChooser.addOption("RIGHT", new RightAuto(this));
-    autoChooser.addOption("RIGHTCYCLE", new RightCycleAuto(this));
-    autoChooser.addOption("TEST", new Test(this));
-    autoChooser.addDefaultOption("L1", new L1(this));
-    // Set up SysId routines
-    // autoChooser.addOption(
-    //     "Drive Wheel Radius Characterization", DriveCommands.wheelRadiusCharacterization(drive));
-    // autoChooser.addOption(
-    //     "Drive Simple FF Characterization", DriveCommands.feedforwardCharacterization(drive));
-    // autoChooser.addOption(
-    //     "Drive SysId (Quasistatic Forward)",
-    //     drive.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
-    // autoChooser.addOption(
-    //     "Drive SysId (Quasistatic Reverse)",
-    //     drive.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
-    // autoChooser.addOption(
-    //     "Drive SysId (Dynamic Forward)", drive.sysIdDynamic(SysIdRoutine.Direction.kForward));
-    // autoChooser.addOption(
-    //     "Drive SysId (Dynamic Reverse)", drive.sysIdDynamic(SysIdRoutine.Direction.kReverse));
+    sideChooser = new LoggedDashboardChooser<>("Side Chooser");
+    sideChooser.addDefaultOption("Left (Default)", false); // 默认 false
+    sideChooser.addOption("Right (Flipped)", true); // 选中时 true
+    autoChooser.addOption("L1", new L1(this, sideChooser::get));
+    autoChooser.addOption("L2", new L2(this, sideChooser::get));
+    autoChooser.addOption("L3", new L3(this, sideChooser::get));
+    autoChooser.addOption("L4", new L4(this, sideChooser::get));
+    autoChooser.addOption("M1", new M1(this, sideChooser::get));
+    autoChooser.addOption("M2", new M2(this, sideChooser::get));
+    autoChooser.addOption("M3", new M3(this, sideChooser::get));
+    autoChooser.addOption("M4", new M4(this, sideChooser::get));
+    autoChooser.addOption("TEST", new Test(this, sideChooser::get));
+    autoChooser.addDefaultOption("L1", new L1(this, sideChooser::get));
     configureButtonBindings();
   }
 

@@ -8,6 +8,7 @@ import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.path.PathConstraints;
+import com.pathplanner.lib.path.PathPlannerPath;
 import com.pathplanner.lib.pathfinding.Pathfinding;
 import com.pathplanner.lib.util.PathPlannerLogging;
 import edu.wpi.first.hal.FRCNetComm.tInstances;
@@ -40,9 +41,11 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
 import frc.robot.Constants.Mode;
+import frc.robot.FieldConstants;
 import frc.robot.Robot;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.vision.VisionConstants;
@@ -53,6 +56,7 @@ import frc.robot.util.TrenchHelper;
 import frc.robot.util.geometry.AllianceFlipUtil;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 import org.ejml.simple.SimpleMatrix;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
@@ -134,6 +138,10 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
           VisionConstants.stateStdDevs,
           VisionConstants.visionStdDevs);
 
+  // Auto
+  private static final double FIELD_WIDTH = FieldConstants.fieldWidth;
+  private Supplier<Boolean> isYFlipped = () -> false;
+
   public Drive(
       GyroIO gyroIO,
       ModuleIO flModuleIO,
@@ -152,11 +160,22 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
     PhoenixOdometryThread.getInstance().start();
 
     // PathPlanner 配置
+    // AutoBuilder.configure(
+    //     this::getPose,
+    //     this::setPose,
+    //     this::getChassisSpeeds,
+    //     this::runVelocity,
+    //     new PPHolonomicDriveController(
+    //         new PIDConstants(5.0, 0.0, 0.0), new PIDConstants(5.0, 0.0, 0.0)),
+    //     PP_CONFIG,
+    //     () -> DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red,
+    //     this);
+
     AutoBuilder.configure(
-        this::getPose,
-        this::setPose,
-        this::getChassisSpeeds,
-        this::runVelocity,
+        this::getAutoPose,
+        this::setAutoPose,
+        this::getAutoChassisSpeeds,
+        this::runAutoVelocity,
         new PPHolonomicDriveController(
             new PIDConstants(5.0, 0.0, 0.0), new PIDConstants(5.0, 0.0, 0.0)),
         PP_CONFIG,
@@ -593,5 +612,85 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
   @Override
   public SimpleMatrix getLocalAcceleration() {
     return kinematicsData.localAcceleration;
+  }
+
+  // AutoBuilder 需要这个方法来反转路径上的 Y 坐标
+  public void setYFlipped(Supplier<Boolean> flipped) {
+    this.isYFlipped = flipped;
+  }
+
+  // 3. 欺骗 PathPlanner 的姿态获取
+  public Pose2d getAutoPose() {
+    Pose2d realPose = getPose();
+    if (isYFlipped.get()) {
+      return new Pose2d(
+          realPose.getX(),
+          FIELD_WIDTH - realPose.getY(),
+          realPose.getRotation().times(-1.0)); // Y翻转，角度取反
+    }
+    return realPose;
+  }
+
+  // 4. 欺骗 PathPlanner 的姿态设置
+  public void setAutoPose(Pose2d pose) {
+    if (isYFlipped.get()) {
+      setPose(new Pose2d(pose.getX(), FIELD_WIDTH - pose.getY(), pose.getRotation().times(-1.0)));
+    } else {
+      setPose(pose);
+    }
+  }
+
+  // 5. 欺骗 PathPlanner 的当前速度获取
+  public ChassisSpeeds getAutoChassisSpeeds() {
+    ChassisSpeeds realSpeeds = getChassisSpeeds();
+    if (isYFlipped.get()) {
+      return new ChassisSpeeds(
+          realSpeeds.vxMetersPerSecond,
+          -realSpeeds.vyMetersPerSecond, // Y速度取反
+          -realSpeeds.omegaRadiansPerSecond); // 角速度取反
+    }
+    return realSpeeds;
+  }
+
+  // 6. 拦截 PathPlanner 的速度指令输出
+  public void runAutoVelocity(ChassisSpeeds speeds) {
+    if (isYFlipped.get()) {
+      ChassisSpeeds flippedSpeeds =
+          new ChassisSpeeds(
+              speeds.vxMetersPerSecond,
+              -speeds.vyMetersPerSecond, // Y速度指令取反
+              -speeds.omegaRadiansPerSecond); // 角速度指令取反
+      runVelocity(flippedSpeeds);
+    } else {
+      runVelocity(speeds);
+    }
+  }
+
+  public Command resetOdomToPath(String pathName) {
+    return Commands.runOnce(
+        () -> {
+          try {
+            PathPlannerPath path = PathPlannerPath.fromChoreoTrajectory(pathName);
+            // 获取起点并从 Optional 中取出，然后应用红蓝翻转
+            Pose2d startPose = path.getStartingHolonomicPose().orElse(new Pose2d());
+            setAutoPose(AllianceFlipUtil.apply(startPose));
+          } catch (Exception e) {
+            DriverStation.reportError(
+                "Failed to reset odom for path: " + pathName, e.getStackTrace());
+          }
+        },
+        this);
+  }
+
+  public Command generatePath(String pathName) {
+    PathPlannerPath path;
+    try {
+      path = PathPlannerPath.fromChoreoTrajectory(pathName);
+    } catch (Exception e) {
+      DriverStation.reportError("Failed to load path: " + pathName, e.getStackTrace());
+      return Commands.none();
+    }
+
+    return AutoBuilder.followPath(path);
   }
 }
