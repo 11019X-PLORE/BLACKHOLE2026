@@ -39,7 +39,7 @@ public class L1 extends SequentialCommandGroup {
             SuperstructureFactory.shoot(c).withTimeout(4.0), SuperstructureFactory.feeding(c)),
         SuperstructureFactory.activeShooting(c).withTimeout(0.1),
         SuperstructureFactory.stopFeeding(c).withTimeout(0.1),
-        Commands.parallel(
+        Commands.deadline(
             generatePath("L3"),
             intake.setGoalCommand(Intake.IntakeGoal.INTAKE),
             extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED),

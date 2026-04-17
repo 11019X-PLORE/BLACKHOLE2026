@@ -27,7 +27,7 @@ public class L2 extends SequentialCommandGroup {
     addCommands(
         Commands.parallel(turret.zeroCommand(), hood.zeroCommand(), extension.zeroCommand()),
         resetOdomToPath("L4", drive),
-        Commands.parallel(
+        Commands.deadline(
             generatePath("L4"),
             intake.setGoalCommand(Intake.IntakeGoal.INTAKE),
             extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED),
@@ -43,7 +43,7 @@ public class L2 extends SequentialCommandGroup {
             extension.setGoalCommand(Extension.ExtensionGoal.SHAKE)),
         SuperstructureFactory.activeShooting(c).withTimeout(0.1),
         SuperstructureFactory.stopFeeding(c).withTimeout(0.1),
-        Commands.parallel(
+        Commands.deadline(
             generatePath("L6"),
             intake.setGoalCommand(Intake.IntakeGoal.INTAKE),
             extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED),

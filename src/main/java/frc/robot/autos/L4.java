@@ -16,8 +16,8 @@ import frc.robot.subsystems.shooter.turret.Turret;
 import frc.robot.subsystems.superstructure.SuperstructureFactory;
 import frc.robot.util.geometry.AllianceFlipUtil;
 
-public class L3 extends SequentialCommandGroup {
-  public L3(RobotContainer c) {
+public class L4 extends SequentialCommandGroup {
+  public L4(RobotContainer c) {
     Intake intake = c.getIntake();
     Turret turret = c.getTurret();
     Hood hood = c.getHood();
@@ -26,14 +26,13 @@ public class L3 extends SequentialCommandGroup {
 
     addCommands(
         Commands.parallel(turret.zeroCommand(), hood.zeroCommand(), extension.zeroCommand()),
-        resetOdomToPath("L4", drive),
+        resetOdomToPath("L8", drive),
         Commands.deadline(
-            generatePath("L4"),
+            generatePath("L8"),
             intake.setGoalCommand(Intake.IntakeGoal.INTAKE),
             extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED),
             SuperstructureFactory.runIndexerIntake(c)),
         SuperstructureFactory.activeShooting(c).withTimeout(0.1),
-        intake.setGoalCommand(Intake.IntakeGoal.STOP).withTimeout(0.1),
         Commands.parallel(
             Commands.deadline(
                 generatePath("L5"),
