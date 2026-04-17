@@ -11,7 +11,7 @@
             "title": "Auto Choices",
             "x": 256.0,
             "y": 0.0,
-            "width": 512.0,
+            "width": 256.0,
             "height": 128.0,
             "type": "ComboBox Chooser",
             "properties": {
@@ -200,6 +200,19 @@
               "data_type": "double",
               "show_submit_button": false
             }
+          },
+          {
+            "title": "Side Chooser",
+            "x": 512.0,
+            "y": 0.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "ComboBox Chooser",
+            "properties": {
+              "topic": "/SmartDashboard/Side Chooser",
+              "period": 0.06,
+              "sort_options": false
+            }
           }
         ]
       }
@@ -242,7 +255,7 @@
             "title": "Auto Choices",
             "x": 256.0,
             "y": 0.0,
-            "width": 512.0,
+            "width": 256.0,
             "height": 128.0,
             "type": "ComboBox Chooser",
             "properties": {
@@ -282,6 +295,19 @@
               "robot_color": 4294198070,
               "trajectory_color": 4294967295,
               "show_robot_outside_widget": true
+            }
+          },
+          {
+            "title": "Side Chooser",
+            "x": 512.0,
+            "y": 0.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "ComboBox Chooser",
+            "properties": {
+              "topic": "/SmartDashboard/Side Chooser",
+              "period": 0.06,
+              "sort_options": false
             }
           }
         ]
@@ -605,7 +631,7 @@
             "title": "Auto Choices",
             "x": 384.0,
             "y": 0.0,
-            "width": 768.0,
+            "width": 384.0,
             "height": 128.0,
             "type": "ComboBox Chooser",
             "properties": {
@@ -645,6 +671,19 @@
             "properties": {
               "topic": "/SmartDashboard/Alerts",
               "period": 0.06
+            }
+          },
+          {
+            "title": "Side Chooser",
+            "x": 768.0,
+            "y": 0.0,
+            "width": 384.0,
+            "height": 128.0,
+            "type": "ComboBox Chooser",
+            "properties": {
+              "topic": "/SmartDashboard/Side Chooser",
+              "period": 0.06,
+              "sort_options": false
             }
           }
         ]
