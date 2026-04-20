@@ -75,7 +75,7 @@ public class FlywheelIOReal implements FlywheelIO {
 
     tryUntilOk(5, () -> talon.getConfigurator().apply(config));
     tryUntilOk(5, () -> secondTalon.getConfigurator().apply(config));
-    secondTalon.setControl(new Follower(talon.getDeviceID(), MotorAlignmentValue.Aligned));
+    secondTalon.setControl(new Follower(talon.getDeviceID(), MotorAlignmentValue.Opposed));
 
     // 初始化信号
     position = talon.getPosition();

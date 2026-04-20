@@ -53,7 +53,7 @@ public class IntakeIOReal implements IntakeIO {
                 new FeedbackConfigs().withSensorToMechanismRatio(IntakeConstants.kIntakeGearRatio))
             .withCurrentLimits(
                 new CurrentLimitsConfigs()
-                    .withStatorCurrentLimit(Amps.of(120.0))
+                    .withStatorCurrentLimit(Amps.of(60.0))
                     .withStatorCurrentLimitEnable(true)
                     .withSupplyCurrentLimit(Amps.of(40))
                     .withSupplyCurrentLimitEnable(true)

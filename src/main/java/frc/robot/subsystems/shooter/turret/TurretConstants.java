@@ -13,7 +13,7 @@ public class TurretConstants {
   public static final int kTurretID = Ports.kTurret;
   public static final boolean kTurretInverted = true;
 
-  public static final double kTurretGearRatio = 82.0 * 5.0 / 10d;
+  public static final double kTurretGearRatio = 41.111111111111;
 
   public static final double kTurretRadius = 0.20027; // TODO
 
@@ -41,7 +41,8 @@ public class TurretConstants {
   // 摄像头相对于炮塔中心的位置
   public static final Transform3d kCameraonTurretoffset =
       new Transform3d(
-          new Translation3d(-0.169025, 0, 0.107176), new Rotation3d(0, Math.toRadians(-22.887), 0));
+          new Translation3d(0.17946, 0, 0.06767),
+          new Rotation3d(Math.PI, Math.toRadians(-26.08), 0));
   public static final Transform3d swerve2TurretOffset =
       new Transform3d(new Translation3d(-0.158, 0, 0.407), new Rotation3d(0, 0, 0.0));
 

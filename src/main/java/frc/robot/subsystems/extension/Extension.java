@@ -64,6 +64,7 @@ public class Extension extends FullSubsystem {
     DEPLOYED, // 展开吸球状态 (闭环维持在吸球角度)
     FIXED_ANGLE, // 任意指定角度 (供测试或特殊位置使用)
     ZEROING,
+    FEEDING,
     SHAKE // 归零状态
   }
 
@@ -72,6 +73,8 @@ public class Extension extends FullSubsystem {
   @Getter @AutoLogOutput private boolean ExtensionZeroed = false;
 
   @Getter @AutoLogOutput private boolean atGoal = false;
+
+  @Getter @AutoLogOutput private double estimatedCapacity = 8;
 
   // --- Hardware Safety & Alerts ---
   private final Debouncer motorConnectedDebouncer =
@@ -108,13 +111,13 @@ public class Extension extends FullSubsystem {
           atGoal = true;
         }
         case STOWED -> {
-          runPositionLogic(ExtensionConstants.kExtensionStowerAngle);
+          runPositionLogic(ExtensionConstants.kExtensionStowerPosition);
         }
         case DEPLOYED -> {
-          runPositionLogic(ExtensionConstants.kExtensionDeployAngle);
+          runPositionLogic(ExtensionConstants.kExtensionDeployPosition);
         }
         case FIXED_ANGLE -> {
-          runPositionLogic(ExtensionConstants.kFixAngle);
+          runPositionLogic(ExtensionConstants.kFixPosition);
         }
         case ZEROING -> {
           outputs.mode = ExtensionIOOutputMode.COAST;
@@ -126,17 +129,34 @@ public class Extension extends FullSubsystem {
           double time = Timer.getFPGATimestamp();
           boolean isHigh = (int) (time * ExtensionConstants.kShakeFrequency * 2) % 2 == 0;
 
-          // 在 0° (Deploy) 和 90° (Stow) 之间切换
+          // 在 (Deploy) 和 (Stow) 之间切换
           double shakeTarget =
               isHigh
-                  ? ExtensionConstants.kExtensionStowerAngle
-                  : ExtensionConstants.kExtensionShakeAngle;
+                  ? ExtensionConstants.kExtensionStowerPosition
+                  : ExtensionConstants.kExtensionShakePosition;
 
           // 执行运动（为了摇晃更有力，建议使用较大的速度限制）
           runPositionLogic(shakeTarget);
         }
+        case FEEDING -> {
+          double ratio =
+              (estimatedCapacity - ExtensionConstants.kStopPushingCapcity)
+                  / (ExtensionConstants.kStartPushingCapcity
+                      - ExtensionConstants.kStopPushingCapcity);
+          ratio = MathUtil.clamp(ratio, 0, 1);
+
+          double targetPosition =
+              ExtensionConstants.kExtensionDeployPosition * ratio
+                  + ExtensionConstants.kExtensionFeedingPosition * (1 - ratio);
+          runPositionLogic(targetPosition);
+        }
       }
     }
+  }
+
+  public void changeCapcity(double delta) {
+    estimatedCapacity += delta;
+    estimatedCapacity = MathUtil.clamp(estimatedCapacity, 0, ExtensionConstants.kMaxCapcity);
   }
 
   @Override
@@ -151,8 +171,8 @@ public class Extension extends FullSubsystem {
     double clampedAngle =
         MathUtil.clamp(
             targetAngleRads,
-            ExtensionConstants.kExtensionMinAngle,
-            ExtensionConstants.kExtensionMaxAngle);
+            ExtensionConstants.kExtensionMinPosition,
+            ExtensionConstants.kExtensionMaxPosition);
 
     outputs.mode = ExtensionIOOutputMode.CLOSED_LOOP;
     outputs.positionRads = clampedAngle;

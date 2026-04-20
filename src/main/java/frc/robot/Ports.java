@@ -11,8 +11,8 @@ public final class Ports {
   public static final int kIntake = 13;
   public static final int kExtension = 14;
 
-  public static final int kIndexer = 15;
-  public static final int kTriggers = 16;
+  public static final int kIndexerLeft = 15;
+  public static final int kIndexerRight = 16;
 
   public static final int kTestLeftTriggers = 25; // TODO
   public static final int kTestRightTriggers = 26;

@@ -12,7 +12,7 @@ import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.SoftwareLimitSwitchConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
+import com.ctre.phoenix6.controls.MotionMagicTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.StaticBrake;
 import com.ctre.phoenix6.controls.VoltageOut;
@@ -39,7 +39,7 @@ public class ExtensionIOReal implements ExtensionIO {
 
   // 控制请求
   private final NeutralOut coastControl = new NeutralOut();
-  private final MotionMagicExpoVoltage motionMagicVoltage = new MotionMagicExpoVoltage(0.0);
+  private final MotionMagicTorqueCurrentFOC motionMagicFOC = new MotionMagicTorqueCurrentFOC(0.0);
   private final StaticBrake brakeControl = new StaticBrake();
   private final VoltageOut voltageControl = new VoltageOut(0);
 
@@ -60,7 +60,7 @@ public class ExtensionIOReal implements ExtensionIO {
                     .withSensorToMechanismRatio(ExtensionConstants.kExtensionGearRatio))
             .withCurrentLimits(
                 new CurrentLimitsConfigs()
-                    .withStatorCurrentLimit(Amps.of(80))
+                    .withStatorCurrentLimit(Amps.of(40))
                     .withStatorCurrentLimitEnable(true)
                     .withSupplyCurrentLimit(Amps.of(40))
                     .withSupplyCurrentLimitEnable(true))
@@ -69,10 +69,13 @@ public class ExtensionIOReal implements ExtensionIO {
                     .withForwardSoftLimitEnable(true)
                     .withForwardSoftLimitThreshold(
                         Units.radiansToRotations(
-                            ExtensionConstants.kExtensionMaxAngle)) // radian转圈数  电机
+                            ExtensionConstants.kExtensionMaxPosition
+                                / ExtensionConstants.kExtensionRadius)) // radian转圈数  电机
                     .withReverseSoftLimitEnable(true)
                     .withReverseSoftLimitThreshold(
-                        Units.radiansToRotations(ExtensionConstants.kExtensionMinAngle)))
+                        Units.radiansToRotations(
+                            ExtensionConstants.kExtensionMinPosition
+                                / ExtensionConstants.kExtensionRadius)))
             .withMotionMagic(
                 new MotionMagicConfigs()
                     .withMotionMagicCruiseVelocity(
@@ -83,7 +86,8 @@ public class ExtensionIOReal implements ExtensionIO {
 
     talon.getConfigurator().apply(config);
 
-    resetPosition(ExtensionConstants.kExtensionInitialAngle);
+    resetPosition(
+        ExtensionConstants.kExtensionInitialPosition / ExtensionConstants.kExtensionRadius);
 
     // 初始化信号
     position = talon.getPosition();
@@ -122,9 +126,9 @@ public class ExtensionIOReal implements ExtensionIO {
       case COAST -> talon.setControl(coastControl);
       case CLOSED_LOOP -> {
         talon.setControl(
-            motionMagicVoltage
-                .withPosition(Units.radiansToRotations(outputs.positionRads))
-                .withEnableFOC(true));
+            motionMagicFOC.withPosition(
+                Units.radiansToRotations(
+                    outputs.positionRads / ExtensionConstants.kExtensionRadius)));
       }
       case VOLTAGE -> {
         talon.setControl(voltageControl.withOutput(outputs.appliedVolts));

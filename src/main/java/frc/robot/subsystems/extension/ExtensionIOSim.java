@@ -14,10 +14,10 @@ public class ExtensionIOSim implements ExtensionIO {
           ExtensionConstants.kExtensionGearRatio,
           1.0,
           .33,
-          ExtensionConstants.kExtensionMinAngle,
-          ExtensionConstants.kExtensionMaxAngle,
+          ExtensionConstants.kExtensionMinPosition,
+          ExtensionConstants.kExtensionMaxPosition,
           false,
-          ExtensionConstants.kExtensionInitialAngle);
+          ExtensionConstants.kExtensionInitialPosition);
 
   private final PIDController controller =
       new PIDController(10.0, 0, 0.1, Constants.loopPeriodSecs);

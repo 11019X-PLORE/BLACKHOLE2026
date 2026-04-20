@@ -3,7 +3,7 @@ package frc.robot.subsystems.triggers;
 import frc.robot.Ports;
 
 public class TriggersConstants {
-  public static final int kTriggersId = Ports.kTriggers;
+  // public static final int kTriggersId = Ports.kTriggers;
 
   public static final int kTestLeftTriggersId = Ports.kTestLeftTriggers;
   public static final int kTestRightTriggersId = Ports.kTestRightTriggers;
