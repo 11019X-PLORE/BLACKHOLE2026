@@ -1,6 +1,7 @@
 package frc.robot.subsystems.superstructure;
 
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.FieldConstants;
@@ -8,7 +9,9 @@ import frc.robot.RobotContainer;
 import frc.robot.subsystems.indexer.Indexer;
 import frc.robot.subsystems.indexer.Indexer.IndexerGoal;
 import frc.robot.subsystems.indexer.IndexerConstants;
+import frc.robot.subsystems.intake.Intake.IntakeGoal;
 import frc.robot.subsystems.intake.IntakeConstants;
+import frc.robot.subsystems.led.LED.LEDState;
 import frc.robot.subsystems.shooter.flywheel.Flywheel;
 import frc.robot.subsystems.shooter.flywheel.Flywheel.FlywheelGoal;
 import frc.robot.subsystems.shooter.flywheel.FlywheelConstants;
@@ -56,7 +59,9 @@ public final class SuperstructureFactory {
 
   /** Check if all shooter subsystems are at their goals and ready to fire. */
   private static boolean isReadyToShoot(RobotContainer c) {
-    return c.getFlywheel().atGoal() && c.getHood().atGoal() && c.getTurret().atGoal();
+    boolean ready = c.getFlywheel().atGoal() && c.getHood().atGoal() && c.getTurret().atGoal();
+    Logger.recordOutput("SuperstructureFactory/isReadyToShoot", ready);
+    return ready;
   }
 
   // ==================== IDLE / STOP COMMANDS ====================
@@ -216,6 +221,7 @@ public final class SuperstructureFactory {
             flywheel.setGoalCommand(FlywheelGoal.TRACKING),
             Commands.run(
                 () -> {
+                  boolean inTrench = c.getDrive().isInTrenchZone() && DriverStation.isTeleop();
                   Translation2d targetPos = targetSupplier.get();
                   ShooterSetpoint sp =
                       ShooterSetpoint.makeSetpoint(
@@ -234,13 +240,18 @@ public final class SuperstructureFactory {
                           + (lookAheadTime * sp.turretAccelerationRadsPerSecSquared),
                       sp.turretAccelerationRadsPerSecSquared,
                       0.0);
-                  hood.runPositionFOCLogic(
-                      TrajectoryCalculator.getHoodSetpoint(
-                          sp.hoodPositionRadians + (lookAheadTime * sp.hoodVelocityRadsPerSec)),
-                      sp.hoodVelocityRadsPerSec
-                          + (lookAheadTime * sp.hoodAccelerationRadsPerSecSquared),
-                      sp.hoodAccelerationRadsPerSecSquared,
-                      0.0);
+                  if (inTrench) {
+                    hood.runPositionFOCLogic(
+                        (Math.PI / 2) - HoodConstants.kHoodInitialAngle, 0.0, 0.0, 0.0);
+                  } else {
+                    hood.runPositionFOCLogic(
+                        TrajectoryCalculator.getHoodSetpoint(
+                            sp.hoodPositionRadians + (lookAheadTime * sp.hoodVelocityRadsPerSec)),
+                        sp.hoodVelocityRadsPerSec
+                            + (lookAheadTime * sp.hoodAccelerationRadsPerSecSquared),
+                        sp.hoodAccelerationRadsPerSecSquared,
+                        0.0);
+                  }
 
                   double radPerSec =
                       TrajectoryCalculator.getFlywheelSetpoint(
@@ -360,5 +371,63 @@ public final class SuperstructureFactory {
                 },
                 indexer))
         .withName("Superstructure.Test");
+  }
+
+  public static Command ledMonitor(RobotContainer c) {
+    return Commands.run(
+            () -> {
+              boolean inTrench = c.getDrive().isInTrenchZone() && DriverStation.isTeleop();
+
+              // 1. 自动阶段 (强制最高优先级)
+              if (DriverStation.isAutonomous()) {
+                c.getLED().setGoal(LEDState.AUTO);
+                return;
+              }
+
+              // 2. TRENCH 保护 (物理安全，最高优先级)
+              if (inTrench) {
+                c.getLED().setGoal(LEDState.TRENCH);
+                return;
+              }
+
+              // 3. 发射与瞄准状态判断
+              if (c.getFlywheel().getGoal() == FlywheelGoal.TRACKING
+                  || c.getFlywheel().getGoal() == FlywheelGoal.FIXED_VELOCITY
+                  || c.getFlywheel().getGoal() == FlywheelGoal.PASSING) {
+
+                if (isReadyToShoot(c)) {
+                  if (c.getIndexer().getGoal() == IndexerGoal.SHOOT) {
+                    c.getLED().setGoal(LEDState.SHOOTING); // 正在开火
+                  } else {
+                    c.getLED().setGoal(LEDState.READY_TO_SHOOT); // 瞄准完毕，随时可打
+                  }
+                } else {
+                  c.getLED().setGoal(LEDState.INITIAL); // 正在追踪瞄准中
+                }
+                return;
+              }
+
+              // 4. 吸球吐球动作
+              if (c.getIntake().getGoal() == IntakeGoal.INTAKE) {
+                c.getLED().setGoal(LEDState.INTAKING);
+                return;
+              }
+
+              if (c.getIntake().getGoal() == IntakeGoal.OUTTAKE) {
+                c.getLED().setGoal(LEDState.OUTTAKE);
+              }
+
+              // 5. STOW (收起状态)
+              if (c.getIntake().getGoal() == IntakeGoal.STOW) {
+                c.getLED().setGoal(LEDState.INTAKE_STOWED);
+                return;
+              }
+
+              // 6. 默认状态 (IDLE)
+              c.getLED().setGoal(LEDState.INITIAL);
+            },
+            c.getLED())
+        .ignoringDisable(true)
+        .withName("Superstructure.LEDMonitor");
   }
 }

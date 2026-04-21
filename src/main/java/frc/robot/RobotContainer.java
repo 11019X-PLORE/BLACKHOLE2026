@@ -452,6 +452,7 @@ public class RobotContainer {
             Commands.parallel(
                 flywheel.setGoalCommand(Flywheel.FlywheelGoal.IDLE),
                 indexer.setGoalCommand(Indexer.IndexerGoal.STOP)));
+    led.setDefaultCommand(SuperstructureFactory.ledMonitor(this));
   }
 
   private void configureFuelSim() {

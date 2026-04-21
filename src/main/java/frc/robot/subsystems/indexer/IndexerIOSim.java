@@ -68,24 +68,43 @@ public class IndexerIOSim implements IndexerIO {
     inputs.triggerDistance = 0.0;
   }
 
+  // 同步添加缺少的 Indexer PID 设置方法
+  @Override
+  public void setPID(double kP, double kI, double kD, double kS, double kV, double kA, double kG) {
+    indexerController.setPID(kP, kI, kD);
+  }
+
+  // 同步添加缺少的 Triggers PID 设置方法
+  @Override
+  public void setTriggersPID(
+      double kP, double kI, double kD, double kS, double kV, double kA, double kG) {
+    triggersController.setPID(kP, kI, kD);
+  }
+
   @Override
   public void applyOutputs(IndexerIOOutputs outputs) {
-    // Indexer
-    if (outputs.mode == IndexerIOOutputMode.COAST) {
-      indexerCurrentOutput = 0.0;
-    } else {
-      indexerCurrentOutput =
-          indexerController.calculate(
-              indexerSim.getAngularVelocityRadPerSec(), outputs.velocityRadsPerSec);
+    // === Indexer ===
+    switch (outputs.mode) {
+      case COAST -> {
+        indexerCurrentOutput = 0.0;
+      }
+      case VELOCITY, FEEDING -> {
+        indexerCurrentOutput =
+            indexerController.calculate(
+                indexerSim.getAngularVelocityRadPerSec(), outputs.velocityRadsPerSec);
+      }
     }
 
-    // Triggers
-    if (outputs.triggersMode == IndexerIOOutputMode.COAST) {
-      triggersCurrentOutput = 0.0;
-    } else {
-      triggersCurrentOutput =
-          triggersController.calculate(
-              triggersSim.getAngularVelocityRadPerSec(), outputs.triggersVelocityRadsPerSec);
+    // === Triggers ===
+    switch (outputs.triggersMode) {
+      case COAST -> {
+        triggersCurrentOutput = 0.0;
+      }
+      case VELOCITY, FEEDING -> {
+        triggersCurrentOutput =
+            triggersController.calculate(
+                triggersSim.getAngularVelocityRadPerSec(), outputs.triggersVelocityRadsPerSec);
+      }
     }
   }
 }

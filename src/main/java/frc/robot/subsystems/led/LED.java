@@ -25,8 +25,7 @@ public class LED extends FullSubsystem {
     TRENCH, // 处于隧道模式（黄色）
     INTAKING, // 正在吸球（白色流水）
     INTAKE_STOWED, // 进气臂收起
-    PASSING, // 正在传球（紫色闪烁）
-    CLIMBING, // 爬升中（彩虹）
+    OUTTAKE, // 正在传球（紫色闪烁）
     AUTO // 自动阶段（金光闪烁）
   }
 
@@ -54,12 +53,11 @@ public class LED extends FullSubsystem {
       case OFF -> solidColor(Color.kBlack);
       case SHOOTING -> strobe(Color.kGreen, Color.kBlack, 0.5); // 极快绿闪
       case READY_TO_SHOOT -> solidColor(Color.kGreen);
-      case PASSING -> strobe(Color.kPurple, Color.kBlack, 0.5); // 紫闪
+      case OUTTAKE -> wave(allianceColor, Color.kPurple, 10, 0.5);
       case TRENCH -> solidColor(Color.kYellow);
       case INTAKING -> wave(allianceColor, Color.kWhite, 10, 0.5);
-      case INTAKE_STOWED -> wave(allianceColor, Color.kOrange, 10, 0.8);
-      case CLIMBING -> rainbow(10, 0.5);
-      case AUTO -> strobe(Color.kGold, Color.kBlack, 0.3);
+      case INTAKE_STOWED -> wave(allianceColor, Color.kOrange, 10, 0.5);
+      case AUTO -> rainbow(10, 0.5);
       default -> solidColor(Color.kBlack);
     }
 
