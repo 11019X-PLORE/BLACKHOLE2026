@@ -1,6 +1,7 @@
 package frc.robot.subsystems.superstructure;
 
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.FieldConstants;
@@ -205,10 +206,14 @@ public final class SuperstructureFactory {
       Supplier<Translation2d> targetSupplier,
       TrajectoryConfig trajectoryConfig,
       boolean useLookAhead,
+      double tiltingTolerance,
       String commandName) {
     Turret turret = c.getTurret();
     Hood hood = c.getHood();
     Flywheel flywheel = c.getFlywheel();
+
+    Translation3d rot = new Translation3d(1, 0, 0).rotateBy(c.getDrive().getRotation3d());
+    boolean isTilted = Math.abs(Math.atan2(rot.getY(), rot.getX())) > tiltingTolerance;
 
     return Commands.parallel(
             turret.setGoalCommand(TurretGoal.TRACKING),
@@ -224,7 +229,8 @@ public final class SuperstructureFactory {
                           FieldConstants.hMax,
                           HoodConstants.kHoodMinAngle,
                           HoodConstants.kHoodMaxAngle,
-                          trajectoryConfig);
+                          trajectoryConfig,
+                          false);
 
                   double lookAheadTime = useLookAhead ? 0.02 : 0.0;
 
@@ -285,6 +291,7 @@ public final class SuperstructureFactory {
         () -> AllianceFlipUtil.apply(FieldConstants.Hub.topCenterPoint.toTranslation2d()),
         TrajectoryConfig.getHubConfig(),
         true,
+        0.1,
         "Superstructure.Shoot");
   }
 
@@ -295,6 +302,7 @@ public final class SuperstructureFactory {
         () -> getBestPassingTarget(TurretConstants.swerve2TurretStructure),
         TrajectoryConfig.getPassingConfig(),
         false,
+        0.1,
         "Superstructure.Pass");
   }
 
