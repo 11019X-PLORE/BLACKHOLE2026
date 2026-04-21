@@ -2,23 +2,16 @@ package frc.robot.subsystems.shooter.flywheel;
 
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import frc.robot.FieldConstants;
 import frc.robot.Robot;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO.FlywheelIOOutputMode;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIO.FlywheelIOOutputs;
-import frc.robot.subsystems.shooter.hood.HoodConstants;
 import frc.robot.util.FullSubsystem;
 import frc.robot.util.Geoffrey.PhysicalJoint;
-import frc.robot.util.Geoffrey.ShooterSetpoint;
-import frc.robot.util.Geoffrey.TrajectoryCalculator;
-import frc.robot.util.Geoffrey.TrajectoryConfig;
 import frc.robot.util.LoggedTunableNumber;
-import frc.robot.util.geometry.AllianceFlipUtil;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -173,25 +166,7 @@ public class Flywheel extends FullSubsystem {
           // runVelocityFOCLogic(radPerSec, radPerSec2, 0.0);
         }
         case ACTIVE -> {
-          Translation2d target =
-              AllianceFlipUtil.apply(FieldConstants.Hub.topCenterPoint.toTranslation2d());
-          ShooterSetpoint sp =
-              ShooterSetpoint.makeSetpoint(
-                  muzzleJoint,
-                  target,
-                  FieldConstants.hMax,
-                  HoodConstants.kHoodMinAngle,
-                  HoodConstants.kHoodMaxAngle,
-                  TrajectoryConfig.getHubConfig());
-          double radPerSec =
-              (TrajectoryCalculator.getFlywheelSetpoint(sp.shooterVelocityMetersPerSec)
-                      / FlywheelConstants.kFlywheelRadius)
-                  * FlywheelConstants.kActiveRatio;
-          double radPerSec2 =
-              TrajectoryCalculator.getFlywheelAcceleration(
-                      sp.shooterVelocityMetersPerSec, sp.shooterAccelerationMetersPerSecSquared)
-                  / FlywheelConstants.kFlywheelRadius;
-          runVelocityFOCLogic(radPerSec, radPerSec2, 0.0);
+          runVelocityFOCLogic(100, 0, 0.0);
         }
         case FIXED_VELOCITY -> {
           runVelocityFOCLogic(FlywheelConstants.kFixVelocity, 0.0, 0.0);

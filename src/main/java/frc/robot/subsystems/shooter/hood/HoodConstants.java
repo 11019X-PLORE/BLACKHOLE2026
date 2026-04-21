@@ -5,10 +5,10 @@ import frc.robot.Ports;
 
 public class HoodConstants {
   public static final int kHoodId = Ports.kHood;
-  public static final boolean kHoodInverted = true;
+  public static final boolean kHoodInverted = false;
 
   public static final double kHoodRadius = 0.20193; // TODO
-  public static final double kHoodGearRatio = 174.0 * 44.0 * 44.0 / (14.0 * 8.0 * 10.0); // TODO
+  public static final double kHoodGearRatio = 155;
 
   public static final double kP = 2000.0; // 500.0
   public static final double kI = 0.0;
@@ -21,9 +21,9 @@ public class HoodConstants {
   public static final double kAccelerationRadPerSecSq = Units.degreesToRadians(180); // 最大角加速度
   public static final double kVelocityRadPerSec = Units.degreesToRadians(180);
 
-  public static final double kHoodMinAngle = Units.degreesToRadians(13.703874); // TODO:
-  public static final double kHoodMaxAngle = Units.degreesToRadians(38.703874);
-  public static final double kHoodInitialAngle = Units.degreesToRadians(13.703874);
+  public static final double kHoodMinAngle = Units.degreesToRadians(13.07 + 10); // TODO:
+  public static final double kHoodMaxAngle = Units.degreesToRadians(43.89);
+  public static final double kHoodInitialAngle = Units.degreesToRadians(13.07);
   public static final double kHoodPassingAngle = Units.degreesToRadians(32.0);
   public static final double kHoodTrenchAngle = Units.degreesToRadians(0.0);
 

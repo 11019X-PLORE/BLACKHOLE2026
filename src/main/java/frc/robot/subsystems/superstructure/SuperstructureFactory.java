@@ -7,6 +7,8 @@ import frc.robot.FieldConstants;
 import frc.robot.RobotContainer;
 import frc.robot.subsystems.indexer.Indexer;
 import frc.robot.subsystems.indexer.Indexer.IndexerGoal;
+import frc.robot.subsystems.indexer.IndexerConstants;
+import frc.robot.subsystems.intake.IntakeConstants;
 import frc.robot.subsystems.shooter.flywheel.Flywheel;
 import frc.robot.subsystems.shooter.flywheel.Flywheel.FlywheelGoal;
 import frc.robot.subsystems.shooter.flywheel.FlywheelConstants;
@@ -16,8 +18,6 @@ import frc.robot.subsystems.shooter.hood.HoodConstants;
 import frc.robot.subsystems.shooter.turret.Turret;
 import frc.robot.subsystems.shooter.turret.Turret.TurretGoal;
 import frc.robot.subsystems.shooter.turret.TurretConstants;
-import frc.robot.subsystems.triggers.Triggers;
-import frc.robot.subsystems.triggers.Triggers.TriggersGoal;
 import frc.robot.util.Geoffrey.PhysicalJoint;
 import frc.robot.util.Geoffrey.ShooterSetpoint;
 import frc.robot.util.Geoffrey.TrajectoryCalculator;
@@ -69,33 +69,28 @@ public final class SuperstructureFactory {
     Turret turret = c.getTurret();
     Hood hood = c.getHood();
     Flywheel flywheel = c.getFlywheel();
-    Triggers triggers = c.getTriggers();
     Indexer indexer = c.getIndexer();
 
     return Commands.parallel(
             turret.setGoalCommand(TurretGoal.IDLE),
             hood.setGoalCommand(HoodGoal.IDLE),
             flywheel.setGoalCommand(FlywheelGoal.IDLE),
-            triggers.setGoalCommand(TriggersGoal.STOP),
             indexer.setGoalCommand(IndexerGoal.STOP))
         .withName("Superstructure.Idle");
   }
 
   public static Command feeding(RobotContainer c) {
-    Triggers triggers = c.getTriggers();
     Indexer indexer = c.getIndexer();
 
     return Commands.run(
             () -> {
               if (isReadyToShoot(c)) {
-                triggers.setGoal(TriggersGoal.SHOOT);
                 indexer.setGoal(IndexerGoal.SHOOT);
+                c.getExtension().changeCapcity(-IndexerConstants.feedingBPS / 50.0);
               } else {
-                triggers.setGoal(TriggersGoal.STOP);
                 indexer.setGoal(IndexerGoal.STOP);
               }
             },
-            triggers,
             indexer)
         .withName("Superstructure.StopFeeding");
   }
@@ -104,15 +99,12 @@ public final class SuperstructureFactory {
    * intake/outtake.
    */
   public static Command stopFeeding(RobotContainer c) {
-    Triggers triggers = c.getTriggers();
     Indexer indexer = c.getIndexer();
 
     return Commands.runOnce(
             () -> {
-              triggers.setGoal(TriggersGoal.STOP);
               indexer.setGoal(IndexerGoal.STOP);
             },
-            triggers,
             indexer)
         .withName("Superstructure.StopFeeding");
   }
@@ -121,30 +113,26 @@ public final class SuperstructureFactory {
 
   /** Runs indexer in intake direction. Triggers remain stopped. */
   public static Command runIndexerIntake(RobotContainer c) {
-    Triggers triggers = c.getTriggers();
     Indexer indexer = c.getIndexer();
 
-    return Commands.runOnce(
+    return Commands.run(
             () -> {
-              triggers.setGoal(TriggersGoal.STOP);
               indexer.setGoal(IndexerGoal.INTAKE);
+              c.getExtension().changeCapcity(IntakeConstants.kIntakeBPS / 50.0);
             },
-            triggers,
             indexer)
         .withName("Superstructure.RunIndexerIntake");
   }
 
   /** Runs triggers and indexer in outtake/spit direction. */
   public static Command spit(RobotContainer c) {
-    Triggers triggers = c.getTriggers();
     Indexer indexer = c.getIndexer();
 
-    return Commands.runOnce(
+    return Commands.run(
             () -> {
-              triggers.setGoal(TriggersGoal.OUTTAKE);
               indexer.setGoal(IndexerGoal.OUTTAKE);
+              c.getExtension().changeCapcity(-IntakeConstants.kIntakeBPS / 50.0);
             },
-            triggers,
             indexer)
         .withName("Superstructure.Spit");
   }
@@ -152,17 +140,15 @@ public final class SuperstructureFactory {
   /** Spins up flywheel to fixed velocity and feeds game piece through. */
   public static Command shootSpit(RobotContainer c) {
     Flywheel flywheel = c.getFlywheel();
-    Triggers triggers = c.getTriggers();
     Indexer indexer = c.getIndexer();
 
     return Commands.parallel(
             flywheel.setGoalCommand(FlywheelGoal.FIXED_VELOCITY),
-            Commands.runOnce(
+            Commands.run(
                 () -> {
-                  triggers.setGoal(TriggersGoal.SHOOT);
                   indexer.setGoal(IndexerGoal.SHOOT);
+                  c.getExtension().changeCapcity(-IndexerConstants.feedingBPS / 50.0);
                 },
-                triggers,
                 indexer))
         .withName("Superstructure.ShootSpit");
   }
@@ -317,7 +303,6 @@ public final class SuperstructureFactory {
     Turret turret = c.getTurret();
     Hood hood = c.getHood();
     Flywheel flywheel = c.getFlywheel();
-    Triggers triggers = c.getTriggers();
     Indexer indexer = c.getIndexer();
 
     return Commands.parallel(
@@ -327,10 +312,8 @@ public final class SuperstructureFactory {
             Commands.run(
                 () -> {
                   if (isReadyToShoot(c)) {
-                    triggers.setGoal(TriggersGoal.SHOOT);
                     indexer.setGoal(IndexerGoal.SHOOT);
                   } else {
-                    triggers.setGoal(TriggersGoal.STOP);
                     indexer.setGoal(IndexerGoal.STOP);
                   }
                 }))
@@ -344,7 +327,6 @@ public final class SuperstructureFactory {
     Turret turret = c.getTurret();
     Hood hood = c.getHood();
     Flywheel flywheel = c.getFlywheel();
-    Triggers triggers = c.getTriggers();
     Indexer indexer = c.getIndexer();
 
     return Commands.parallel(
@@ -353,10 +335,8 @@ public final class SuperstructureFactory {
             flywheel.setGoalCommand(FlywheelGoal.TRACKING),
             Commands.runOnce(
                 () -> {
-                  triggers.setGoal(TriggersGoal.STOP);
                   indexer.setGoal(IndexerGoal.STOP);
                 },
-                triggers,
                 indexer))
         .withName("Superstructure.Trench");
   }
@@ -366,7 +346,6 @@ public final class SuperstructureFactory {
   /** Test mode - turret in test mode, feeds when ready. */
   public static Command test(RobotContainer c) {
     Turret turret = c.getTurret();
-    Triggers triggers = c.getTriggers();
     Indexer indexer = c.getIndexer();
 
     return Commands.parallel(
@@ -374,14 +353,11 @@ public final class SuperstructureFactory {
             Commands.run(
                 () -> {
                   if (isReadyToShoot(c)) {
-                    triggers.setGoal(TriggersGoal.SHOOT);
                     indexer.setGoal(IndexerGoal.SHOOT);
                   } else {
-                    triggers.setGoal(TriggersGoal.STOP);
                     indexer.setGoal(IndexerGoal.STOP);
                   }
                 },
-                triggers,
                 indexer))
         .withName("Superstructure.Test");
   }

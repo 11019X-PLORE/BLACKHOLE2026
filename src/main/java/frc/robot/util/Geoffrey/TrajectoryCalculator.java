@@ -110,7 +110,7 @@ public class TrajectoryCalculator {
     //   return 4.74446 * Math.pow(1.17377, v);
     // }
     // return 15;
-    return 1.05 * 4.40309 * Math.pow(1.17819, v);
+    return 0.8 * 4.40309 * Math.pow(1.17819, v);
     // return 4.62907 * Math.pow(1.18664, v); // placeholder for testing
     // return 3.44691 * v - 9.06894;
   }

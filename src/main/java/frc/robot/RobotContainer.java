@@ -7,8 +7,6 @@ import static frc.robot.subsystems.vision.VisionConstants.*;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -44,7 +42,6 @@ import frc.robot.subsystems.extension.ExtensionConstants;
 import frc.robot.subsystems.extension.ExtensionIOReal;
 import frc.robot.subsystems.extension.ExtensionIOSim;
 import frc.robot.subsystems.indexer.Indexer;
-import frc.robot.subsystems.indexer.IndexerConstants;
 import frc.robot.subsystems.indexer.IndexerIOReal;
 import frc.robot.subsystems.indexer.IndexerIOSim;
 import frc.robot.subsystems.intake.Intake;
@@ -65,9 +62,6 @@ import frc.robot.subsystems.shooter.turret.TurretConstants;
 import frc.robot.subsystems.shooter.turret.TurretIOSim;
 import frc.robot.subsystems.shooter.turret.TurretIOreal;
 import frc.robot.subsystems.superstructure.SuperstructureFactory;
-import frc.robot.subsystems.triggers.Triggers;
-import frc.robot.subsystems.triggers.TriggersIOReal;
-import frc.robot.subsystems.triggers.TriggersIOSim;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.VisionIOLimelight;
 import frc.robot.subsystems.vision.VisionIOPhotonVisionSim;
@@ -86,7 +80,6 @@ public class RobotContainer {
   public final Drive drive;
   public final Intake intake;
   public final Extension extension;
-  public final Triggers triggers;
   public final Indexer indexer;
   public final Turret turret;
   public final Flywheel flywheel;
@@ -141,10 +134,7 @@ public class RobotContainer {
         intake =
             new Intake(
                 new IntakeIOReal(IntakeConstants.kIntakeId, IntakeConstants.kIntakeInverted));
-        triggers = new Triggers(new TriggersIOReal());
-        indexer =
-            new Indexer(
-                new IndexerIOReal(IndexerConstants.kIndexerId, IndexerConstants.kIndexerInverted));
+        indexer = new Indexer(new IndexerIOReal());
         extension =
             new Extension(
                 new ExtensionIOReal(
@@ -161,11 +151,11 @@ public class RobotContainer {
         vision =
             new Vision(
                 drive,
-                new VisionIOLimelight(
-                    camera0Name,
-                    new double[] {640, 480},
-                    drive,
-                    new Transform3d(0.0, 0.0, 0.616, new Rotation3d(0.0, -0.4, 0.0))),
+                // new VisionIOLimelight(
+                //     camera0Name,
+                //     new double[] {640, 480},
+                //     drive,
+                //     new Transform3d(0.0, 0.0, 0.616, new Rotation3d(0.0, -0.4, 0.0))),
                 new VisionIOLimelight(
                     camera1Name,
                     new double[] {640, 480},
@@ -197,7 +187,6 @@ public class RobotContainer {
                 new VisionIOPhotonVisionSim(
                     camera1Name, robotToCamera1, drive, robotToCamera1, drive::getPose));
         intake = new Intake(new IntakeIOSim());
-        triggers = new Triggers(new TriggersIOSim());
         indexer = new Indexer(new IndexerIOSim());
         extension = new Extension(new ExtensionIOSim());
         turret =
@@ -247,7 +236,6 @@ public class RobotContainer {
                 new VisionIOPhotonVisionSim(
                     camera1Name, robotToCamera1, drive, robotToCamera1, drive::getPose));
         intake = new Intake(new IntakeIOSim());
-        triggers = new Triggers(new TriggersIOSim());
         indexer = new Indexer(new IndexerIOSim());
         extension = new Extension(new ExtensionIOSim());
         turret =
@@ -299,10 +287,6 @@ public class RobotContainer {
 
   public Extension getExtension() {
     return extension;
-  }
-
-  public Triggers getTriggers() {
-    return triggers;
   }
 
   public Indexer getIndexer() {
@@ -375,8 +359,19 @@ public class RobotContainer {
         .onFalse(SuperstructureFactory.activeShooting(this));
     shootTrigger
         .or(passTrigger)
-        .onTrue(SuperstructureFactory.feeding(this))
-        .onFalse(SuperstructureFactory.stopFeeding(this));
+        .onTrue(
+            Commands.parallel(
+                SuperstructureFactory.feeding(this),
+                intake.setGoalCommand(Intake.IntakeGoal.SHOOT)))
+        .onFalse(
+            new ConditionalCommand(
+                Commands.parallel(
+                    SuperstructureFactory.runIndexerIntake(this),
+                    intake.setGoalCommand(Intake.IntakeGoal.INTAKE)),
+                Commands.parallel(
+                    SuperstructureFactory.stopFeeding(this),
+                    intake.setGoalCommand(Intake.IntakeGoal.STOP)),
+                intakeTrigger));
 
     intakeTrigger
         .onTrue(
@@ -389,11 +384,14 @@ public class RobotContainer {
                     shootTrigger.or(passTrigger))))
         .onFalse(
             Commands.parallel(
-                intake.setGoalCommand(Intake.IntakeGoal.STOP),
-                extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED),
+                extension.setGoalCommand(Extension.ExtensionGoal.FEEDING),
                 new ConditionalCommand(
-                    SuperstructureFactory.feeding(this),
-                    SuperstructureFactory.stopFeeding(this),
+                    Commands.parallel(
+                        SuperstructureFactory.feeding(this),
+                        intake.setGoalCommand(Intake.IntakeGoal.SHOOT)),
+                    Commands.parallel(
+                        SuperstructureFactory.stopFeeding(this),
+                        intake.setGoalCommand(Intake.IntakeGoal.STOP)),
                     shootTrigger.or(passTrigger))));
 
     outtakeTrigger
@@ -449,13 +447,11 @@ public class RobotContainer {
         .onTrue(
             Commands.parallel(
                 flywheel.setGoalCommand(Flywheel.FlywheelGoal.FIXED_VELOCITY),
-                indexer.setGoalCommand(Indexer.IndexerGoal.SHOOT),
-                triggers.setGoalCommand(Triggers.TriggersGoal.SHOOT)))
+                indexer.setGoalCommand(Indexer.IndexerGoal.SHOOT)))
         .onFalse(
             Commands.parallel(
                 flywheel.setGoalCommand(Flywheel.FlywheelGoal.IDLE),
-                indexer.setGoalCommand(Indexer.IndexerGoal.STOP),
-                triggers.setGoalCommand(Triggers.TriggersGoal.STOP)));
+                indexer.setGoalCommand(Indexer.IndexerGoal.STOP)));
   }
 
   private void configureFuelSim() {

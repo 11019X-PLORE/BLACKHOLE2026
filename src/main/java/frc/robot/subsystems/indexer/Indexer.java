@@ -18,7 +18,7 @@ import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 public class Indexer extends FullSubsystem {
-  // --- Tunable Numbers ---
+  // --- Indexer Tunable Numbers ---
   private static final LoggedTunableNumber kP = new LoggedTunableNumber("Indexer/kP");
   private static final LoggedTunableNumber kI = new LoggedTunableNumber("Indexer/kI");
   private static final LoggedTunableNumber kD = new LoggedTunableNumber("Indexer/kD");
@@ -40,6 +40,29 @@ public class Indexer extends FullSubsystem {
   private static final LoggedTunableNumber atGoalDebounce =
       new LoggedTunableNumber("Indexer/AtGoalDebounce", 0.2);
 
+  // --- Triggers Tunable Numbers ---
+  private static final LoggedTunableNumber kTriggers_kP =
+      new LoggedTunableNumber("Indexer/Triggers_kP");
+  private static final LoggedTunableNumber kTriggers_kI =
+      new LoggedTunableNumber("Indexer/Triggers_kI");
+  private static final LoggedTunableNumber kTriggers_kD =
+      new LoggedTunableNumber("Indexer/Triggers_kD");
+  private static final LoggedTunableNumber kTriggers_kS =
+      new LoggedTunableNumber("Indexer/Triggers_kS");
+  private static final LoggedTunableNumber kTriggers_kV =
+      new LoggedTunableNumber("Indexer/Triggers_kV");
+  private static final LoggedTunableNumber kTriggers_kA =
+      new LoggedTunableNumber("Indexer/Triggers_kA");
+  private static final LoggedTunableNumber kTriggers_kG =
+      new LoggedTunableNumber("Indexer/Triggers_kG");
+
+  private static final LoggedTunableNumber kTriggersIntakeVelocity =
+      new LoggedTunableNumber("Indexer/TriggersIntakeVelocity");
+  private static final LoggedTunableNumber kTriggersOuttakeVelocity =
+      new LoggedTunableNumber("Indexer/TriggersOuttakeVelocity");
+  private static final LoggedTunableNumber kTriggersShootVelocity =
+      new LoggedTunableNumber("Indexer/TriggersShootVelocity");
+
   static {
     if (Robot.isSimulation()) {
       kP.initDefault(0.035);
@@ -54,6 +77,17 @@ public class Indexer extends FullSubsystem {
       kOuttakeVelocity.initDefault(-100.0);
       kActiveVelocity.initDefault(100.0);
       kShootVelocity.initDefault(100.0);
+
+      kTriggers_kP.initDefault(0.035);
+      kTriggers_kI.initDefault(0.0);
+      kTriggers_kD.initDefault(0.0);
+      kTriggers_kS.initDefault(0.0);
+      kTriggers_kV.initDefault(0.0);
+      kTriggers_kA.initDefault(0.0);
+      kTriggers_kG.initDefault(0.0);
+      kTriggersIntakeVelocity.initDefault(150.0);
+      kTriggersOuttakeVelocity.initDefault(-150.0);
+      kTriggersShootVelocity.initDefault(150.0);
     } else {
       kP.initDefault(IndexerConstants.kP);
       kI.initDefault(IndexerConstants.kI);
@@ -67,6 +101,17 @@ public class Indexer extends FullSubsystem {
       kOuttakeVelocity.initDefault(IndexerConstants.kOuttakeVelocity);
       kActiveVelocity.initDefault(IndexerConstants.kActiveVelocity);
       kShootVelocity.initDefault(IndexerConstants.kShootVelocity);
+
+      kTriggers_kP.initDefault(IndexerConstants.kTriggers_kP);
+      kTriggers_kI.initDefault(0.0);
+      kTriggers_kD.initDefault(0.0);
+      kTriggers_kS.initDefault(0.0);
+      kTriggers_kV.initDefault(0.0);
+      kTriggers_kA.initDefault(0.0);
+      kTriggers_kG.initDefault(0.0);
+      kTriggersIntakeVelocity.initDefault(IndexerConstants.kTriggersIntakeVelocity);
+      kTriggersOuttakeVelocity.initDefault(IndexerConstants.kTriggersOuttakeVelocity);
+      kTriggersShootVelocity.initDefault(IndexerConstants.kTriggersShootVelocity);
     }
   }
 
@@ -92,25 +137,35 @@ public class Indexer extends FullSubsystem {
 
   // --- Hardware Safety & Alerts ---
   private final Debouncer motorConnectedDebouncer = new Debouncer(0.5, DebounceType.kFalling);
+  private final Debouncer triggersConnectedDebouncer = new Debouncer(0.5, DebounceType.kFalling);
   private final Alert disconnected;
+  private final Alert triggersDisconnected;
   private Debouncer atGoalDebouncer = new Debouncer(atGoalDebounce.get(), DebounceType.kFalling);
 
   public Indexer(IndexerIO io) {
     this.io = io;
     disconnected = new Alert("Indexer motor disconnected!", Alert.AlertType.kWarning);
+    triggersDisconnected = new Alert("Triggers motors disconnected!", Alert.AlertType.kWarning);
 
     io.setPID(kP.get(), kI.get(), kD.get(), kS.get(), kV.get(), kA.get(), kG.get());
+    io.setTriggersPID(
+        kTriggers_kP.get(),
+        kTriggers_kI.get(),
+        kTriggers_kD.get(),
+        kTriggers_kS.get(),
+        kTriggers_kV.get(),
+        kTriggers_kA.get(),
+        kTriggers_kG.get());
   }
 
   @Override
   public void updateInputsPeriodic() {
-    // 1. 读取输入
     io.updateInputs(inputs);
     Logger.processInputs("Indexer", inputs);
 
-    // 2. 更新 Tunables 和 硬件报警
     updateTunables();
     disconnected.set(!motorConnectedDebouncer.calculate(inputs.connected));
+    triggersDisconnected.set(!triggersConnectedDebouncer.calculate(inputs.triggersConnected));
   }
 
   @Override
@@ -118,27 +173,48 @@ public class Indexer extends FullSubsystem {
     if (DriverStation.isDisabled()) {
       outputs.mode = IndexerIOOutputMode.COAST;
       outputs.velocityRadsPerSec = 0.0;
-      outputs.volts = 0.0;
+      outputs.triggersMode = IndexerIOOutputMode.COAST;
+      outputs.triggersVelocityRadsPerSec = 0.0;
       atGoal = false;
     } else {
       switch (goal) {
         case STOP -> {
           outputs.mode = IndexerIOOutputMode.COAST;
           outputs.velocityRadsPerSec = 0.0;
-          outputs.volts = 0.0;
+          // Triggers also stop
+          outputs.triggersMode = IndexerIOOutputMode.COAST;
+          outputs.triggersVelocityRadsPerSec = 0.0;
           atGoal = false;
         }
         case INTAKE -> {
+          // Indexer runs intake, triggers stop (game piece fed by indexer only)
           runVelocityLogic(kIntakeVelocity.get());
+          outputs.triggersMode = IndexerIOOutputMode.COAST;
+          outputs.triggersVelocityRadsPerSec = 0.0;
         }
         case ACTIVE -> {
           runVelocityLogic(kActiveVelocity.get());
+          // Triggers stop in active pre-aim mode
+          outputs.triggersMode = IndexerIOOutputMode.COAST;
+          outputs.triggersVelocityRadsPerSec = 0.0;
         }
         case OUTTAKE -> {
           runVelocityLogic(kOuttakeVelocity.get());
+          // Triggers also outtake
+          outputs.triggersMode = IndexerIOOutputMode.VELOCITY;
+          outputs.triggersVelocityRadsPerSec = kTriggersOuttakeVelocity.get();
         }
         case SHOOT -> {
           runVelocityLogic(kShootVelocity.get());
+
+          outputs.mode = IndexerIOOutputMode.FEEDING;
+          outputs.maxVelocityRadsPerSec = kShootVelocity.get();
+          outputs.maxCurrent = 80;
+          outputs.velocityRadsPerSec = kIntakeVelocity.get();
+          atGoal = true;
+          // Triggers also shoot
+          outputs.triggersMode = IndexerIOOutputMode.FEEDING;
+          outputs.triggersVelocityRadsPerSec = kTriggersShootVelocity.get();
         }
       }
     }
@@ -148,22 +224,24 @@ public class Indexer extends FullSubsystem {
   public void executePeriodic() {
     Logger.recordOutput("Indexer/Mode", outputs.mode);
     Logger.recordOutput("Indexer/Setpoint", outputs.velocityRadsPerSec);
+    Logger.recordOutput("Indexer/TriggersMode", outputs.triggersMode);
+    Logger.recordOutput("Indexer/TriggersSetpoint", outputs.triggersVelocityRadsPerSec);
+    Logger.recordOutput("Indexer/FeedingLeft", inputs.feedingLeft);
+    Logger.recordOutput("Indexer/LeftLimitSwitch", inputs.leftLimitSwitch);
+    Logger.recordOutput("Indexer/RightLimitSwitch", inputs.rightLimitSwitch);
     io.applyOutputs(outputs);
     Robot.batteryLogger.reportCurrentUsage(
         "Indexer", false, inputs.connected ? inputs.supplyCurrentAmps : 0.0);
   }
 
-  /** 内部速度闭环辅助方法：负责设定 output 并计算 atGoal */
+  /** Internal velocity closed-loop helper: sets output and computes atGoal */
   private void runVelocityLogic(double velocityRadsPerSec) {
     outputs.mode = IndexerIOOutputMode.VELOCITY;
     outputs.velocityRadsPerSec = velocityRadsPerSec;
-    outputs.volts = 0.0; // 清零电压，防止干扰闭环
 
-    // 计算是否到达目标
     boolean inTolerance =
         Math.abs(inputs.velocityRadsPerSec - velocityRadsPerSec) <= velocityTolerance.get();
 
-    // 如果设定值过低，强制认为未就绪
     if (Math.abs(velocityRadsPerSec) < 1.0) {
       inTolerance = false;
     }
@@ -171,7 +249,7 @@ public class Indexer extends FullSubsystem {
     atGoal = atGoalDebouncer.calculate(inTolerance);
   }
 
-  /** 更新可调参数 */
+  /** Update tunable parameters */
   private void updateTunables() {
     if (atGoalDebounce.hasChanged(hashCode())) {
       atGoalDebouncer = new Debouncer(atGoalDebounce.get(), DebounceType.kFalling);
@@ -185,13 +263,29 @@ public class Indexer extends FullSubsystem {
         || kG.hasChanged(hashCode())) {
       io.setPID(kP.get(), kI.get(), kD.get(), kS.get(), kV.get(), kA.get(), kG.get());
     }
+    if (kTriggers_kP.hasChanged(hashCode())
+        || kTriggers_kI.hasChanged(hashCode())
+        || kTriggers_kD.hasChanged(hashCode())
+        || kTriggers_kS.hasChanged(hashCode())
+        || kTriggers_kV.hasChanged(hashCode())
+        || kTriggers_kA.hasChanged(hashCode())
+        || kTriggers_kG.hasChanged(hashCode())) {
+      io.setTriggersPID(
+          kTriggers_kP.get(),
+          kTriggers_kI.get(),
+          kTriggers_kD.get(),
+          kTriggers_kS.get(),
+          kTriggers_kV.get(),
+          kTriggers_kA.get(),
+          kTriggers_kG.get());
+    }
   }
 
   public double getVelocity() {
     return inputs.velocityRadsPerSec;
   }
 
-  // --- Commands (供 Superstructure 调用) ---
+  // --- Commands ---
   public Command setGoalCommand(IndexerGoal newGoal) {
     return Commands.runOnce(() -> this.goal = newGoal, this);
   }
