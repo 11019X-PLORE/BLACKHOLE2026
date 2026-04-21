@@ -6,6 +6,7 @@ package frc.robot.util.Geoffrey;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import org.ejml.simple.SimpleMatrix;
@@ -46,7 +47,8 @@ public class ShooterSetpoint {
       double hMax,
       double minHoodAngleRads,
       double maxHoodAngleRads,
-      TrajectoryConfig trajConfig) {
+      TrajectoryConfig trajConfig,
+      boolean use3dRotation) {
 
     // 1. Get current Muzzle State (Pose, Vel, Accel)
     Translation3d muzzlePos = muzzleJoint.getGlobalPose().getTranslation();
@@ -186,6 +188,28 @@ public class ShooterSetpoint {
     // Acceleration of the flywheel magnitude: d/dt sqrt(x^2 + y^2 + z^2)
     double shooterAccel = (x * vx + y * vy + z * vz) / shooterVel;
 
+    // 8. (Optional) 3D Rotation Correction for tilted chassis
+    // When use3dRotation=true, the full 3D orientation of the muzzle joint is used to remap
+    // vLaunch into the robot-body frame, compensating for chassis pitch and roll.
+    // Velocity/acceleration FFs are kept from the flat calculation — negligible error when
+    // stationary.
+    if (use3dRotation) {
+      Rotation3d muzzleRot3d = muzzleJoint.getGlobalPose().getRotation();
+
+      // Express vLaunch in the muzzle's local (robot-body) frame
+      Translation3d vLaunchLocal = vLaunch.rotateBy(muzzleRot3d.unaryMinus());
+      double xL = vLaunchLocal.getX();
+      double yL = vLaunchLocal.getY();
+      double zL = vLaunchLocal.getZ();
+      double hL = Math.sqrt(xL * xL + yL * yL);
+
+      // Recalculate position setpoints only
+      turretPos = MathUtil.angleModulus(Math.atan2(yL, xL));
+      hoodPos = Math.atan2(zL, hL);
+      // turretVel, turretAccel, hoodVel, hoodAccel, shooterAccel are unchanged (robot is stationary
+      // when tilted)
+    }
+
     return new ShooterSetpoint(
         shooterVel, shooterAccel, turretPos, turretVel, turretAccel, hoodPos, hoodVel, hoodAccel);
   }
@@ -284,7 +308,8 @@ public class ShooterSetpoint {
             2.2,
             Math.toRadians(13),
             Math.toRadians(38),
-            TrajectoryConfig.getHubConfig());
+            TrajectoryConfig.getHubConfig(),
+            false);
     System.out.println(setpoint);
   }
 }

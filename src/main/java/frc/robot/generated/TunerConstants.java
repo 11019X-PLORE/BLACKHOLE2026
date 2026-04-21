@@ -92,6 +92,7 @@ public class TunerConstants {
   public static final Transform3d pigeonMountingOffset =
       new Transform3d(
           new Translation3d(0.118865, -0.195835, 0.094), new Rotation3d(Math.PI, 0.0, 0.0));
+  public static final double pigeonDriftRadsPerSec = 0.005;
 
   // CAN bus that the devices are located on;
   // All swerve devices must share the same CAN bus

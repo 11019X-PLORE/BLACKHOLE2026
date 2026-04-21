@@ -18,6 +18,7 @@ import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
@@ -125,6 +126,9 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
   // 动力学数据
   private final PhysicalJoint.kinematics kinematicsData = new PhysicalJoint.kinematics();
   private PhysicalJoint base = PhysicalJoint.ground;
+
+  private double rollOffset = 0.0;
+  private double pitchOffset = 0.0;
 
   private TimeInterpolatableBuffer<Pose2d> robotPoseBuffer =
       TimeInterpolatableBuffer.createBuffer(2);
@@ -517,6 +521,19 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
     return getPose().getRotation();
   }
 
+  public Rotation3d getRotation3d() {
+    Rotation3d rotation =
+        gyroInputs.rotation.rotateBy(TunerConstants.pigeonMountingOffset.getRotation());
+    rotation =
+        new Rotation3d(
+            rotation.getX() + rollOffset, rotation.getY() + pitchOffset, rotation.getZ());
+    rollOffset += (rotation.getX() > 0 ? -1 : 1) * TunerConstants.pigeonDriftRadsPerSec / 50.0;
+
+    pitchOffset += (rotation.getY() > 0 ? -1 : 1) * TunerConstants.pigeonDriftRadsPerSec / 50.0;
+
+    return new Rotation3d(rotation.getX(), rotation.getY(), getRotation().getRadians());
+  }
+
   public void setPose(Pose2d pose) {
     poseEstimator.resetPosition(rawGyroRotation, getModulePositions(), pose);
   }
@@ -570,9 +587,10 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
         new Transform3d(
             new Translation3d(
                 currentPose.getTranslation().getX(), currentPose.getTranslation().getY(), 0),
-            new Rotation3d(0, 0, currentPose.getRotation().getRadians()));
+            getRotation3d());
 
     Logger.recordOutput("Drive/forwardKinematic", kinematicsData.forwardKinematic);
+    Logger.recordOutput("Drive/3dPose", Pose3d.kZero.transformBy(kinematicsData.forwardKinematic));
 
     ChassisSpeeds currentSpeeds = getChassisSpeeds();
     SimpleMatrix vel = kinematicsData.localVelocity;
