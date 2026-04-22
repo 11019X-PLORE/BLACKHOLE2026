@@ -89,13 +89,16 @@ public class Flywheel extends FullSubsystem {
 
   // --- Hardware Safety & Alerts ---
   private final Debouncer motorConnectedDebouncer = new Debouncer(0.5, DebounceType.kFalling);
+  private final Debouncer secondmotorConnectedDebouncer = new Debouncer(0.5, DebounceType.kFalling);
   private final Alert disconnected;
+  private final Alert secondconnected;
   private Debouncer atGoalDebouncer = new Debouncer(atGoalDebounce.get(), DebounceType.kFalling);
 
   public Flywheel(FlywheelIO io, PhysicalJoint muzzleJoint) {
     this.io = io;
     this.muzzleJoint = muzzleJoint;
     disconnected = new Alert("Flywheel motor disconnected!", Alert.AlertType.kWarning);
+    secondconnected = new Alert("SecondFlywheel motor disconnected!", Alert.AlertType.kWarning);
 
     io.setPID(kP.get(), kI.get(), kD.get(), kS.get(), kV.get(), kA.get(), kG.get());
   }
@@ -108,6 +111,7 @@ public class Flywheel extends FullSubsystem {
     // 2. 更新 Tunables 和 硬件报警
     updateTunables();
     disconnected.set(!motorConnectedDebouncer.calculate(inputs.connected));
+    secondconnected.set(!secondmotorConnectedDebouncer.calculate(inputs.secondconnected));
   }
 
   @Override

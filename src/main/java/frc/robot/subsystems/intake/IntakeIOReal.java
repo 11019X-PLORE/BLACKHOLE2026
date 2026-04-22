@@ -79,10 +79,10 @@ public class IntakeIOReal implements IntakeIO {
   @Override
   public void updateInputs(IntakeIOInputs inputs) {
     // 刷新所有信号
-    BaseStatusSignal.refreshAll(
-        position, velocity, appliedVolts, supplyCurrent, torqueCurrent, temp);
-
-    inputs.connected = true;
+    inputs.connected =
+        BaseStatusSignal.refreshAll(
+                position, velocity, appliedVolts, supplyCurrent, torqueCurrent, temp)
+            .isOK();
     inputs.positionRads = Units.rotationsToRadians(position.getValueAsDouble());
     inputs.velocityRadsPerSec = Units.rotationsToRadians(velocity.getValueAsDouble());
     inputs.appliedVoltage = appliedVolts.getValueAsDouble();

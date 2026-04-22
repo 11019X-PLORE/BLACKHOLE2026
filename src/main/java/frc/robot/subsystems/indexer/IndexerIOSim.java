@@ -52,6 +52,8 @@ public class IndexerIOSim implements IndexerIO {
     inputs.torqueCurrentAmps = indexerCurrentOutput;
     inputs.tempCelsius = 0.0;
 
+    inputs.indexRightconnected = true;
+    inputs.indexRightvelocityRadsPerSec = indexerSim.getAngularVelocityRadPerSec();
     // Triggers sim update
     double triggersOutputAsVolt =
         triggersMotorModel.getVoltage(
@@ -62,7 +64,11 @@ public class IndexerIOSim implements IndexerIO {
 
     inputs.triggersConnected = true;
     inputs.triggersVelocityRadsPerSec = triggersSim.getAngularVelocityRadPerSec();
+    inputs.triggersRightconnected = true;
+    inputs.triggersRightVelocityRadsPerSec = triggersSim.getAngularVelocityRadPerSec();
     inputs.feedingLeft = true;
+    inputs.leftLimitSwitchconnected = true;
+    inputs.rightLimitSwitchconnected = true;
     inputs.leftLimitSwitch = false;
     inputs.rightLimitSwitch = false;
     inputs.triggerDistance = 0.0;

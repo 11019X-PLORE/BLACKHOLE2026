@@ -1,7 +1,7 @@
 package frc.robot.subsystems.led;
 
 public class LEDConstants {
-  public static final int LEDPort = 0;
+  public static final int LEDPort = 9;
   public static final int length = 30;
 
   // solidColor

@@ -23,6 +23,7 @@ import frc.robot.autos.L1;
 import frc.robot.autos.L2;
 import frc.robot.autos.L3;
 import frc.robot.autos.L4;
+import frc.robot.autos.L5;
 import frc.robot.autos.M1;
 import frc.robot.autos.M2;
 import frc.robot.autos.M3;
@@ -260,6 +261,7 @@ public class RobotContainer {
     autoChooser.addOption("L2", new L2(this, sideChooser::get));
     autoChooser.addOption("L3", new L3(this, sideChooser::get));
     autoChooser.addOption("L4", new L4(this, sideChooser::get));
+    autoChooser.addOption("L5", new L5(this, sideChooser::get));
     autoChooser.addOption("M1", new M1(this, sideChooser::get));
     autoChooser.addOption("M2", new M2(this, sideChooser::get));
     autoChooser.addOption("M3", new M3(this, sideChooser::get));

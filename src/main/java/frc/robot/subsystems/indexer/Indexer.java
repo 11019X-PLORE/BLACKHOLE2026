@@ -137,15 +137,33 @@ public class Indexer extends FullSubsystem {
 
   // --- Hardware Safety & Alerts ---
   private final Debouncer motorConnectedDebouncer = new Debouncer(0.5, DebounceType.kFalling);
+  private final Debouncer rightmotorConnectedDebouncer = new Debouncer(0.5, DebounceType.kFalling);
   private final Debouncer triggersConnectedDebouncer = new Debouncer(0.5, DebounceType.kFalling);
+  private final Debouncer righttriggersConnectedDebouncer =
+      new Debouncer(0.5, DebounceType.kFalling);
+  private final Debouncer leftLimitSwitchconnectedDebouncer =
+      new Debouncer(0.5, DebounceType.kFalling);
+  private final Debouncer rightLimitSwitchconnectedDebouncer =
+      new Debouncer(0.5, DebounceType.kFalling);
+  private final Alert rightdisconnected;
   private final Alert disconnected;
   private final Alert triggersDisconnected;
+  private final Alert righttriggersDisconnected;
+  private final Alert leftLimitSwitchconnected;
+  private final Alert rightLimitSwitchconnected;
+
   private Debouncer atGoalDebouncer = new Debouncer(atGoalDebounce.get(), DebounceType.kFalling);
 
   public Indexer(IndexerIO io) {
     this.io = io;
     disconnected = new Alert("Indexer motor disconnected!", Alert.AlertType.kWarning);
+    rightdisconnected = new Alert("RightIndexer motor disconnected!", Alert.AlertType.kWarning);
     triggersDisconnected = new Alert("Triggers motors disconnected!", Alert.AlertType.kWarning);
+    righttriggersDisconnected =
+        new Alert("RightTriggers motors disconnected!", Alert.AlertType.kWarning);
+    leftLimitSwitchconnected = new Alert("leftLimitSwitch disconnected!", Alert.AlertType.kWarning);
+    rightLimitSwitchconnected =
+        new Alert("rightLimitSwitch disconnected!", Alert.AlertType.kWarning);
 
     io.setPID(kP.get(), kI.get(), kD.get(), kS.get(), kV.get(), kA.get(), kG.get());
     io.setTriggersPID(
@@ -165,7 +183,14 @@ public class Indexer extends FullSubsystem {
 
     updateTunables();
     disconnected.set(!motorConnectedDebouncer.calculate(inputs.connected));
+    rightdisconnected.set(!rightmotorConnectedDebouncer.calculate(inputs.indexRightconnected));
     triggersDisconnected.set(!triggersConnectedDebouncer.calculate(inputs.triggersConnected));
+    righttriggersDisconnected.set(
+        !righttriggersConnectedDebouncer.calculate(inputs.triggersRightconnected));
+    leftLimitSwitchconnected.set(
+        !triggersConnectedDebouncer.calculate(inputs.leftLimitSwitchconnected));
+    rightLimitSwitchconnected.set(
+        !righttriggersConnectedDebouncer.calculate(inputs.rightLimitSwitchconnected));
   }
 
   @Override

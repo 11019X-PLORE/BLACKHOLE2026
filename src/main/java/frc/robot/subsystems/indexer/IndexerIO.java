@@ -13,10 +13,19 @@ public interface IndexerIO {
     public double torqueCurrentAmps;
     public double tempCelsius;
 
+    public boolean indexRightconnected;
+    public double indexRightvelocityRadsPerSec;
+
     // Triggers inputs (merged from TriggersIO)
     public boolean triggersConnected;
     public double triggersVelocityRadsPerSec;
+
+    public boolean triggersRightconnected;
+    public double triggersRightVelocityRadsPerSec;
+
     public boolean feedingLeft;
+    public boolean leftLimitSwitchconnected;
+    public boolean rightLimitSwitchconnected;
     public boolean leftLimitSwitch;
     public boolean rightLimitSwitch;
     public double triggerDistance;

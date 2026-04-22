@@ -38,6 +38,8 @@ public class FlywheelIOSim implements FlywheelIO {
     inputs.supplyCurrentAmps = sim.getCurrentDrawAmps();
     inputs.torqueCurrentAmps = currentOutput;
     inputs.tempCelsius = 0.0;
+
+    inputs.secondconnected = true;
   }
 
   @Override

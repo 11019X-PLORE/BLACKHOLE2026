@@ -110,20 +110,10 @@ public class FlywheelIOReal implements FlywheelIO {
   @Override
   public void updateInputs(FlywheelIOInputs inputs) {
     // 刷新所有信号
-    BaseStatusSignal.refreshAll(
-        position,
-        velocity,
-        appliedVolts,
-        supplyCurrent,
-        torqueCurrent,
-        temp,
-        secondposition,
-        secondvelocity,
-        secondappliedVolts,
-        secondsupplyCurrent,
-        secondtorqueCurrent);
-
-    inputs.connected = true;
+    inputs.connected =
+        BaseStatusSignal.refreshAll(
+                position, velocity, appliedVolts, supplyCurrent, torqueCurrent, temp)
+            .isOK();
     inputs.positionRads = Units.rotationsToRadians(position.getValueAsDouble());
     inputs.velocityRadsPerSec = Units.rotationsToRadians(velocity.getValueAsDouble());
     inputs.appliedVoltage = appliedVolts.getValueAsDouble();
@@ -131,7 +121,14 @@ public class FlywheelIOReal implements FlywheelIO {
     inputs.torqueCurrentAmps = torqueCurrent.getValueAsDouble();
     inputs.tempCelsius = temp.getValueAsDouble();
 
-    inputs.secondconnected = true;
+    inputs.secondconnected =
+        BaseStatusSignal.refreshAll(
+                secondposition,
+                secondvelocity,
+                secondappliedVolts,
+                secondsupplyCurrent,
+                secondtorqueCurrent)
+            .isOK();
     inputs.secondpositionRads = Units.rotationsToRadians(secondposition.getValueAsDouble());
     inputs.secondvelocityRadsPerSec = Units.rotationsToRadians(secondvelocity.getValueAsDouble());
     inputs.secondappliedVoltage = secondappliedVolts.getValueAsDouble();

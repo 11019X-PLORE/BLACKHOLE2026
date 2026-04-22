@@ -43,6 +43,8 @@ public class IndexerIOReal implements IndexerIO {
   private final StatusSignal<Current> indexerTorqueCurrent;
   private final StatusSignal<Temperature> indexerTemp;
 
+  private final StatusSignal<AngularVelocity> indexerRightvelocity;
+
   private final VelocityTorqueCurrentFOC indexerVelocityControl = new VelocityTorqueCurrentFOC(0.0);
   private final NeutralOut indexerCoastControl = new NeutralOut();
 
@@ -54,6 +56,7 @@ public class IndexerIOReal implements IndexerIO {
   private final CANrange rightCANrange;
 
   private final StatusSignal<AngularVelocity> triggersVelocity;
+  private final StatusSignal<AngularVelocity> triggersRightVelocity;
   private final StatusSignal<Boolean> leftLimitSwitch;
   private final StatusSignal<Boolean> rightLimitSwitch;
 
@@ -119,13 +122,16 @@ public class IndexerIOReal implements IndexerIO {
     indexerTorqueCurrent = indexerLeftTalon.getTorqueCurrent();
     indexerTemp = indexerLeftTalon.getDeviceTemp();
 
+    indexerRightvelocity = indexerRightTalon.getVelocity();
+
     BaseStatusSignal.setUpdateFrequencyForAll(
         50.0,
         indexerPosition,
         indexerVelocity,
         indexerAppliedVolts,
         indexerSupplyCurrent,
-        indexerTorqueCurrent);
+        indexerTorqueCurrent,
+        indexerRightvelocity);
 
     // === Configure Triggers Motors ===
     triggersLeft = new TalonFX(IndexerConstants.kTriggersLeftId);
@@ -190,24 +196,26 @@ public class IndexerIOReal implements IndexerIO {
     limitRightConfigs.ForwardLimitRemoteSensorID = rightCANrange.getDeviceID();
 
     triggersVelocity = triggersLeft.getVelocity();
+    triggersRightVelocity = triggersRight.getVelocity();
     leftLimitSwitch = leftCANrange.getIsDetected();
     rightLimitSwitch = rightCANrange.getIsDetected();
 
     BaseStatusSignal.setUpdateFrequencyForAll(
-        50.0, triggersVelocity, leftLimitSwitch, rightLimitSwitch);
+        50.0, triggersVelocity, triggersRightVelocity, leftLimitSwitch, rightLimitSwitch);
   }
 
   @Override
   public void updateInputs(IndexerIOInputs inputs) {
-    BaseStatusSignal.refreshAll(
-        indexerPosition,
-        indexerVelocity,
-        indexerAppliedVolts,
-        indexerSupplyCurrent,
-        indexerTorqueCurrent,
-        indexerTemp);
+    inputs.connected =
+        BaseStatusSignal.refreshAll(
+                indexerPosition,
+                indexerVelocity,
+                indexerAppliedVolts,
+                indexerSupplyCurrent,
+                indexerTorqueCurrent,
+                indexerTemp)
+            .isOK();
 
-    inputs.connected = true;
     inputs.positionRads = Units.rotationsToRadians(indexerPosition.getValueAsDouble());
     inputs.velocityRadsPerSec = Units.rotationsToRadians(indexerVelocity.getValueAsDouble());
     inputs.appliedVoltage = indexerAppliedVolts.getValueAsDouble();
@@ -215,11 +223,22 @@ public class IndexerIOReal implements IndexerIO {
     inputs.torqueCurrentAmps = indexerTorqueCurrent.getValueAsDouble();
     inputs.tempCelsius = indexerTemp.getValueAsDouble();
 
+    inputs.indexRightconnected = BaseStatusSignal.refreshAll(indexerRightvelocity).isOK();
+    inputs.indexRightvelocityRadsPerSec =
+        Units.rotationsToRadians(indexerRightvelocity.getValueAsDouble());
+
     BaseStatusSignal.refreshAll(triggersVelocity, leftLimitSwitch, rightLimitSwitch);
-    inputs.triggersConnected = true;
+    inputs.triggersConnected = BaseStatusSignal.refreshAll(triggersVelocity).isOK();
     inputs.triggersVelocityRadsPerSec =
         Units.rotationsToRadians(triggersVelocity.getValueAsDouble());
+
+    inputs.triggersRightconnected = BaseStatusSignal.refreshAll(triggersRightVelocity).isOK();
+    inputs.triggersRightVelocityRadsPerSec =
+        Units.rotationsToRadians(triggersRightVelocity.getValueAsDouble());
+
     inputs.feedingLeft = feedingLeft;
+    inputs.leftLimitSwitchconnected = BaseStatusSignal.refreshAll(leftLimitSwitch).isOK();
+    inputs.rightLimitSwitchconnected = BaseStatusSignal.refreshAll(rightLimitSwitch).isOK();
     inputs.leftLimitSwitch = leftLimitSwitch.getValue();
     inputs.rightLimitSwitch = rightLimitSwitch.getValue();
     inputs.triggerDistance = leftCANrange.getDistance().getValueAsDouble();
