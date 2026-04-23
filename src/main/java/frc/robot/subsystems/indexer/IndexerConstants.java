@@ -28,7 +28,7 @@ public class IndexerConstants {
   public static final double kIntakeVelocity = 125.0;
   public static final double kOuttakeVelocity = -125.0;
   public static final double kActiveVelocity = 125.0;
-  public static final double kShootVelocity = 125.0;
+  public static final double kShootVelocity = 200.0;
 
   // === Triggers Motors (merged from TriggersConstants) ===
   public static final int kTriggersLeftId = Ports.kTestLeftTriggers;
