@@ -11,7 +11,7 @@ public class ExtensionConstants {
   public static final double kExtensionRadius = 0.0127; // TODO
   public static final double kExtensionGearRatio = 3.0 * 42.0 / 18.0; // TODO
 
-  public static final double kP = 1000.0; // 20
+  public static final double kP = 600.0; // 20
   public static final double kI = 0.0;
   public static final double kD = 0.1; // 0.7
   public static final double kG = 0.0; //
@@ -25,9 +25,11 @@ public class ExtensionConstants {
   public static final double kExtensionMinPosition = 0; // TODO:零位位于水平位置0.0
   public static final double kExtensionMaxPosition = 0.270; // 150.0
   public static final double kExtensionInitialPosition = 0; // 123.0
-  public static final double kExtensionDeployPosition = 0.275; // 展开位置//
+  public static final double kExtensionDeployPosition = 0.240; // 0.275; // 展开位置//
   public static final double kExtensionStowerPosition = 0; //
   public static final double kExtensionShakePosition = 0.1;
+
+  public static final double kExtensionShakeRange = 0.05;
 
   public static final double kExtensionFeedingPosition = 0.14; // 不卡球位置
 

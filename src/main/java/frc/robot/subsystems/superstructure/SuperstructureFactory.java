@@ -26,6 +26,7 @@ import frc.robot.util.Geoffrey.PhysicalJoint;
 import frc.robot.util.Geoffrey.ShooterSetpoint;
 import frc.robot.util.Geoffrey.TrajectoryCalculator;
 import frc.robot.util.Geoffrey.TrajectoryConfig;
+import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.geometry.AllianceFlipUtil;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.Logger;
@@ -37,10 +38,18 @@ import org.littletonrobotics.junction.Logger;
  *
  * <p>All subsystems are accessed via RobotContainer getter methods.
  */
-public final class SuperstructureFactory {
+public class SuperstructureFactory {
 
   // Private constructor prevents instantiation
-  private SuperstructureFactory() {}
+  public final LoggedTunableNumber flywheelSetpoint =
+      new LoggedTunableNumber("shooter/fixedFlywheelSetpoint");
+  public final LoggedTunableNumber hoodSetpoint =
+      new LoggedTunableNumber("shooter/fixedHoodSetpoint");
+
+  public SuperstructureFactory() {
+    hoodSetpoint.initDefault(0);
+    flywheelSetpoint.initDefault(0);
+  }
 
   // ==================== HELPER METHODS ====================
 
@@ -270,6 +279,12 @@ public final class SuperstructureFactory {
                               sp.shooterAccelerationMetersPerSecSquared)
                           / FlywheelConstants.kFlywheelRadius;
                   flywheel.runVelocityFOCLogic(radPerSec, radPerSec2, 0.0);
+
+                  // turret.runPositionFOCLogic(0, 0, 0, 0);
+
+                  // flywheel.runVelocityFOCLogic(15 / FlywheelConstants.kFlywheelRadius, 0, 0.0);
+
+                  // hood.runPositionFOCLogic(Math.toRadians(86), 0, 0, 0);
 
                   Logger.recordOutput(
                       "shooterSetpoint/shooterVelocityMetersPerSec",

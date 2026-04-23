@@ -21,8 +21,8 @@ public class HoodConstants {
   public static final double kAccelerationRadPerSecSq = Units.degreesToRadians(180); // 最大角加速度
   public static final double kVelocityRadPerSec = Units.degreesToRadians(180);
 
-  public static final double kHoodMinAngle = Units.degreesToRadians(13.07 + 10); // TODO:
-  public static final double kHoodMaxAngle = Units.degreesToRadians(38);
+  public static final double kHoodMinAngle = Units.degreesToRadians(13.07); // TODO:
+  public static final double kHoodMaxAngle = Units.degreesToRadians(43);
   public static final double kHoodInitialAngle = Units.degreesToRadians(13.07);
   public static final double kHoodPassingAngle = Units.degreesToRadians(32.0);
   public static final double kHoodTrenchAngle = Units.degreesToRadians(0.0);

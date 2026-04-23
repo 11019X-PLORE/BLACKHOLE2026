@@ -12,7 +12,7 @@ import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.NeutralOut;
-import com.ctre.phoenix6.controls.VelocityVoltage;
+import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
@@ -44,7 +44,7 @@ public class FlywheelIOReal implements FlywheelIO {
   private final StatusSignal<Temperature> secondtemp;
 
   // 控制请求
-  private final VelocityVoltage velocityControl = new VelocityVoltage(0.0);
+  private final VelocityTorqueCurrentFOC velocityControl = new VelocityTorqueCurrentFOC(0.0);
   private final VoltageOut voltageControl = new VoltageOut(0);
   private final NeutralOut coastControl = new NeutralOut();
 
@@ -65,7 +65,7 @@ public class FlywheelIOReal implements FlywheelIO {
                     .withSensorToMechanismRatio(FlywheelConstants.kFlywheelGearRatio))
             .withCurrentLimits(
                 new CurrentLimitsConfigs()
-                    .withStatorCurrentLimit(Amps.of(60.0))
+                    .withStatorCurrentLimit(Amps.of(65.0))
                     .withStatorCurrentLimitEnable(true)
                     .withSupplyCurrentLimit(Amps.of(40))
                     .withSupplyCurrentLimitEnable(true)
@@ -163,7 +163,6 @@ public class FlywheelIOReal implements FlywheelIO {
       case VELOCITY_FOC -> {
         talon.setControl(
             velocityControl
-                .withEnableFOC(true)
                 .withAcceleration(Units.radiansToRotations(outputs.accelerationRadPerSec2))
                 .withVelocity(Units.radiansToRotations(outputs.velocityRadsPerSec))
                 .withFeedForward(outputs.feedforwardAmps));

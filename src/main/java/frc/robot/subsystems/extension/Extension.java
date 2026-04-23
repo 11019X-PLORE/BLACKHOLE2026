@@ -145,9 +145,13 @@ public class Extension extends FullSubsystem {
                       - ExtensionConstants.kStopPushingCapcity);
           ratio = MathUtil.clamp(ratio, 0, 1);
 
+          double time = Timer.getFPGATimestamp();
+
           double targetPosition =
               ExtensionConstants.kExtensionDeployPosition * ratio
-                  + ExtensionConstants.kExtensionFeedingPosition * (1 - ratio);
+                  + ExtensionConstants.kExtensionFeedingPosition * (1 - ratio)
+                  + (ExtensionConstants.kExtensionShakeRange
+                      * Math.sin(time * 2 * Math.PI * ExtensionConstants.kShakeFrequency));
           runPositionLogic(targetPosition);
         }
       }
