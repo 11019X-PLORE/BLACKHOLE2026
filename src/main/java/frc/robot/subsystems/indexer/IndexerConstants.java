@@ -13,7 +13,7 @@ public class IndexerConstants {
   public static final double kIndexerRadius = 0.05; // TODO
   public static final double kIndexerGearRatio = 3.0;
 
-  public static final double kIndexerStatorCurrentLimit = 60;
+  public static final double kIndexerStatorCurrentLimit = 35;
 
   public static final double kP = 100.0; // 10.0
   public static final double kI = 0.0;
@@ -25,10 +25,10 @@ public class IndexerConstants {
 
   public static final double kVelocityTolerance = 5.0;
 
-  public static final double kIntakeVelocity = 125.0;
+  public static final double kIntakeVelocity = 80.0;
   public static final double kOuttakeVelocity = -125.0;
-  public static final double kActiveVelocity = 125.0;
-  public static final double kShootVelocity = 125.0;
+  public static final double kActiveVelocity = 80.0;
+  public static final double kShootVelocity = 200.0;
 
   // === Triggers Motors (merged from TriggersConstants) ===
   public static final int kTriggersLeftId = Ports.kTestLeftTriggers;

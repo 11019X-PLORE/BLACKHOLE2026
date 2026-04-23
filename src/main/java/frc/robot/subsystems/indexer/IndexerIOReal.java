@@ -78,7 +78,7 @@ public class IndexerIOReal implements IndexerIO {
         new TalonFXConfiguration()
             .withMotorOutput(
                 new MotorOutputConfigs()
-                    .withNeutralMode(NeutralModeValue.Coast)
+                    .withNeutralMode(NeutralModeValue.Brake)
                     .withInverted(
                         IndexerConstants.kIndexerLeftInverted
                             ? InvertedValue.Clockwise_Positive
