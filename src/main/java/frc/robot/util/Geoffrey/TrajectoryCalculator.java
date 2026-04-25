@@ -110,13 +110,19 @@ public class TrajectoryCalculator {
     //   return 4.74446 * Math.pow(1.17377, v);
     // }
     // return 15;
-    return 0.85 * 4.40309 * Math.pow(1.17819, v);
+    // return 0.85 * 4.40309 * Math.pow(1.17819, v);
     // return 4.62907 * Math.pow(1.18664, v); // placeholder for testing
     // return 3.44691 * v - 9.06894;
+
+    return 1.1 * 4.44865 * Math.pow(1.14391, v);
   }
 
   public static double getHoodSetpoint(double a) {
-    return Math.toRadians((0.746204 * Math.toDegrees(a)) + 14.48929);
+    // return Math.toRadians((0.746204 * Math.toDegrees(a)) + 14.48929);
+    return Math.toRadians((0.901026 * Math.toDegrees(a)) + 5.23916);
+
+    // return Math.toRadians((0.0774547 * Math.pow(a, 1.5867)));
+    // return a;
   }
 
   public static double getFlywheelAcceleration(double v, double a) {

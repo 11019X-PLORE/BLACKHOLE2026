@@ -11,7 +11,7 @@ import frc.robot.util.Geoffrey.PhysicalJoint;
 public class TurretConstants {
 
   public static final int kTurretID = Ports.kTurret;
-  public static final boolean kTurretInverted = true;
+  public static final boolean kTurretInverted = false;
 
   public static final double kTurretGearRatio = 41.111111111111;
 
@@ -31,7 +31,7 @@ public class TurretConstants {
   // ========== 角度限制 ==========
   public static final double kTurretMinAngle = Units.degreesToRadians(-270); // radius
   public static final double kTurretMaxAngle = Units.degreesToRadians(90.0); // radius
-  public static final double kTurretInitialAngle = Units.degreesToRadians(0);
+  public static final double kTurretInitialAngle = Units.degreesToRadians(-180);
 
   public static final double kTurretToleranceDeg = Units.degreesToRadians(10); // max is 4.6
   public static final double kTurretFixAngle = Units.degreesToRadians(-90.0);
