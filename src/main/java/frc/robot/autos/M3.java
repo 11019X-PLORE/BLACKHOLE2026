@@ -30,9 +30,14 @@ public class M3 extends SequentialCommandGroup {
         Commands.deadline(
             drive.generatePath("M3"),
             intake.setGoalCommand(Intake.IntakeGoal.INTAKE),
-            extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED)),
+            extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED),
+            SuperstructureFactory.activeShooting(c),
+            SuperstructureFactory.runIndexerIntake(c)),
         Commands.deadline(
-            SuperstructureFactory.shoot(c).withTimeout(3.0), SuperstructureFactory.feeding(c)),
+            SuperstructureFactory.shoot(c).withTimeout(4.0),
+            SuperstructureFactory.feeding(c),
+            intake.setGoalCommand(Intake.IntakeGoal.STOW),
+            extension.setGoalCommand(Extension.ExtensionGoal.FEEDING)),
         Commands.parallel(
                 SuperstructureFactory.activeShooting(c), SuperstructureFactory.stopFeeding(c))
             .withTimeout(0.1),
@@ -40,12 +45,13 @@ public class M3 extends SequentialCommandGroup {
             drive.generatePath("M4"),
             intake.setGoalCommand(Intake.IntakeGoal.INTAKE),
             extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED),
+            SuperstructureFactory.activeShooting(c),
             SuperstructureFactory.runIndexerIntake(c)),
-        Commands.parallel(
-            Commands.deadline(
-                SuperstructureFactory.shoot(c).withTimeout(4.0), SuperstructureFactory.feeding(c)),
+        Commands.deadline(
+            SuperstructureFactory.shoot(c).withTimeout(4.0),
+            SuperstructureFactory.feeding(c),
             intake.setGoalCommand(Intake.IntakeGoal.STOW),
-            extension.setGoalCommand(Extension.ExtensionGoal.SHAKE)),
+            extension.setGoalCommand(Extension.ExtensionGoal.FEEDING)),
         Commands.parallel(
                 SuperstructureFactory.activeShooting(c), SuperstructureFactory.stopFeeding(c))
             .withTimeout(0.1));

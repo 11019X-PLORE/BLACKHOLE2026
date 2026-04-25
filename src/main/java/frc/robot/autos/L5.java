@@ -22,25 +22,28 @@ public class L5 extends SequentialCommandGroup {
     addCommands(
         Commands.runOnce(() -> drive.setYFlipped(isRightSide)),
         Commands.parallel(turret.zeroCommand(), hood.zeroCommand(), extension.zeroCommand()),
-        drive.resetOdomToPath("L13"),
+        drive.resetOdomToPath("L12"),
         Commands.deadline(
             SuperstructureFactory.shoot(c).withTimeout(4.0), SuperstructureFactory.feeding(c)),
         Commands.parallel(
                 SuperstructureFactory.activeShooting(c), SuperstructureFactory.stopFeeding(c))
             .withTimeout(0.1),
         Commands.deadline(
-            drive.generatePath("L13"),
+            drive.generatePath("L12"),
             intake.setGoalCommand(Intake.IntakeGoal.INTAKE),
             extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED),
+            SuperstructureFactory.activeShooting(c),
             SuperstructureFactory.runIndexerIntake(c)),
-        Commands.deadline(
-            drive.generatePath("L14"),
-            SuperstructureFactory.shoot(c),
-            SuperstructureFactory.feeding(c)),
+        Commands.parallel(intake.setGoalCommand(Intake.IntakeGoal.STOP)).withTimeout(0.1),
         Commands.parallel(
-                SuperstructureFactory.activeShooting(c),
-                SuperstructureFactory.stopFeeding(c),
-                intake.setGoalCommand(Intake.IntakeGoal.STOP))
+            Commands.deadline(
+                drive.generatePath("L13"),
+                SuperstructureFactory.shoot(c),
+                SuperstructureFactory.feeding(c)),
+            intake.setGoalCommand(Intake.IntakeGoal.STOW),
+            extension.setGoalCommand(Extension.ExtensionGoal.FEEDING)),
+        Commands.parallel(
+                SuperstructureFactory.activeShooting(c), SuperstructureFactory.stopFeeding(c))
             .withTimeout(0.1));
   }
 }
