@@ -36,8 +36,8 @@ public class IndexerConstants {
   public static final int kTriggersLeftLimitSwitchId = Ports.kTestLeftLimitSwitch;
   public static final int kTriggersRightLimitSwitchId = Ports.kTestRightLimitSwitch;
 
-  public static boolean kTriggersLeftInverted = true;
-  public static boolean kTriggersRightInverted = false;
+  public static boolean kTriggersLeftInverted = false;
+  public static boolean kTriggersRightInverted = true;
 
   public static double kTriggersMinSwitchPeriod = 0.2;
 
@@ -58,5 +58,5 @@ public class IndexerConstants {
   public static final double kTriggersOuttakeVelocity = -150.0;
   public static final double kTriggersShootVelocity = 150.0;
 
-  public static final double feedingBPS = 10.0; // balls per second
+  public static final double feedingBPS = 8.0; // balls per second
 }
