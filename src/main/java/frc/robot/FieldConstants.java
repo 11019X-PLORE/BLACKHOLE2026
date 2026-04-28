@@ -182,7 +182,7 @@ public class FieldConstants {
   public static class LeftTrench {
     // Dimensions
     public static final double width = Units.inchesToMeters(65.65);
-    public static final double depth = Units.inchesToMeters(47.0);
+    public static final double depth = (Units.inchesToMeters(47.0) + 0.4) / 2.0;
     public static final double height = Units.inchesToMeters(40.25);
     public static final double openingWidth = Units.inchesToMeters(50.34);
     public static final double openingHeight = Units.inchesToMeters(22.25);

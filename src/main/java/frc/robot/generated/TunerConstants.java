@@ -73,7 +73,7 @@ public class TunerConstants {
       new TalonFXConfiguration()
           .withCurrentLimits(
               new CurrentLimitsConfigs()
-                  .withStatorCurrentLimit(Amps.of(80))
+                  .withStatorCurrentLimit(Amps.of(65))
                   .withStatorCurrentLimitEnable(true)
                   .withSupplyCurrentLimit(Amps.of(30)) // 持续电流限制为 40A
                   .withSupplyCurrentLowerLimit(Amps.of(60)) // 允许瞬间电流达到 50A
@@ -83,11 +83,13 @@ public class TunerConstants {
       new TalonFXConfiguration()
           .withCurrentLimits(
               new CurrentLimitsConfigs()
-                  .withStatorCurrentLimit(Amps.of(80))
+                  .withStatorCurrentLimit(Amps.of(45))
                   .withStatorCurrentLimitEnable(true));
   private static final CANcoderConfiguration encoderInitialConfigs = new CANcoderConfiguration();
   // Configs for the Pigeon 2; leave this null to skip applying Pigeon 2 configs
-  private static final Pigeon2Configuration pigeonConfigs = null;
+  private static final Pigeon2Configuration pigeonConfigs =
+      new Pigeon2Configuration()
+          .withGyroTrim(new GyroTrimConfigs().withGyroScalarZ(-3.88229128008676));
 
   public static final Transform3d pigeonMountingOffset =
       new Transform3d(

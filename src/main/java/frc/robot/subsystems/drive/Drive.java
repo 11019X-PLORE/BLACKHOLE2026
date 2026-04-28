@@ -587,7 +587,7 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
         new Transform3d(
             new Translation3d(
                 currentPose.getTranslation().getX(), currentPose.getTranslation().getY(), 0),
-            getRotation3d());
+            new Rotation3d(0, 0, getRotation().getRadians()));
 
     Logger.recordOutput("Drive/forwardKinematic", kinematicsData.forwardKinematic);
     Logger.recordOutput("Drive/3dPose", Pose3d.kZero.transformBy(kinematicsData.forwardKinematic));

@@ -71,7 +71,7 @@ public class GyroIOPigeon2 implements GyroIO {
     inputs.connected =
         BaseStatusSignal.refreshAll(roll, pitch, yaw, yawVelocity, accelX, accelY, accelZ)
             .equals(StatusCode.OK);
-    inputs.yawPosition = Rotation2d.fromDegrees(yaw.getValueAsDouble()).times(1 + 0.0147);
+    inputs.yawPosition = Rotation2d.fromDegrees(yaw.getValueAsDouble());
     inputs.yawVelocityRadPerSec = Units.degreesToRadians(yawVelocity.getValueAsDouble());
 
     inputs.rotation =
@@ -84,7 +84,7 @@ public class GyroIOPigeon2 implements GyroIO {
         yawTimestampQueue.stream().mapToDouble((Double value) -> value).toArray();
     inputs.odometryYawPositions =
         yawPositionQueue.stream()
-            .map((Double value) -> Rotation2d.fromDegrees(value).times(1 + 0.0147))
+            .map((Double value) -> Rotation2d.fromDegrees(value))
             .toArray(Rotation2d[]::new);
     inputs.odometryPitchPositions =
         pitchPositionQueue.stream()

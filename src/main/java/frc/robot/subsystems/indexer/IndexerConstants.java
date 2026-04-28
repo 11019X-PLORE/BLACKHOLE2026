@@ -13,7 +13,7 @@ public class IndexerConstants {
   public static final double kIndexerRadius = 0.05; // TODO
   public static final double kIndexerGearRatio = 3.0;
 
-  public static final double kIndexerStatorCurrentLimit = 35;
+  public static final double kIndexerStatorCurrentLimit = 50;
 
   public static final double kP = 100.0; // 10.0
   public static final double kI = 0.0;
@@ -54,7 +54,7 @@ public class IndexerConstants {
 
   public static final double kTriggersVelocityTolerance = 5.0;
 
-  public static final double kTriggersIntakeVelocity = 80.0;
+  public static final double kTriggersIntakeVelocity = 150.0;
   public static final double kTriggersOuttakeVelocity = -150.0;
   public static final double kTriggersShootVelocity = 150.0;
 

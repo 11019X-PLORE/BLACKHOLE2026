@@ -39,6 +39,7 @@ import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOTalonFX;
 import frc.robot.subsystems.extension.Extension;
+import frc.robot.subsystems.extension.Extension.ExtensionGoal;
 import frc.robot.subsystems.extension.ExtensionConstants;
 import frc.robot.subsystems.extension.ExtensionIOReal;
 import frc.robot.subsystems.extension.ExtensionIOSim;
@@ -104,7 +105,7 @@ public class RobotContainer {
   private final Trigger stowTrigger = controller.button(10);
   private final Trigger shootTrigger = controller.R2();
   private final Trigger passTrigger = controller.L1();
-  private final Trigger fixShootTrigger = controller.triangle();
+  private final Trigger forceIntakeIn = controller.triangle();
   private final Trigger driveToClimb = controller.povLeft();
   private final Trigger autoTrench = controller.povRight();
   private final Trigger drivetoBump = controller.cross();
@@ -341,17 +342,10 @@ public class RobotContainer {
     zeroSuperstructurePosition.onTrue(
         (Commands.parallel(hood.zeroCommand(), extension.zeroCommand(), turret.zeroCommand())));
 
-    fixShootTrigger.onTrue(
-        Commands.runOnce(
-            () -> {
-              if (isTestMode) {
-                SuperstructureFactory.idle(this).schedule();
-                isTestMode = false;
-              } else {
-                SuperstructureFactory.test(this).schedule();
-                isTestMode = true;
-              }
-            }));
+    forceIntakeIn.onTrue(
+        Commands.parallel(
+            intake.setGoalCommand(Intake.IntakeGoal.STOP),
+            extension.setGoalCommand(ExtensionGoal.STOWED)));
 
     shootTrigger
         .onTrue(SuperstructureFactory.shoot(this))
@@ -439,7 +433,9 @@ public class RobotContainer {
             Commands.defer(
                 () ->
                     DriveCommands.autoPathfindToPose(
-                        drive, TrenchHelper.getTrenchTargetPose(drive::getPose)),
+                        drive,
+                        TrenchHelper.getTrenchTargetPose(
+                            TurretConstants.swerve2TurretStructure::getGlobalPose2d)),
                 java.util.Set.of(drive) // 声明占用 drive 子系统
                 )));
 

@@ -46,6 +46,9 @@ public interface IndexerIO {
     // Triggers outputs (merged from TriggersIO)
     public IndexerIOOutputMode triggersMode = IndexerIOOutputMode.VELOCITY;
     public double triggersVelocityRadsPerSec = 0.0;
+
+    public boolean forceFeedLeft = false;
+    public boolean forceFeedRight = false;
   }
 
   default void updateInputs(IndexerIOInputs inputs) {}

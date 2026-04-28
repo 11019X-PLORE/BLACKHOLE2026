@@ -77,7 +77,7 @@ public class Hood extends FullSubsystem {
   // 供 FIXED_ANGLE 模式使用
   @Setter private double fixedAngleRads = HoodConstants.kHoodInitialAngle;
 
-  @Getter @AutoLogOutput private boolean hoodZeroed = false;
+  @Getter @AutoLogOutput private boolean hoodZeroed = true;
 
   @Getter
   @Accessors(fluent = true)

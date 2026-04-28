@@ -118,8 +118,8 @@ public class TrajectoryCalculator {
   }
 
   public static double getHoodSetpoint(double a) {
-    // return Math.toRadians((0.746204 * Math.toDegrees(a)) + 14.48929);
-    return Math.toRadians((0.901026 * Math.toDegrees(a)) + 5.23916);
+    return Math.toRadians((0.746204 * Math.toDegrees(a)) + 14.48929);
+    // return Math.toRadians((0.901026 * Math.toDegrees(a)) + 5.23916);
 
     // return Math.toRadians((0.0774547 * Math.pow(a, 1.5867)));
     // return a;

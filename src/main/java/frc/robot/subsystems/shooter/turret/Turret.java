@@ -102,7 +102,7 @@ public class Turret extends FullSubsystem implements PhysicalJoint {
   private final Alert disconnected =
       new Alert("Turret motor disconnected!", Alert.AlertType.kWarning);
 
-  @Getter @AutoLogOutput private boolean turretZeroed = false;
+  @Getter @AutoLogOutput private boolean turretZeroed = true;
 
   @Getter
   @Accessors(fluent = true)

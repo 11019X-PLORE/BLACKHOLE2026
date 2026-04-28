@@ -70,7 +70,7 @@ public class Extension extends FullSubsystem {
 
   @Getter @Setter @AutoLogOutput private ExtensionGoal goal = ExtensionGoal.IDLE;
 
-  @Getter @AutoLogOutput private boolean ExtensionZeroed = false;
+  @Getter @AutoLogOutput private boolean ExtensionZeroed = true;
 
   @Getter @AutoLogOutput private boolean atGoal = false;
 

@@ -313,6 +313,8 @@ public class IndexerIOReal implements IndexerIO {
       lastChangeTime = Timer.getFPGATimestamp();
     }
 
+    feedingLeft = (outputs.forceFeedLeft || feedingLeft) && (!outputs.forceFeedRight);
+
     // === Apply Indexer Outputs ===
     switch (outputs.mode) {
       case COAST -> {

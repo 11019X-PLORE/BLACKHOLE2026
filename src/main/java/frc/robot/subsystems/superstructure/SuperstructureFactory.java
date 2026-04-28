@@ -5,6 +5,7 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import frc.robot.FieldConstants;
 import frc.robot.RobotContainer;
 import frc.robot.subsystems.indexer.Indexer;
@@ -116,11 +117,25 @@ public class SuperstructureFactory {
   public static Command stopFeeding(RobotContainer c) {
     Indexer indexer = c.getIndexer();
 
-    return Commands.runOnce(
-            () -> {
-              indexer.setGoal(IndexerGoal.STOP);
-            },
-            indexer)
+    // return Commands.runOnce(
+    //         () -> {
+    //           indexer.setGoal(IndexerGoal.STOP);
+    //         },
+    //         indexer)
+    //     .withName("Superstructure.StopFeeding");
+
+    return Commands.sequence(
+            Commands.runOnce(
+                () -> {
+                  indexer.setGoal(IndexerGoal.OUTTAKE);
+                },
+                indexer),
+            new WaitCommand(0.1),
+            Commands.runOnce(
+                () -> {
+                  indexer.setGoal(IndexerGoal.STOP);
+                },
+                indexer))
         .withName("Superstructure.StopFeeding");
   }
 
@@ -158,13 +173,15 @@ public class SuperstructureFactory {
     Indexer indexer = c.getIndexer();
 
     return Commands.parallel(
-            flywheel.setGoalCommand(FlywheelGoal.FIXED_VELOCITY),
+            // flywheel.setGoalCommand(FlywheelGoal.FIXED_VELOCITY),
             Commands.run(
                 () -> {
                   indexer.setGoal(IndexerGoal.SHOOT);
+                  flywheel.setGoal(FlywheelGoal.FIXED_VELOCITY);
                   c.getExtension().changeCapcity(-IndexerConstants.feedingBPS / 50.0);
                 },
-                indexer))
+                indexer,
+                flywheel))
         .withName("Superstructure.ShootSpit");
   }
 

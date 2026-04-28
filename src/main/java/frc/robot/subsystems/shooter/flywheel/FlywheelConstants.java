@@ -23,7 +23,7 @@ public class FlywheelConstants {
   public static final double kAccelerationRadPerSecSq = 180.0; // 最大角加速度
   public static final double kVelocityRadPerSec = 180.0;
 
-  public static final double kFixVelocity = 300.0;
+  public static final double kFixVelocity = 100.0;
   public static final double kPassVelocity = 400.0;
   public static final double kOutTakeVelocity = -400.0;
   public static final double kActiveRatio = 0.6;

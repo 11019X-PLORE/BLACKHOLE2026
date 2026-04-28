@@ -31,7 +31,7 @@ public class ExtensionConstants {
 
   public static final double kExtensionShakeRange = 0.05;
 
-  public static final double kExtensionFeedingPosition = 0.14; // 不卡球位置
+  public static final double kExtensionFeedingPosition = 0.1; // 不卡球位置
 
   public static final double kExtensionoffset =
       Units.degreesToRadians(0.0); // TODO: offset for Extension Position

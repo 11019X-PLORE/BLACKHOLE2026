@@ -4,6 +4,8 @@
 
 package frc.robot.util.Geoffrey;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
@@ -106,6 +108,10 @@ public interface PhysicalJoint {
     } else {
       return getForwardKinematic();
     }
+  }
+
+  default Pose2d getGlobalPose2d() {
+    return Pose3d.kZero.transformBy(getGlobalPose()).toPose2d();
   }
 
   default Transform3d getGlobalPose(double timestamp) {
