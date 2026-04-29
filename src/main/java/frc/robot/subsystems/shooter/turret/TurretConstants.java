@@ -29,8 +29,8 @@ public class TurretConstants {
   public static final double kT = 0.01537;
 
   // ========== 角度限制 ==========
-  public static final double kTurretMinAngle = Units.degreesToRadians(-270); // radius
-  public static final double kTurretMaxAngle = Units.degreesToRadians(90.0); // radius
+  public static final double kTurretMinAngle = Units.degreesToRadians(-265); // radius
+  public static final double kTurretMaxAngle = Units.degreesToRadians(118.0); // radius
   public static final double kTurretInitialAngle = Units.degreesToRadians(-180);
 
   public static final double kTurretToleranceDeg = Units.degreesToRadians(10); // max is 4.6
