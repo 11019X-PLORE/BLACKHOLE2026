@@ -47,6 +47,8 @@ public class SuperstructureFactory {
   public final LoggedTunableNumber hoodSetpoint =
       new LoggedTunableNumber("shooter/fixedHoodSetpoint");
 
+  public static double compensation_percent = 0;
+
   public SuperstructureFactory() {
     hoodSetpoint.initDefault(0);
     flywheelSetpoint.initDefault(0);
@@ -286,12 +288,14 @@ public class SuperstructureFactory {
                   }
 
                   double radPerSec =
-                      TrajectoryCalculator.getFlywheelSetpoint(
+                      (1 + (compensation_percent / 100.0))
+                          * TrajectoryCalculator.getFlywheelSetpoint(
                               sp.shooterVelocityMetersPerSec
                                   + (lookAheadTime * sp.shooterAccelerationMetersPerSecSquared))
                           / FlywheelConstants.kFlywheelRadius;
                   double radPerSec2 =
-                      TrajectoryCalculator.getFlywheelAcceleration(
+                      (1 + (compensation_percent / 100.0))
+                          * TrajectoryCalculator.getFlywheelAcceleration(
                               sp.shooterVelocityMetersPerSec,
                               sp.shooterAccelerationMetersPerSecSquared)
                           / FlywheelConstants.kFlywheelRadius;

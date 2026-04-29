@@ -7,7 +7,7 @@ public class IntakeConstants {
   public static boolean kIntakeInverted = true;
 
   public static final double kIntakeRadius = 0.025; // TODO
-  public static final double kIntakeGearRatio = 44.0 / 12.0; // 1.125
+  public static final double kIntakeGearRatio = 18.0 / 12.0; // 44.0 / 12.0; // 1.125
 
   public static final double kP = 50.0; // 10.0
   public static final double kI = 0.0;
@@ -19,10 +19,10 @@ public class IntakeConstants {
 
   public static final double kVelocityTolerance = 5.0;
 
-  public static final double kIntakeVelocity = 180.0;
-  public static final double kOuttakeVelocity = -180.0;
+  public static final double kIntakeVelocity = 400; // 180.0;
+  public static final double kOuttakeVelocity = -400; // -180.0;
   public static final double kStowVelocity = 180.0;
-  public static final double kShootVelocity = 50.0;
+  public static final double kShootVelocity = 100; // 50.0;
 
   public static final double kIntakeBPS = 25.0; // balls per second
 }

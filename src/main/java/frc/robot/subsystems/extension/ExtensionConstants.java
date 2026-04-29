@@ -25,7 +25,7 @@ public class ExtensionConstants {
   public static final double kExtensionMinPosition = 0; // TODO:零位位于水平位置0.0
   public static final double kExtensionMaxPosition = 0.270; // 150.0
   public static final double kExtensionInitialPosition = 0; // 123.0
-  public static final double kExtensionDeployPosition = 0.240; // 0.275; // 展开位置//
+  public static final double kExtensionDeployPosition = 0.260; // 0.275; // 展开位置//
   public static final double kExtensionStowerPosition = 0; //
   public static final double kExtensionShakePosition = 0.1;
 

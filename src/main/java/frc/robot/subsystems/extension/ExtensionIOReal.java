@@ -60,7 +60,7 @@ public class ExtensionIOReal implements ExtensionIO {
                     .withSensorToMechanismRatio(ExtensionConstants.kExtensionGearRatio))
             .withCurrentLimits(
                 new CurrentLimitsConfigs()
-                    .withStatorCurrentLimit(Amps.of(40))
+                    .withStatorCurrentLimit(Amps.of(25))
                     .withStatorCurrentLimitEnable(true)
                     .withSupplyCurrentLimit(Amps.of(40))
                     .withSupplyCurrentLimitEnable(true))
