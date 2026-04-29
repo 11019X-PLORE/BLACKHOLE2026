@@ -27,24 +27,25 @@ public class L4 extends SequentialCommandGroup {
             drive.generatePath("L8"),
             intake.setGoalCommand(Intake.IntakeGoal.INTAKE),
             extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED),
+            SuperstructureFactory.activeShooting(c),
             SuperstructureFactory.runIndexerIntake(c)),
-        SuperstructureFactory.activeShooting(c).withTimeout(0.1),
         Commands.deadline(
             drive.generatePath("L9"),
             SuperstructureFactory.pass(c),
             SuperstructureFactory.feeding(c)),
-        Commands.parallel(
-                SuperstructureFactory.activeShooting(c),
-                SuperstructureFactory.stopFeeding(c),
-                intake.setGoalCommand(Intake.IntakeGoal.STOP))
-            .withTimeout(0.1),
-        drive.generatePath("L10"),
         Commands.deadline(
+            drive.generatePath("L10"),
+            intake.setGoalCommand(Intake.IntakeGoal.INTAKE),
+            extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED),
+            SuperstructureFactory.activeShooting(c),
+            SuperstructureFactory.runIndexerIntake(c)),
+        Commands.parallel(
             Commands.deadline(
                 drive.generatePath("L11"),
                 SuperstructureFactory.shoot(c),
                 SuperstructureFactory.feeding(c)),
-            intake.setGoalCommand(Intake.IntakeGoal.INTAKE)),
+            intake.setGoalCommand(Intake.IntakeGoal.STOW),
+            extension.setGoalCommand(Extension.ExtensionGoal.FEEDING)),
         Commands.parallel(
                 SuperstructureFactory.activeShooting(c), SuperstructureFactory.stopFeeding(c))
             .withTimeout(0.1));

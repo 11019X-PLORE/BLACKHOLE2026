@@ -23,23 +23,25 @@ public class L1 extends SequentialCommandGroup {
         Commands.runOnce(() -> drive.setYFlipped(isRightSide)),
         Commands.parallel(turret.zeroCommand(), hood.zeroCommand(), extension.zeroCommand()),
         drive.resetOdomToPath("L1"),
-        Commands.parallel(
+        Commands.deadline(
             drive.generatePath("L1"),
             intake.setGoalCommand(Intake.IntakeGoal.INTAKE),
             extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED),
+            SuperstructureFactory.activeShooting(c),
             SuperstructureFactory.runIndexerIntake(c)),
-        SuperstructureFactory.activeShooting(c).withTimeout(0.1),
         drive.generatePath("L2"),
         intake.setGoalCommand(Intake.IntakeGoal.STOP).withTimeout(0.1),
         Commands.deadline(
-            SuperstructureFactory.shoot(c).withTimeout(4.0), SuperstructureFactory.feeding(c)),
-        Commands.parallel(
-                SuperstructureFactory.activeShooting(c), SuperstructureFactory.stopFeeding(c))
-            .withTimeout(0.1),
+            SuperstructureFactory.shoot(c).withTimeout(4.0),
+            SuperstructureFactory.feeding(c),
+            intake.setGoalCommand(Intake.IntakeGoal.STOW),
+            extension.setGoalCommand(Extension.ExtensionGoal.FEEDING)),
+        Commands.parallel(SuperstructureFactory.stopFeeding(c)).withTimeout(0.1),
         Commands.deadline(
             drive.generatePath("L3"),
             intake.setGoalCommand(Intake.IntakeGoal.INTAKE),
             extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED),
+            SuperstructureFactory.activeShooting(c),
             SuperstructureFactory.runIndexerIntake(c)),
         intake.setGoalCommand(Intake.IntakeGoal.STOP).withTimeout(0.1),
         Commands.parallel(
@@ -48,7 +50,7 @@ public class L1 extends SequentialCommandGroup {
                 SuperstructureFactory.shoot(c),
                 SuperstructureFactory.feeding(c)),
             intake.setGoalCommand(Intake.IntakeGoal.STOW),
-            extension.setGoalCommand(Extension.ExtensionGoal.SHAKE)),
+            extension.setGoalCommand(Extension.ExtensionGoal.FEEDING)),
         Commands.parallel(
                 SuperstructureFactory.activeShooting(c), SuperstructureFactory.stopFeeding(c))
             .withTimeout(0.1));

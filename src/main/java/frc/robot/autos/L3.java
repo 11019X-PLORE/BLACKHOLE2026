@@ -27,32 +27,31 @@ public class L3 extends SequentialCommandGroup {
             drive.generatePath("L4"),
             intake.setGoalCommand(Intake.IntakeGoal.INTAKE),
             extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED),
+            SuperstructureFactory.activeShooting(c),
             SuperstructureFactory.runIndexerIntake(c)),
-        Commands.parallel(
-                SuperstructureFactory.activeShooting(c),
-                intake.setGoalCommand(Intake.IntakeGoal.STOP))
-            .withTimeout(0.1),
+        Commands.parallel(intake.setGoalCommand(Intake.IntakeGoal.STOP)).withTimeout(0.1),
         Commands.parallel(
             Commands.deadline(
                 drive.generatePath("L5"),
                 SuperstructureFactory.shoot(c),
                 SuperstructureFactory.feeding(c)),
             intake.setGoalCommand(Intake.IntakeGoal.STOW),
-            extension.setGoalCommand(Extension.ExtensionGoal.SHAKE)),
-        Commands.parallel(
-                SuperstructureFactory.activeShooting(c), SuperstructureFactory.stopFeeding(c))
-            .withTimeout(0.1),
+            extension.setGoalCommand(Extension.ExtensionGoal.FEEDING)),
+        Commands.parallel(SuperstructureFactory.stopFeeding(c)).withTimeout(0.1),
         Commands.deadline(
             drive.generatePath("L6"),
             intake.setGoalCommand(Intake.IntakeGoal.INTAKE),
             extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED),
+            SuperstructureFactory.activeShooting(c),
             SuperstructureFactory.runIndexerIntake(c)),
+        intake.setGoalCommand(Intake.IntakeGoal.STOP).withTimeout(0.1),
         Commands.parallel(
             Commands.deadline(
                 drive.generatePath("L7"),
                 SuperstructureFactory.shoot(c),
                 SuperstructureFactory.feeding(c)),
-            intake.setGoalCommand(Intake.IntakeGoal.INTAKE)),
+            intake.setGoalCommand(Intake.IntakeGoal.STOW),
+            extension.setGoalCommand(Extension.ExtensionGoal.FEEDING)),
         Commands.parallel(
                 SuperstructureFactory.activeShooting(c), SuperstructureFactory.stopFeeding(c))
             .withTimeout(0.1));
