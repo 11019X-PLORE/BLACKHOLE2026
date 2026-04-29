@@ -395,12 +395,12 @@ public class RobotContainer {
         .onTrue(
             Commands.parallel(
                 intake.setGoalCommand(Intake.IntakeGoal.OUTTAKE),
-                extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED),
+                extension.setGoalCommand(Extension.ExtensionGoal.OUTTAKE),
                 SuperstructureFactory.spit(this)))
         .onFalse(
             Commands.parallel(
                 intake.setGoalCommand(Intake.IntakeGoal.STOP),
-                extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED),
+                extension.setGoalCommand(Extension.ExtensionGoal.FEEDING),
                 SuperstructureFactory.stopFeeding(this)));
 
     shakeStowTrigger

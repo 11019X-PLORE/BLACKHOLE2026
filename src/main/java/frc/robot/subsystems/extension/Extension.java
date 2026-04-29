@@ -65,7 +65,8 @@ public class Extension extends FullSubsystem {
     FIXED_ANGLE, // 任意指定角度 (供测试或特殊位置使用)
     ZEROING,
     FEEDING,
-    SHAKE // 归零状态
+    SHAKE,
+    OUTTAKE
   }
 
   @Getter @Setter @AutoLogOutput private ExtensionGoal goal = ExtensionGoal.IDLE;
@@ -150,6 +151,14 @@ public class Extension extends FullSubsystem {
           double targetPosition =
               ExtensionConstants.kExtensionDeployPosition * ratio
                   + ExtensionConstants.kExtensionFeedingPosition * (1 - ratio)
+                  + (ExtensionConstants.kExtensionShakeRange
+                      * Math.sin(time * 2 * Math.PI * ExtensionConstants.kShakeFrequency));
+          runPositionLogic(targetPosition);
+        }
+        case OUTTAKE -> {
+          double time = Timer.getFPGATimestamp();
+          double targetPosition =
+              ExtensionConstants.kExtensionDeployPosition
                   + (ExtensionConstants.kExtensionShakeRange
                       * Math.sin(time * 2 * Math.PI * ExtensionConstants.kShakeFrequency));
           runPositionLogic(targetPosition);

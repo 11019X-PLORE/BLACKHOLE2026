@@ -13,6 +13,14 @@ public class AllianceFlipUtil {
     return shouldFlip() ? FieldConstants.fieldWidth - y : y;
   }
 
+  public static Translation2d applyX(Translation2d t) {
+    return new Translation2d(FieldConstants.fieldLength - t.getX(), t.getY());
+  }
+
+  public static Translation2d applyY(Translation2d t) {
+    return new Translation2d(t.getX(), FieldConstants.fieldWidth - t.getY());
+  }
+
   public static Translation2d apply(Translation2d translation) {
     return new Translation2d(applyX(translation.getX()), applyY(translation.getY()));
   }

@@ -1,5 +1,7 @@
 package frc.robot.subsystems.superstructure;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -61,13 +63,31 @@ public class SuperstructureFactory {
    * points.
    */
   private static Translation2d getBestPassingTarget(PhysicalJoint base) {
-    Translation2d blueLeft = new Translation2d(1.874, 5.49);
-    Translation2d blueRight = new Translation2d(1.874, 2.17);
-    Translation2d left = AllianceFlipUtil.apply(blueLeft);
-    Translation2d right = AllianceFlipUtil.apply(blueRight);
 
     Translation2d robotPos = base.getGlobalPose().getTranslation().toTranslation2d();
-    return (robotPos.getDistance(left) < robotPos.getDistance(right)) ? left : right;
+
+    // blue right
+    Translation2d origin = Translation2d.kZero;
+    Translation2d corner = new Translation2d(1, 1);
+    Translation2d bump = new Translation2d(3.6, 2.2);
+    Translation2d trench = new Translation2d(6.7, 0.6);
+
+    origin = AllianceFlipUtil.apply(origin);
+
+    boolean flipY = Math.abs(robotPos.getY() - origin.getY()) > FieldConstants.fieldWidth / 2.0;
+
+    double distance_x = Math.abs(robotPos.getX() - origin.getX());
+
+    if (distance_x < FieldConstants.fieldLength / 2.0) {
+      corner = AllianceFlipUtil.apply(corner);
+      return flipY ? AllianceFlipUtil.applyY(corner) : corner;
+    }
+    if (distance_x < 12.8) {
+      bump = AllianceFlipUtil.apply(bump);
+      return flipY ? AllianceFlipUtil.applyY(bump) : bump;
+    }
+    trench = AllianceFlipUtil.apply(trench);
+    return flipY ? AllianceFlipUtil.applyY(trench) : trench;
   }
 
   /** Check if all shooter subsystems are at their goals and ready to fire. */
@@ -256,6 +276,9 @@ public class SuperstructureFactory {
                 () -> {
                   boolean inTrench = c.getDrive().isInTrenchZone() && DriverStation.isTeleop();
                   Translation2d targetPos = targetSupplier.get();
+                  Logger.recordOutput(
+                      "SuperstructureFactory/shootingTarget",
+                      new Pose2d(targetSupplier.get(), new Rotation2d()));
                   ShooterSetpoint sp =
                       ShooterSetpoint.makeSetpoint(
                           TurretConstants.swerve2TurretStructure,

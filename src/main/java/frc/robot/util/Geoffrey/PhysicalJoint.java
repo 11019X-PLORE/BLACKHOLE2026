@@ -103,6 +103,9 @@ public interface PhysicalJoint {
 
   default Transform3d getGlobalPose() {
     PhysicalJoint parent = getParentJoint();
+    if (getForwardKinematic() == null) {
+      return Transform3d.kZero;
+    }
     if (parent != null) {
       return parent.getGlobalPose().plus(getForwardKinematic());
     } else {
