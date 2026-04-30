@@ -135,6 +135,10 @@ public class Indexer extends FullSubsystem {
   @AutoLogOutput
   private boolean atGoal = false;
 
+  @AutoLogOutput public boolean forceLeft = false;
+
+  @AutoLogOutput public boolean forceRight = false;
+
   // --- Hardware Safety & Alerts ---
   private final Debouncer motorConnectedDebouncer = new Debouncer(0.5, DebounceType.kFalling);
   private final Debouncer rightmotorConnectedDebouncer = new Debouncer(0.5, DebounceType.kFalling);
@@ -240,6 +244,9 @@ public class Indexer extends FullSubsystem {
           // Triggers also shoot
           outputs.triggersMode = IndexerIOOutputMode.FEEDING;
           outputs.triggersVelocityRadsPerSec = kTriggersShootVelocity.get();
+
+          outputs.forceFeedLeft = forceLeft;
+          outputs.forceFeedRight = forceRight;
         }
       }
     }

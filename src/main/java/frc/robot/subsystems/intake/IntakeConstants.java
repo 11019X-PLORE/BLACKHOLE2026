@@ -24,5 +24,5 @@ public class IntakeConstants {
   public static final double kStowVelocity = 180.0;
   public static final double kShootVelocity = 100; // 50.0;
 
-  public static final double kIntakeBPS = 25.0; // balls per second
+  public static final double kIntakeBPS = 30.0; // balls per second
 }

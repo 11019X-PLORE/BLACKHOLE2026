@@ -69,8 +69,9 @@ public class SuperstructureFactory {
     // blue right
     Translation2d origin = Translation2d.kZero;
     Translation2d corner = new Translation2d(1, 1);
-    Translation2d bump = new Translation2d(3.6, 2.2);
-    Translation2d trench = new Translation2d(6.7, 0.6);
+    Translation2d bump = new Translation2d(3, 2.2);
+    // Translation2d trench = new Translation2d(5.3, 0.8);
+    Translation2d trench = bump;
 
     origin = AllianceFlipUtil.apply(origin);
 
@@ -88,6 +89,25 @@ public class SuperstructureFactory {
     }
     trench = AllianceFlipUtil.apply(trench);
     return flipY ? AllianceFlipUtil.applyY(trench) : trench;
+  }
+
+  /**
+   * Gets the best passing target based on robot position. Returns the closer of the two passing
+   * points.
+   */
+  private static Translation2d getBestVisionTarget(PhysicalJoint base) {
+
+    Translation2d ourHub =
+        AllianceFlipUtil.apply(FieldConstants.Hub.topCenterPoint.toTranslation2d());
+
+    Translation2d otherHub = AllianceFlipUtil.applyX(ourHub);
+
+    Translation2d robotPos = base.getGlobalPose().getTranslation().toTranslation2d();
+
+    if (robotPos.getDistance(otherHub) * 2 < robotPos.getDistance(ourHub)) {
+      return otherHub;
+    }
+    return ourHub;
   }
 
   /** Check if all shooter subsystems are at their goals and ready to fire. */
@@ -224,8 +244,15 @@ public class SuperstructureFactory {
             flywheel.setGoalCommand(FlywheelGoal.ACTIVE),
             Commands.run(
                 () -> {
+                  // Translation2d targetPos =
+                  //
+                  // AllianceFlipUtil.apply(FieldConstants.Hub.topCenterPoint.toTranslation2d());
                   Translation2d targetPos =
-                      AllianceFlipUtil.apply(FieldConstants.Hub.topCenterPoint.toTranslation2d());
+                      getBestVisionTarget(TurretConstants.swerve2TurretStructure);
+                  Logger.recordOutput(
+                      "SuperstructureFactory/visionTarget",
+                      new Pose2d(targetPos, new Rotation2d()));
+
                   ShooterSetpoint sp =
                       ShooterSetpoint.makeSetpoint(
                           TurretConstants.swerve2TurretStructure,

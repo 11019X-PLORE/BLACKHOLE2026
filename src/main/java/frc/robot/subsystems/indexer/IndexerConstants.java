@@ -58,5 +58,5 @@ public class IndexerConstants {
   public static final double kTriggersOuttakeVelocity = -150.0;
   public static final double kTriggersShootVelocity = 150.0;
 
-  public static final double feedingBPS = 8.0; // balls per second
+  public static final double feedingBPS = 7.5; // balls per second
 }

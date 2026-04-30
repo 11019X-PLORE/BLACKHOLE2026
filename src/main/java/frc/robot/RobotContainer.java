@@ -25,12 +25,12 @@ import frc.robot.autos.L2;
 import frc.robot.autos.L3;
 import frc.robot.autos.L4;
 import frc.robot.autos.L5;
+import frc.robot.autos.L6;
 import frc.robot.autos.M1;
 import frc.robot.autos.M2;
 import frc.robot.autos.M3;
 import frc.robot.autos.M4;
 import frc.robot.autos.Test;
-import frc.robot.commands.AutoAlignCommand;
 import frc.robot.commands.DriveCommands;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.Drive;
@@ -68,10 +68,8 @@ import frc.robot.subsystems.superstructure.SuperstructureFactory;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.VisionIOLimelight;
 import frc.robot.subsystems.vision.VisionIOPhotonVisionSim;
-import frc.robot.util.ClimbTargetSelector;
 import frc.robot.util.Dimensions;
 import frc.robot.util.FuelSim;
-import frc.robot.util.TrenchHelper;
 import frc.robot.util.geometry.AllianceFlipUtil;
 import java.util.function.BooleanSupplier;
 import org.littletonrobotics.junction.Logger;
@@ -107,8 +105,11 @@ public class RobotContainer {
   private final Trigger shootTrigger = controller.R2();
   private final Trigger passTrigger = controller.L1();
   private final Trigger forceIntakeIn = controller.triangle();
-  private final Trigger driveToClimb = controller.povLeft();
-  private final Trigger autoTrench = controller.povRight();
+  //   private final Trigger driveToClimb = controller.povLeft();
+  //   private final Trigger autoTrench = controller.povRight();
+
+  private final Trigger forceLeftTrigger = controller.povLeft();
+  private final Trigger forceRightTrigger = controller.povRight();
   private final Trigger drivetoBump = controller.cross();
   private final Trigger robotHeadSwitchTrigger = controller.button(12);
   private final Trigger driveFaceToPointTrigger = controller.button(11);
@@ -264,6 +265,7 @@ public class RobotContainer {
     autoChooser.addOption("L3", new L3(this, sideChooser::get));
     autoChooser.addOption("L4", new L4(this, sideChooser::get));
     autoChooser.addOption("L5", new L5(this, sideChooser::get));
+    autoChooser.addOption("L6", new L6(this, sideChooser::get));
     autoChooser.addOption("M1", new M1(this, sideChooser::get));
     autoChooser.addOption("M2", new M2(this, sideChooser::get));
     autoChooser.addOption("M3", new M3(this, sideChooser::get));
@@ -422,23 +424,47 @@ public class RobotContainer {
         .onTrue(SuperstructureFactory.shootSpit(this))
         .onFalse(SuperstructureFactory.activeShooting(this));
 
-    driveToClimb.whileTrue(
-        new AutoAlignCommand(
-            drive,
-            () -> ClimbTargetSelector.getNearestClimbPose(drive::getPose),
-            ClimbTargetSelector.getNearestClimbPose(drive::getPose).getRotation().getDegrees()));
+    // driveToClimb.whileTrue(
+    //     new AutoAlignCommand(
+    //         drive,
+    //         () -> ClimbTargetSelector.getNearestClimbPose(drive::getPose),
+    //         ClimbTargetSelector.getNearestClimbPose(drive::getPose).getRotation().getDegrees()));
 
-    autoTrench.whileTrue(
-        Commands.parallel(
-            SuperstructureFactory.trench(this),
-            Commands.defer(
-                () ->
-                    DriveCommands.autoPathfindToPose(
-                        drive,
-                        TrenchHelper.getTrenchTargetPose(
-                            TurretConstants.swerve2TurretStructure::getGlobalPose2d)),
-                java.util.Set.of(drive) // 声明占用 drive 子系统
-                )));
+    // autoTrench.whileTrue(
+    //     Commands.parallel(
+    //         SuperstructureFactory.trench(this),
+    //         Commands.defer(
+    //             () ->
+    //                 DriveCommands.autoPathfindToPose(
+    //                     drive,
+    //                     TrenchHelper.getTrenchTargetPose(
+    //                         TurretConstants.swerve2TurretStructure::getGlobalPose2d)),
+    //             java.util.Set.of(drive) // 声明占用 drive 子系统
+    //             )));
+
+    forceLeftTrigger
+        .onTrue(
+            new InstantCommand(
+                () -> {
+                  indexer.forceLeft = true;
+                }))
+        .onFalse(
+            new InstantCommand(
+                () -> {
+                  indexer.forceLeft = false;
+                }));
+
+    forceRightTrigger
+        .onTrue(
+            new InstantCommand(
+                () -> {
+                  indexer.forceRight = true;
+                }))
+        .onFalse(
+            new InstantCommand(
+                () -> {
+                  indexer.forceRight = false;
+                }));
 
     // testing:
     testing_controller
