@@ -60,10 +60,14 @@ public class ExtensionIOReal implements ExtensionIO {
                     .withSensorToMechanismRatio(ExtensionConstants.kExtensionGearRatio))
             .withCurrentLimits(
                 new CurrentLimitsConfigs()
-                    .withStatorCurrentLimit(Amps.of(25))
+                    .withStatorCurrentLimit(Amps.of(20))
                     .withStatorCurrentLimitEnable(true)
                     .withSupplyCurrentLimit(Amps.of(40))
                     .withSupplyCurrentLimitEnable(true))
+            // .withTorqueCurrent(
+            //     new TorqueCurrentConfigs()
+            //         .withPeakForwardTorqueCurrent(10)
+            //         .withPeakReverseTorqueCurrent(50))
             .withSoftwareLimitSwitch(
                 new SoftwareLimitSwitchConfigs()
                     .withForwardSoftLimitEnable(true)
@@ -154,4 +158,18 @@ public class ExtensionIOReal implements ExtensionIO {
   public void resetPosition(double Radius) {
     talon.getConfigurator().setPosition(Units.radiansToRotations(Radius));
   }
+
+  // @Override
+  // private void setIndexerLeftCurrent(double current) {
+  //   if (current == lastIndexerLeftStatorCurrentLimit) {
+  //     return;
+  //   }
+  //   tryUntilOk(
+  //       5,
+  //       () ->
+  //           indexerLeftTalon
+  //               .getConfigurator()
+  //               .apply(indexerLeftConfig.CurrentLimits.withStatorCurrentLimit(current)));
+  //   lastIndexerLeftStatorCurrentLimit = current;
+  // }
 }

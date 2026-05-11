@@ -43,14 +43,14 @@ public class LED extends FullSubsystem {
   @Override
   public void periodicAfterScheduler() {
     var alliance = DriverStation.getAlliance();
-    Color allianceColor = Color.kBlack;
+    Color allianceColor = Color.kWhite;
     if (alliance.isPresent()) {
       allianceColor = (alliance.get() == DriverStation.Alliance.Blue) ? Color.kBlue : Color.kRed;
     }
 
     switch (goal) {
       case INITIAL -> solidColor(allianceColor);
-      case OFF -> solidColor(Color.kBlack);
+      case OFF -> solidColor(Color.kWhite);
       case SHOOTING -> strobe(Color.kGreen, Color.kBlack, 0.5); // 极快绿闪
       case READY_TO_SHOOT -> solidColor(Color.kGreen);
       case OUTTAKE -> wave(allianceColor, Color.kPurple, 10, 0.5);
@@ -58,7 +58,7 @@ public class LED extends FullSubsystem {
       case INTAKING -> wave(allianceColor, Color.kWhite, 10, 0.5);
       case INTAKE_STOWED -> wave(allianceColor, Color.kOrange, 10, 0.5);
       case AUTO -> rainbow(10, 0.5);
-      default -> solidColor(Color.kBlack);
+      default -> solidColor(Color.kWhite);
     }
 
     leds.setData(buffer);

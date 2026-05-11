@@ -51,6 +51,8 @@ public class SuperstructureFactory {
 
   public static double compensation_percent = 0;
 
+  public static double turretShootOffset = 0; // Radians
+
   public SuperstructureFactory() {
     hoodSetpoint.initDefault(0);
     flywheelSetpoint.initDefault(0);
@@ -146,7 +148,7 @@ public class SuperstructureFactory {
                 indexer.setGoal(IndexerGoal.SHOOT);
                 c.getExtension().changeCapcity(-IndexerConstants.feedingBPS / 50.0);
               } else {
-                indexer.setGoal(IndexerGoal.STOP);
+                indexer.setGoal(IndexerGoal.INTAKE);
               }
             },
             indexer)
@@ -319,7 +321,9 @@ public class SuperstructureFactory {
                   double lookAheadTime = useLookAhead ? 0.02 : 0.0;
 
                   turret.runPositionFOCLogic(
-                      sp.turretPositionRadians + (lookAheadTime * sp.turretVelocityRadsPerSec),
+                      sp.turretPositionRadians
+                          + (lookAheadTime * sp.turretVelocityRadsPerSec)
+                          + turretShootOffset,
                       sp.turretVelocityRadsPerSec
                           + (lookAheadTime * sp.turretAccelerationRadsPerSecSquared),
                       sp.turretAccelerationRadsPerSecSquared,

@@ -43,6 +43,8 @@ public class ExtensionConstants {
 
   public static final double kMaxCapcity = 45; // TODO
 
-  public static final double kStartPushingCapcity = 30; // TODO
+  public static final double kStartPushingCapcity = 40; // TODO
   public static final double kStopPushingCapcity = 16; // TODO
+
+  public static final double current = 30;
 }

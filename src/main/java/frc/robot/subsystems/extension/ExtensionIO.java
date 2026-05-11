@@ -32,6 +32,8 @@ public interface ExtensionIO {
     public double kD = 0.0;
     // Voltage control
     public double appliedVolts = 0.0;
+
+    public double current = 30;
   }
 
   public default void updateInputs(ExtensionIOInputs inputs) {}

@@ -6,7 +6,6 @@ import static edu.wpi.first.units.Units.Radians;
 import static frc.robot.subsystems.vision.VisionConstants.*;
 
 import com.pathplanner.lib.auto.AutoBuilder;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -26,6 +25,7 @@ import frc.robot.autos.L3;
 import frc.robot.autos.L4;
 import frc.robot.autos.L5;
 import frc.robot.autos.L6;
+import frc.robot.autos.L7;
 import frc.robot.autos.M1;
 import frc.robot.autos.M2;
 import frc.robot.autos.M3;
@@ -45,22 +45,27 @@ import frc.robot.subsystems.extension.ExtensionConstants;
 import frc.robot.subsystems.extension.ExtensionIOReal;
 import frc.robot.subsystems.extension.ExtensionIOSim;
 import frc.robot.subsystems.indexer.Indexer;
+import frc.robot.subsystems.indexer.Indexer.IndexerGoal;
 import frc.robot.subsystems.indexer.IndexerIOReal;
 import frc.robot.subsystems.indexer.IndexerIOSim;
 import frc.robot.subsystems.intake.Intake;
+import frc.robot.subsystems.intake.Intake.IntakeGoal;
 import frc.robot.subsystems.intake.IntakeConstants;
 import frc.robot.subsystems.intake.IntakeIOReal;
 import frc.robot.subsystems.intake.IntakeIOSim;
 import frc.robot.subsystems.led.LED;
 import frc.robot.subsystems.shooter.flywheel.Flywheel;
+import frc.robot.subsystems.shooter.flywheel.Flywheel.FlywheelGoal;
 import frc.robot.subsystems.shooter.flywheel.FlywheelConstants;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOReal;
 import frc.robot.subsystems.shooter.flywheel.FlywheelIOSim;
 import frc.robot.subsystems.shooter.hood.Hood;
+import frc.robot.subsystems.shooter.hood.Hood.HoodGoal;
 import frc.robot.subsystems.shooter.hood.HoodConstants;
 import frc.robot.subsystems.shooter.hood.HoodIOReal;
 import frc.robot.subsystems.shooter.hood.HoodIOSim;
 import frc.robot.subsystems.shooter.turret.Turret;
+import frc.robot.subsystems.shooter.turret.Turret.TurretGoal;
 import frc.robot.subsystems.shooter.turret.TurretConstants;
 import frc.robot.subsystems.shooter.turret.TurretIOSim;
 import frc.robot.subsystems.shooter.turret.TurretIOreal;
@@ -96,11 +101,13 @@ public class RobotContainer {
   private final CommandPS5Controller testing_controller = new CommandPS5Controller(1);
 
   // Bindings
-  private final Trigger zeroSuperstructurePosition = controller.square();
+  // private final Trigger zeroSuperstructurePosition = controller.square();
   private final Trigger zeroGyro = controller.button(13);
   private final Trigger intakeTrigger = controller.R1();
   private final Trigger outtakeTrigger = controller.L2();
-  private final Trigger shakeStowTrigger = controller.circle();
+  // private final Trigger shakeStowTrigger = controller.circle();
+  private final Trigger fixTurret = controller.circle();
+
   private final Trigger stowTrigger = controller.button(10);
   private final Trigger shootTrigger = controller.R2();
   private final Trigger passTrigger = controller.L1();
@@ -108,9 +115,13 @@ public class RobotContainer {
   //   private final Trigger driveToClimb = controller.povLeft();
   //   private final Trigger autoTrench = controller.povRight();
 
-  private final Trigger forceLeftTrigger = controller.povLeft();
-  private final Trigger forceRightTrigger = controller.povRight();
-  private final Trigger drivetoBump = controller.cross();
+  private final Trigger forceLeftTrigger = controller.cross();
+  private final Trigger forceRightTrigger = controller.square();
+
+  private final Trigger increaseTurretOffset = controller.povLeft();
+  private final Trigger decreaseTurretOffset = controller.povRight();
+
+  // private final Trigger drivetoBump = controller.cross();
   private final Trigger robotHeadSwitchTrigger = controller.button(12);
   private final Trigger driveFaceToPointTrigger = controller.button(11);
   private final Trigger shootouttakTrigger = controller.button(9);
@@ -266,6 +277,7 @@ public class RobotContainer {
     autoChooser.addOption("L4", new L4(this, sideChooser::get));
     autoChooser.addOption("L5", new L5(this, sideChooser::get));
     autoChooser.addOption("L6", new L6(this, sideChooser::get));
+    autoChooser.addOption("L7", new L7(this, sideChooser::get));
     autoChooser.addOption("M1", new M1(this, sideChooser::get));
     autoChooser.addOption("M2", new M2(this, sideChooser::get));
     autoChooser.addOption("M3", new M3(this, sideChooser::get));
@@ -320,12 +332,12 @@ public class RobotContainer {
     zeroGyro.onTrue(Commands.runOnce(drive::zeroHeading, drive).ignoringDisable(true));
 
     // bump
-    drivetoBump.whileTrue(
-        DriveCommands.joystickDriveAtAngle(
-            drive,
-            () -> -controller.getLeftY(),
-            () -> -controller.getLeftX(),
-            () -> Rotation2d.fromDegrees(45)));
+    // drivetoBump.whileTrue(
+    //     DriveCommands.joystickDriveAtAngle(
+    //         drive,
+    //         () -> -controller.getLeftY(),
+    //         () -> -controller.getLeftX(),
+    //         () -> Rotation2d.fromDegrees(45)));
 
     // 有头模式
     robotHeadSwitchTrigger.whileTrue(
@@ -342,8 +354,8 @@ public class RobotContainer {
             () -> -controller.getLeftX(),
             () -> AllianceFlipUtil.apply(FieldConstants.Hub.topCenterPoint.toTranslation2d())));
 
-    zeroSuperstructurePosition.onTrue(
-        (Commands.parallel(hood.zeroCommand(), extension.zeroCommand(), turret.zeroCommand())));
+    // zeroSuperstructurePosition.onTrue(
+    //     (Commands.parallel(hood.zeroCommand(), extension.zeroCommand(), turret.zeroCommand())));
 
     forceIntakeIn.onTrue(
         Commands.parallel(
@@ -361,16 +373,27 @@ public class RobotContainer {
         .onTrue(
             Commands.parallel(
                 SuperstructureFactory.feeding(this),
-                intake.setGoalCommand(Intake.IntakeGoal.SHOOT)))
+                intake.setGoalCommand(Intake.IntakeGoal.SHOOT),
+                Commands.run(
+                    () -> {
+                      indexer.forceLeft = forceLeftTrigger.getAsBoolean();
+                      indexer.forceRight = forceRightTrigger.getAsBoolean();
+                    })))
         .onFalse(
-            new ConditionalCommand(
-                Commands.parallel(
-                    SuperstructureFactory.runIndexerIntake(this),
-                    intake.setGoalCommand(Intake.IntakeGoal.INTAKE)),
-                Commands.parallel(
-                    SuperstructureFactory.stopFeeding(this),
-                    intake.setGoalCommand(Intake.IntakeGoal.STOP)),
-                intakeTrigger));
+            Commands.parallel(
+                new ConditionalCommand(
+                    Commands.parallel(
+                        SuperstructureFactory.runIndexerIntake(this),
+                        intake.setGoalCommand(Intake.IntakeGoal.INTAKE)),
+                    Commands.parallel(
+                        SuperstructureFactory.stopFeeding(this),
+                        intake.setGoalCommand(Intake.IntakeGoal.STOP)),
+                    intakeTrigger),
+                new InstantCommand(
+                    () -> {
+                      indexer.forceRight = false;
+                      indexer.forceLeft = false;
+                    })));
 
     intakeTrigger
         .onTrue(
@@ -405,15 +428,24 @@ public class RobotContainer {
                 extension.setGoalCommand(Extension.ExtensionGoal.FEEDING),
                 SuperstructureFactory.stopFeeding(this)));
 
-    shakeStowTrigger
-        .onTrue(
-            Commands.parallel(
-                intake.setGoalCommand(Intake.IntakeGoal.STOW),
-                extension.setGoalCommand(Extension.ExtensionGoal.SHAKE)))
-        .onFalse(
-            Commands.parallel(
-                intake.setGoalCommand(Intake.IntakeGoal.STOP),
-                extension.setGoalCommand(Extension.ExtensionGoal.STOWED)));
+    // shakeStowTrigger
+    //     .onTrue(
+    //         Commands.parallel(
+    //             intake.setGoalCommand(Intake.IntakeGoal.STOW),
+    //             extension.setGoalCommand(Extension.ExtensionGoal.SHAKE)))
+    //     .onFalse(
+    //         Commands.parallel(
+    //             intake.setGoalCommand(Intake.IntakeGoal.STOP),
+    //             extension.setGoalCommand(Extension.ExtensionGoal.STOWED)));
+
+    fixTurret.onTrue(
+        Commands.parallel(
+            turret.setGoalCommand(TurretGoal.FIXED_ANGLE),
+            hood.setGoalCommand(HoodGoal.ZEROING),
+            flywheel.setGoalCommand(FlywheelGoal.IDLE),
+            intake.setGoalCommand(IntakeGoal.STOP),
+            extension.setGoalCommand(ExtensionGoal.STOWED),
+            indexer.setGoalCommand(IndexerGoal.STOP)));
 
     stowTrigger.onTrue(
         Commands.parallel(
@@ -477,6 +509,7 @@ public class RobotContainer {
             Commands.parallel(
                 flywheel.setGoalCommand(Flywheel.FlywheelGoal.IDLE),
                 indexer.setGoalCommand(Indexer.IndexerGoal.STOP)));
+
     led.setDefaultCommand(SuperstructureFactory.ledMonitor(this));
 
     controller
@@ -493,6 +526,18 @@ public class RobotContainer {
                 () -> {
                   SuperstructureFactory.compensation_percent -= 5;
                 }));
+
+    increaseTurretOffset.onTrue(
+        new InstantCommand(
+            () -> {
+              SuperstructureFactory.turretShootOffset += Math.toRadians(1);
+            }));
+
+    decreaseTurretOffset.onTrue(
+        new InstantCommand(
+            () -> {
+              SuperstructureFactory.turretShootOffset -= Math.toRadians(1);
+            }));
   }
 
   private void configureFuelSim() {
