@@ -1,143 +1,115 @@
 package frc.robot;
 
-import static edu.wpi.first.units.Units.Meters;
-import static edu.wpi.first.units.Units.MetersPerSecond;
-import static edu.wpi.first.units.Units.Radians;
 import static frc.robot.subsystems.vision.VisionConstants.*;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.RobotController;
-import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.CommandFactories.CommandFactory;
 import frc.robot.FieldConstants.AprilTagLayoutType;
-import frc.robot.autos.L1;
-import frc.robot.autos.L2;
-import frc.robot.autos.L3;
-import frc.robot.autos.L4;
-import frc.robot.autos.L5;
-import frc.robot.autos.L6;
-import frc.robot.autos.L7;
-import frc.robot.autos.M1;
-import frc.robot.autos.M2;
-import frc.robot.autos.M3;
-import frc.robot.autos.M4;
-import frc.robot.autos.Test;
+import frc.robot.autos.FCeStR;
+import frc.robot.autos.LCPCeP;
+import frc.robot.autos.LCSR;
+import frc.robot.autos.LCePCeR;
+import frc.robot.autos.LCeSR;
+import frc.robot.autos.LCsSCsS;
+import frc.robot.autos.MSm;
+import frc.robot.autos.MSmR;
 import frc.robot.commands.DriveCommands;
 import frc.robot.generated.TunerConstants;
+import frc.robot.subsystems.arm.Arm;
+import frc.robot.subsystems.arm.Arm.ArmGoal;
+import frc.robot.subsystems.arm.ArmConstants;
+import frc.robot.subsystems.arm.ArmIOReal;
+import frc.robot.subsystems.arm.ArmIOSim;
+import frc.robot.subsystems.blocker.Blocker;
+import frc.robot.subsystems.blocker.Blocker.BlockerGoal;
+import frc.robot.subsystems.blocker.BlockerConstants;
+import frc.robot.subsystems.blocker.BlockerIOReal;
+import frc.robot.subsystems.blocker.BlockerIOSim;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
 import frc.robot.subsystems.drive.GyroIOPigeon2;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOTalonFX;
-import frc.robot.subsystems.extension.Extension;
-import frc.robot.subsystems.extension.Extension.ExtensionGoal;
-import frc.robot.subsystems.extension.ExtensionConstants;
-import frc.robot.subsystems.extension.ExtensionIOReal;
-import frc.robot.subsystems.extension.ExtensionIOSim;
+import frc.robot.subsystems.flywheel.Flywheel;
+import frc.robot.subsystems.flywheel.FlywheelConstants;
+import frc.robot.subsystems.flywheel.FlywheelIOReal;
+import frc.robot.subsystems.flywheel.FlywheelIOSim;
 import frc.robot.subsystems.indexer.Indexer;
-import frc.robot.subsystems.indexer.Indexer.IndexerGoal;
+import frc.robot.subsystems.indexer.IndexerConstants;
 import frc.robot.subsystems.indexer.IndexerIOReal;
 import frc.robot.subsystems.indexer.IndexerIOSim;
-import frc.robot.subsystems.intake.Intake;
-import frc.robot.subsystems.intake.Intake.IntakeGoal;
-import frc.robot.subsystems.intake.IntakeConstants;
-import frc.robot.subsystems.intake.IntakeIOReal;
-import frc.robot.subsystems.intake.IntakeIOSim;
 import frc.robot.subsystems.led.LED;
-import frc.robot.subsystems.shooter.flywheel.Flywheel;
-import frc.robot.subsystems.shooter.flywheel.Flywheel.FlywheelGoal;
-import frc.robot.subsystems.shooter.flywheel.FlywheelConstants;
-import frc.robot.subsystems.shooter.flywheel.FlywheelIOReal;
-import frc.robot.subsystems.shooter.flywheel.FlywheelIOSim;
-import frc.robot.subsystems.shooter.hood.Hood;
-import frc.robot.subsystems.shooter.hood.Hood.HoodGoal;
-import frc.robot.subsystems.shooter.hood.HoodConstants;
-import frc.robot.subsystems.shooter.hood.HoodIOReal;
-import frc.robot.subsystems.shooter.hood.HoodIOSim;
-import frc.robot.subsystems.shooter.turret.Turret;
-import frc.robot.subsystems.shooter.turret.Turret.TurretGoal;
-import frc.robot.subsystems.shooter.turret.TurretConstants;
-import frc.robot.subsystems.shooter.turret.TurretIOSim;
-import frc.robot.subsystems.shooter.turret.TurretIOreal;
-import frc.robot.subsystems.superstructure.SuperstructureFactory;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.VisionIOLimelight;
 import frc.robot.subsystems.vision.VisionIOPhotonVisionSim;
 import frc.robot.util.Dimensions;
 import frc.robot.util.FuelSim;
-import frc.robot.util.geometry.AllianceFlipUtil;
-import java.util.function.BooleanSupplier;
-import org.littletonrobotics.junction.Logger;
+import frc.robot.util.Geoffrey.PhysicalJoint;
+import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 public class RobotContainer {
 
-  // Subsystems
+  // --- Subsystems ---
   public final Drive drive;
-  public final Intake intake;
-  public final Extension extension;
-  public final Indexer indexer;
-  public final Turret turret;
-  public final Flywheel flywheel;
-  public final Hood hood;
   public final Vision vision;
+  public final Indexer indexer;
+  public final Flywheel flywheel;
+  public final Arm arm;
+  public final Blocker blocker;
   public final LED led;
 
-  public Dimensions dimensions;
-  public FuelSim fuelSim = new FuelSim("FuelSim"); // creates a new fuelSim of FuelSim
-  // Controller
+  // Simulated fuel (balls) used for visualisation in sim.
+  public FuelSim fuelSim = new FuelSim("FuelSim");
+
+  // --- Controller ---
   private final CommandPS5Controller controller = new CommandPS5Controller(0);
 
-  private final CommandPS5Controller testing_controller = new CommandPS5Controller(1);
-
-  // Bindings
-  // private final Trigger zeroSuperstructurePosition = controller.square();
+  // --- Bindings ---
   private final Trigger zeroGyro = controller.button(13);
   private final Trigger intakeTrigger = controller.R1();
-  private final Trigger outtakeTrigger = controller.L2();
-  // private final Trigger shakeStowTrigger = controller.circle();
-  private final Trigger fixTurret = controller.circle();
-
-  private final Trigger stowTrigger = controller.button(10);
+  private final Trigger deployIntakeTrigger = controller.button(1);
   private final Trigger shootTrigger = controller.R2();
-  private final Trigger passTrigger = controller.L1();
-  private final Trigger forceIntakeIn = controller.triangle();
-  //   private final Trigger driveToClimb = controller.povLeft();
-  //   private final Trigger autoTrench = controller.povRight();
+  private final Trigger autoShootTrigger = controller.circle();
+  private final Trigger outtakeTrigger = controller.button(2);
+  //   private final Trigger deployArmTrigger = controller.triangle();
+  private final Trigger passingTrigger = controller.L2();
 
-  private final Trigger forceLeftTrigger = controller.cross();
-  private final Trigger forceRightTrigger = controller.square();
+  //   private final Trigger stowArmTrigger = controller.cross();
+  private final Trigger blockTrigger = controller.L1();
+  private final Trigger bigbackTrigger = controller.triangle();
 
-  private final Trigger increaseTurretOffset = controller.povLeft();
-  private final Trigger decreaseTurretOffset = controller.povRight();
+  private final Trigger increaseTurretOffset = controller.povUp();
+  private final Trigger decreaseTurretOffset = controller.povDown();
 
-  // private final Trigger drivetoBump = controller.cross();
-  private final Trigger robotHeadSwitchTrigger = controller.button(12);
-  private final Trigger driveFaceToPointTrigger = controller.button(11);
-  private final Trigger shootouttakTrigger = controller.button(9);
+  private final Trigger increaseBlockerOffset = controller.povRight();
+  private final Trigger decreaseBlockerOffset = controller.povLeft();
+
+  private final Trigger testShootTrigger = controller.button(10);
 
   private final Alert controllerDisconnected =
       new Alert("controller disconnected (port 0).", AlertType.kWarning);
+
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
   private final LoggedDashboardChooser<Boolean> sideChooser;
-  private final Timer simShootTimer = new Timer();
-  private boolean isTestMode = false;
+
+  @AutoLogOutput private boolean isbigback = false;
+  @AutoLogOutput private boolean isIntaking = false;
+  @AutoLogOutput private boolean isAutoAim = true;
 
   public RobotContainer() {
-    simShootTimer.start();
     switch (Constants.currentMode) {
-      case REAL:
+      case REAL -> {
+        // Real robot, instantiate hardware IO implementations
         drive =
             new Drive(
                 new GyroIOPigeon2(),
@@ -145,48 +117,36 @@ public class RobotContainer {
                 new ModuleIOTalonFX(TunerConstants.FrontRight),
                 new ModuleIOTalonFX(TunerConstants.BackLeft),
                 new ModuleIOTalonFX(TunerConstants.BackRight));
-
-        intake =
-            new Intake(
-                new IntakeIOReal(IntakeConstants.kIntakeId, IntakeConstants.kIntakeInverted));
-        indexer = new Indexer(new IndexerIOReal());
-        extension =
-            new Extension(
-                new ExtensionIOReal(
-                    ExtensionConstants.kExtensionId, ExtensionConstants.kExtensionInverted));
-        turret =
-            new Turret(
-                new TurretIOreal(TurretConstants.kTurretID, TurretConstants.kTurretInverted),
-                TurretConstants.kTurretonRobotoffset,
-                drive::getPose,
-                drive::getFieldVelocity);
-        TurretConstants.swerve2TurretStructure.setBase(drive);
-        turret.setBase(TurretConstants.swerve2TurretStructure);
-
+        // Two cameras mounted on the chassis (drive).
         vision =
             new Vision(
                 drive,
-                // new VisionIOLimelight(
-                //     camera0Name,
-                //     new double[] {640, 480},
-                //     drive,
-                //     new Transform3d(0.0, 0.0, 0.616, new Rotation3d(0.0, -0.4, 0.0))),
-                new VisionIOLimelight(
-                    camera1Name,
-                    new double[] {640, 480},
-                    turret,
-                    TurretConstants.kCameraonTurretoffset));
+                new VisionIOLimelight(camera0Name, new double[] {640, 480}, drive, robotToCamera0),
+                new VisionIOLimelight(camera1Name, new double[] {640, 480}, drive, robotToCamera1));
+        arm = new Arm(new ArmIOReal(ArmConstants.kArmId, ArmConstants.kArmInverted));
+
+        indexer =
+            new Indexer(
+                new IndexerIOReal(
+                    IndexerConstants.kIndexerId,
+                    IndexerConstants.kIndexerInverted,
+                    IndexerConstants.kTriggerId,
+                    IndexerConstants.kTriggerInverted),
+                arm);
+        blocker =
+            new Blocker(
+                new BlockerIOReal(BlockerConstants.kBlockerId, BlockerConstants.kBlockerInverted),
+                arm);
         flywheel =
             new Flywheel(
                 new FlywheelIOReal(
-                    FlywheelConstants.kFlywheelId, FlywheelConstants.kFlywheelInverted),
-                turret);
-        hood = new Hood(new HoodIOReal(HoodConstants.kHoodId, HoodConstants.kHoodInverted), turret);
+                    FlywheelConstants.kFlywheelIds, FlywheelConstants.kFlywheelInverted),
+                arm);
         led = new LED();
-        break;
+      }
 
-      case SIM:
-        // Sim robot, instantiate physics sim IO implementations
+      case SIM -> {
+        // Physics sim IO implementations
         drive =
             new Drive(
                 new GyroIO() {},
@@ -201,40 +161,15 @@ public class RobotContainer {
                     camera0Name, robotToCamera0, drive, robotToCamera0, drive::getPose),
                 new VisionIOPhotonVisionSim(
                     camera1Name, robotToCamera1, drive, robotToCamera1, drive::getPose));
-        intake = new Intake(new IntakeIOSim());
-        indexer = new Indexer(new IndexerIOSim());
-        extension = new Extension(new ExtensionIOSim());
-        turret =
-            new Turret(
-                new TurretIOSim(fuelSim),
-                TurretConstants.kTurretonRobotoffset,
-                drive::getPose,
-                drive::getFieldVelocity);
-        TurretConstants.swerve2TurretStructure.setBase(drive);
-        turret.setBase(TurretConstants.swerve2TurretStructure);
-        flywheel = new Flywheel(new FlywheelIOSim(), turret);
-        // upperStructure = new UpperStructure(turret, turretFR);
-        hood = new Hood(new HoodIOSim(), turret);
+        arm = new Arm(new ArmIOSim());
+        indexer = new Indexer(new IndexerIOSim(), arm);
+        blocker = new Blocker(new BlockerIOSim(), arm);
+        flywheel = new Flywheel(new FlywheelIOSim(), arm);
         led = new LED();
-        // fuel sim setup
-        fuelSim.spawnStartingFuel();
-        // 2. 调用你写的配置方法 (确保传入 intake 的状态判定)
-        configureFuelSimRobot(
-            () -> intake.getGoal() == Intake.IntakeGoal.INTAKE,
-            () -> {
-              System.out.println("yesyesyes Fuel");
-            } // 这里可以写 intake 成功后的回调
-            );
-        // 物理参数设置
-        fuelSim.setSubticks(1); // 每 20ms 执行多少次物理迭代
-        fuelSim.enableAirResistance(); // 开启空气阻力影响（可选）
+        setupFuelSim();
+      }
 
-        // 控制模拟是否自动运行
-        fuelSim.start(); // 启动模拟
-        // … 在适当的时候 …
-        break;
-
-      default:
+      default -> {
         // Replayed robot, disable IO implementations
         drive =
             new Drive(
@@ -250,77 +185,47 @@ public class RobotContainer {
                     camera0Name, robotToCamera0, drive, robotToCamera0, drive::getPose),
                 new VisionIOPhotonVisionSim(
                     camera1Name, robotToCamera1, drive, robotToCamera1, drive::getPose));
-        intake = new Intake(new IntakeIOSim());
-        indexer = new Indexer(new IndexerIOSim());
-        extension = new Extension(new ExtensionIOSim());
-        turret =
-            new Turret(
-                new TurretIOSim(fuelSim),
-                TurretConstants.kTurretonRobotoffset,
-                drive::getPose,
-                drive::getFieldVelocity);
-        TurretConstants.swerve2TurretStructure.setBase(drive);
-        turret.setBase(TurretConstants.swerve2TurretStructure);
-        flywheel = new Flywheel(new FlywheelIOSim(), turret);
-        hood = new Hood(new HoodIOSim(), turret);
+        arm = new Arm(new ArmIOSim());
+
+        indexer = new Indexer(new IndexerIOSim(), arm);
+        blocker = new Blocker(new BlockerIOSim(), arm);
+        flywheel = new Flywheel(new FlywheelIOSim(), arm);
         led = new LED();
-        break;
+      }
     }
+
+    // --- Geoffrey physical joint chain ---
+    // The chassis (drive) is the base of the chain. The arm and blocker are mounted on the
+    // chassis via static structure joints, and each rotates about its measured angle.
+    PhysicalJoint armMount = PhysicalJoint.getStructureJoint(ArmConstants.kChassisToArmPivot);
+    armMount.setBase(drive);
+    arm.setBase(armMount);
+
+    PhysicalJoint blockerMount =
+        PhysicalJoint.getStructureJoint(BlockerConstants.kChassisToBlockerPivot);
+    blockerMount.setBase(drive);
+    blocker.setBase(blockerMount);
+
     // Set up auto routines
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
     sideChooser = new LoggedDashboardChooser<>("Side Chooser");
     sideChooser.addDefaultOption("Left (Default)", false); // 默认 false
     sideChooser.addOption("Right (Flipped)", true); // 选中时 true
-    autoChooser.addOption("L1", new L1(this, sideChooser::get));
-    autoChooser.addOption("L2", new L2(this, sideChooser::get));
-    autoChooser.addOption("L3", new L3(this, sideChooser::get));
-    autoChooser.addOption("L4", new L4(this, sideChooser::get));
-    autoChooser.addOption("L5", new L5(this, sideChooser::get));
-    autoChooser.addOption("L6", new L6(this, sideChooser::get));
-    autoChooser.addOption("L7", new L7(this, sideChooser::get));
-    autoChooser.addOption("M1", new M1(this, sideChooser::get));
-    autoChooser.addOption("M2", new M2(this, sideChooser::get));
-    autoChooser.addOption("M3", new M3(this, sideChooser::get));
-    autoChooser.addOption("M4", new M4(this, sideChooser::get));
-    autoChooser.addOption("TEST", new Test(this, sideChooser::get));
-    autoChooser.addDefaultOption("L1", new L1(this, sideChooser::get));
+
+    autoChooser.addOption("LCSR", new LCSR(this, sideChooser::get));
+    autoChooser.addOption("LCeSR", new LCeSR(this, sideChooser::get));
+    autoChooser.addOption("LCePCeR", new LCePCeR(this, sideChooser::get));
+    autoChooser.addOption("LCPCeP", new LCPCeP(this, sideChooser::get));
+    autoChooser.addOption("FCeStR", new FCeStR(this, sideChooser::get));
+    autoChooser.addOption("LCsSCsS", new LCsSCsS(this, sideChooser::get));
+    autoChooser.addOption("MSm", new MSm(this, sideChooser::get));
+    autoChooser.addOption("MSmR", new MSmR(this, sideChooser::get));
+
     configureButtonBindings();
   }
 
-  public Turret getTurret() {
-    return turret;
-  }
-
-  public Hood getHood() {
-    return hood;
-  }
-
-  public Flywheel getFlywheel() {
-    return flywheel;
-  }
-
-  public Intake getIntake() {
-    return intake;
-  }
-
-  public Extension getExtension() {
-    return extension;
-  }
-
-  public Indexer getIndexer() {
-    return indexer;
-  }
-
-  public LED getLED() {
-    return led;
-  }
-
-  public Drive getDrive() {
-    return drive;
-  }
-
   private void configureButtonBindings() {
-    // Default command, normal field-relative drive
+    // Default command: field-relative drive
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
             drive,
@@ -328,307 +233,172 @@ public class RobotContainer {
             () -> -controller.getLeftX(),
             () -> -controller.getRightX()));
 
-    // zero gyro
+    // Zero the gyro heading
     zeroGyro.onTrue(Commands.runOnce(drive::zeroHeading, drive).ignoringDisable(true));
 
-    // bump
-    // drivetoBump.whileTrue(
-    //     DriveCommands.joystickDriveAtAngle(
-    //         drive,
-    //         () -> -controller.getLeftY(),
-    //         () -> -controller.getLeftX(),
-    //         () -> Rotation2d.fromDegrees(45)));
-
-    // 有头模式
-    robotHeadSwitchTrigger.whileTrue(
-        DriveCommands.joystickDriveRobotRelative(
-            drive,
-            () -> -controller.getLeftY(),
-            () -> -controller.getLeftX(),
-            () -> -controller.getRightX()));
-
-    driveFaceToPointTrigger.whileTrue(
-        DriveCommands.joystickDriveFacingPoint(
-            drive,
-            () -> -controller.getLeftY(),
-            () -> -controller.getLeftX(),
-            () -> AllianceFlipUtil.apply(FieldConstants.Hub.topCenterPoint.toTranslation2d())));
-
-    // zeroSuperstructurePosition.onTrue(
-    //     (Commands.parallel(hood.zeroCommand(), extension.zeroCommand(), turret.zeroCommand())));
-
-    forceIntakeIn.onTrue(
-        Commands.parallel(
-            intake.setGoalCommand(Intake.IntakeGoal.STOP),
-            extension.setGoalCommand(ExtensionGoal.STOWED)));
-
-    shootTrigger
-        .onTrue(SuperstructureFactory.shoot(this))
-        .onFalse(SuperstructureFactory.activeShooting(this));
-    passTrigger
-        .onTrue(SuperstructureFactory.pass(this))
-        .onFalse(SuperstructureFactory.activeShooting(this));
-    shootTrigger
-        .or(passTrigger)
-        .onTrue(
+    // Intake: deploy arm, run flywheel + indexer inward
+    intakeTrigger
+        .whileTrue(
             Commands.parallel(
-                SuperstructureFactory.feeding(this),
-                intake.setGoalCommand(Intake.IntakeGoal.SHOOT),
-                Commands.run(
-                    () -> {
-                      indexer.forceLeft = forceLeftTrigger.getAsBoolean();
-                      indexer.forceRight = forceRightTrigger.getAsBoolean();
-                    })))
+                // arm.setGoalCommand(Arm.ArmGoal.INTAKE),
+                flywheel.setGoalCommand(Flywheel.FlywheelGoal.INTAKE),
+                indexer.setGoalCommand(Indexer.IndexerGoal.INTAKE)))
+        .onTrue(
+            new InstantCommand(
+                () -> {
+                  isIntaking = true;
+                  arm.setGoal(ArmGoal.INTAKE);
+
+                  blocker.setGoal(BlockerGoal.CLOSE);
+                },
+                arm))
         .onFalse(
             Commands.parallel(
-                new ConditionalCommand(
-                    Commands.parallel(
-                        SuperstructureFactory.runIndexerIntake(this),
-                        intake.setGoalCommand(Intake.IntakeGoal.INTAKE)),
-                    Commands.parallel(
-                        SuperstructureFactory.stopFeeding(this),
-                        intake.setGoalCommand(Intake.IntakeGoal.STOP)),
-                    intakeTrigger),
+                // arm.setGoalCommand(Arm.ArmGoal.STOW),
+                flywheel.setGoalCommand(Flywheel.FlywheelGoal.IDLE),
+                indexer.setGoalCommand(Indexer.IndexerGoal.STOP)));
+
+    deployIntakeTrigger.onTrue(
+        new InstantCommand(
+                () -> {
+                  isIntaking = false;
+                  arm.setGoal(ArmGoal.ZEROING);
+                  //   flywheel.setGoal(isIntaking ? FlywheelGoal.INTAKE : FlywheelGoal.IDLE);
+                  //   indexer.setGoal(isIntaking ? Indexer.IndexerGoal.INTAKE :
+                  // Indexer.IndexerGoal.STOP);
+                },
+                arm)
+            .andThen(blocker.setGoalCommand(BlockerGoal.CLOSE))
+        // .andThen(
+        //     new InstantCommand(
+        //         () -> {
+        //           isIntaking = false;
+        //         }))
+        );
+
+    // Shoot: for now the fixed shooting fallback is the default while the shoot button is held
+    // (used when vision is unavailable/unreliable). The arm holds its fixed shooting angle and the
+    // flywheel spins to its fixed shoot velocity, feeding once both are at goal. Swap to
+    // CommandFactory.shoot(...) below to re-enable the vision-aimed, shoot-on-the-move version.
+    shootTrigger
+        .whileTrue(Commands.parallel(CommandFactory.shootFixed(this), blocker.shootCommand()))
+        .onFalse(
+            blocker
+                .setGoalCommand(BlockerGoal.OPEN)
+                .andThen(new InstantCommand(() -> isbigback = true)));
+    testShootTrigger
+        .whileTrue(Commands.parallel(CommandFactory.shootTest(this), blocker.shootCommand()))
+        .onFalse(
+            blocker
+                .setGoalCommand(BlockerGoal.OPEN)
+                .andThen(new InstantCommand(() -> isbigback = true)));
+    autoShootTrigger
+        .whileTrue(
+            Commands.parallel(
+                CommandFactory.shoot(
+                    this, () -> -controller.getLeftY(), () -> -controller.getLeftX()),
+                blocker.shootCommand()))
+        .onFalse(
+            blocker
+                .setGoalCommand(BlockerGoal.OPEN)
+                .andThen(new InstantCommand(() -> isbigback = true)));
+    shootTrigger
+        .or(autoShootTrigger)
+        .or(testShootTrigger)
+        .onTrue(
+            new InstantCommand(
+                () -> {
+                  isIntaking = false;
+                }));
+
+    // shootTrigger.whileTrue(
+    //     CommandFactory.shoot(this, () -> -controller.getLeftY(), () -> -controller.getLeftX()));
+
+    // Outtake: reverse flywheel + indexer
+    outtakeTrigger
+        .whileTrue(
+            Commands.parallel(
+                flywheel.setGoalCommand(Flywheel.FlywheelGoal.OUTTAKE),
+                indexer.setGoalCommand(Indexer.IndexerGoal.OUTTAKE),
                 new InstantCommand(
                     () -> {
-                      indexer.forceRight = false;
-                      indexer.forceLeft = false;
-                    })));
-
-    intakeTrigger
-        .onTrue(
-            Commands.parallel(
-                intake.setGoalCommand(Intake.IntakeGoal.INTAKE),
-                extension.setGoalCommand(Extension.ExtensionGoal.DEPLOYED),
-                new ConditionalCommand(
-                    SuperstructureFactory.feeding(this),
-                    SuperstructureFactory.runIndexerIntake(this),
-                    shootTrigger.or(passTrigger))))
-        .onFalse(
-            Commands.parallel(
-                extension.setGoalCommand(Extension.ExtensionGoal.FEEDING),
-                new ConditionalCommand(
-                    Commands.parallel(
-                        SuperstructureFactory.feeding(this),
-                        intake.setGoalCommand(Intake.IntakeGoal.SHOOT)),
-                    Commands.parallel(
-                        SuperstructureFactory.stopFeeding(this),
-                        intake.setGoalCommand(Intake.IntakeGoal.STOP)),
-                    shootTrigger.or(passTrigger))));
-
-    outtakeTrigger
-        .onTrue(
-            Commands.parallel(
-                intake.setGoalCommand(Intake.IntakeGoal.OUTTAKE),
-                extension.setGoalCommand(Extension.ExtensionGoal.OUTTAKE),
-                SuperstructureFactory.spit(this)))
-        .onFalse(
-            Commands.parallel(
-                intake.setGoalCommand(Intake.IntakeGoal.STOP),
-                extension.setGoalCommand(Extension.ExtensionGoal.FEEDING),
-                SuperstructureFactory.stopFeeding(this)));
-
-    // shakeStowTrigger
-    //     .onTrue(
-    //         Commands.parallel(
-    //             intake.setGoalCommand(Intake.IntakeGoal.STOW),
-    //             extension.setGoalCommand(Extension.ExtensionGoal.SHAKE)))
-    //     .onFalse(
-    //         Commands.parallel(
-    //             intake.setGoalCommand(Intake.IntakeGoal.STOP),
-    //             extension.setGoalCommand(Extension.ExtensionGoal.STOWED)));
-
-    fixTurret.onTrue(
-        Commands.parallel(
-            turret.setGoalCommand(TurretGoal.FIXED_ANGLE),
-            hood.setGoalCommand(HoodGoal.ZEROING),
-            flywheel.setGoalCommand(FlywheelGoal.IDLE),
-            intake.setGoalCommand(IntakeGoal.STOP),
-            extension.setGoalCommand(ExtensionGoal.STOWED),
-            indexer.setGoalCommand(IndexerGoal.STOP)));
-
-    stowTrigger.onTrue(
-        Commands.parallel(
-            intake.setGoalCommand(Intake.IntakeGoal.STOP),
-            extension.setGoalCommand(Extension.ExtensionGoal.STOWED)));
-
-    shootouttakTrigger
-        .onTrue(SuperstructureFactory.shootSpit(this))
-        .onFalse(SuperstructureFactory.activeShooting(this));
-
-    // driveToClimb.whileTrue(
-    //     new AutoAlignCommand(
-    //         drive,
-    //         () -> ClimbTargetSelector.getNearestClimbPose(drive::getPose),
-    //         ClimbTargetSelector.getNearestClimbPose(drive::getPose).getRotation().getDegrees()));
-
-    // autoTrench.whileTrue(
-    //     Commands.parallel(
-    //         SuperstructureFactory.trench(this),
-    //         Commands.defer(
-    //             () ->
-    //                 DriveCommands.autoPathfindToPose(
-    //                     drive,
-    //                     TrenchHelper.getTrenchTargetPose(
-    //                         TurretConstants.swerve2TurretStructure::getGlobalPose2d)),
-    //             java.util.Set.of(drive) // 声明占用 drive 子系统
-    //             )));
-
-    forceLeftTrigger
-        .onTrue(
-            new InstantCommand(
-                () -> {
-                  indexer.forceLeft = true;
-                }))
-        .onFalse(
-            new InstantCommand(
-                () -> {
-                  indexer.forceLeft = false;
-                }));
-
-    forceRightTrigger
-        .onTrue(
-            new InstantCommand(
-                () -> {
-                  indexer.forceRight = true;
-                }))
-        .onFalse(
-            new InstantCommand(
-                () -> {
-                  indexer.forceRight = false;
-                }));
-
-    // testing:
-    testing_controller
-        .button(1)
-        .onTrue(
-            Commands.parallel(
-                flywheel.setGoalCommand(Flywheel.FlywheelGoal.FIXED_VELOCITY),
-                indexer.setGoalCommand(Indexer.IndexerGoal.SHOOT)))
+                      isIntaking = false;
+                    })))
         .onFalse(
             Commands.parallel(
                 flywheel.setGoalCommand(Flywheel.FlywheelGoal.IDLE),
                 indexer.setGoalCommand(Indexer.IndexerGoal.STOP)));
 
-    led.setDefaultCommand(SuperstructureFactory.ledMonitor(this));
+    passingTrigger
+        .whileTrue(Commands.parallel(CommandFactory.passing(this), blocker.shootCommand()))
+        .onFalse(
+            blocker
+                .setGoalCommand(BlockerGoal.HALFOPEN)
+                .andThen(new InstantCommand(() -> isbigback = true)));
+    // Manual arm control
+    // deployArmTrigger.onTrue(arm.setGoalCommand(Arm.ArmGoal.INTAKE));
+    // stowArmTrigger.onTrue(arm.setGoalCommand(Arm.ArmGoal.STOW));
 
-    controller
-        .povUp()
-        .onTrue(
-            new InstantCommand(
-                () -> {
-                  SuperstructureFactory.compensation_percent += 5;
-                }));
-    controller
-        .povDown()
-        .onTrue(
-            new InstantCommand(
-                () -> {
-                  SuperstructureFactory.compensation_percent -= 5;
-                }));
+    // Blocker: deploy while held, retract when released. Ensure we read isbigback at runtime
+    // (the previous code evaluated the ternary at bind time, so it always used the initial value).
+    blockTrigger
+        .whileTrue(blocker.setGoalCommand(BlockerGoal.BLOCKING))
+        .onFalse(
+            Commands.runOnce(
+                () -> blocker.setGoal(isbigback ? BlockerGoal.HALFOPEN : BlockerGoal.CLOSE),
+                blocker));
+
+    // Toggle the "big back" mode and then set the blocker goal based on the new value.
+    bigbackTrigger.onTrue(
+        new InstantCommand(
+            () -> {
+              isbigback = !isbigback;
+              blocker.setGoal(isbigback ? BlockerGoal.HALFOPEN : BlockerGoal.CLOSE);
+            },
+            blocker));
 
     increaseTurretOffset.onTrue(
         new InstantCommand(
             () -> {
-              SuperstructureFactory.turretShootOffset += Math.toRadians(1);
+              ArmIOReal.angleOffset += Math.toRadians(2.5);
             }));
-
     decreaseTurretOffset.onTrue(
         new InstantCommand(
             () -> {
-              SuperstructureFactory.turretShootOffset -= Math.toRadians(1);
+              ArmIOReal.angleOffset -= Math.toRadians(2.5);
             }));
+
+    increaseBlockerOffset.onTrue(blocker.upZeroCommand());
+    decreaseBlockerOffset.onTrue(blocker.downZeroCommand());
   }
 
-  private void configureFuelSim() {
-    fuelSim = new FuelSim();
+  /** Minimal fuel (ball) simulation used only for visualisation in sim. */
+  private void setupFuelSim() {
     fuelSim.spawnStartingFuel();
-
-    fuelSim.start();
-    SmartDashboard.putData(
-        Commands.runOnce(
-                () -> {
-                  fuelSim.clearFuel();
-                  fuelSim.spawnStartingFuel();
-                })
-            .withName("Reset Fuel")
-            .ignoringDisable(true));
-  }
-
-  private void configureFuelSimRobot(BooleanSupplier ableToIntake, Runnable intakeCallback) {
-    // 注册机器人实体 (1.0m x 1.0m)
     fuelSim.registerRobot(
         Dimensions.FULL_WIDTH,
         Dimensions.FULL_LENGTH,
         Dimensions.BUMPER_HEIGHT,
-        // turret::getturretpose,
         drive::getPose,
         drive::getFieldVelocity);
 
-    // 重新定义吸入口坐标：
-    // 假设 X 正方向是机器人的前方
+    // Intake zone in front of the robot, active while the flywheel is intaking.
     double frontEdge = Dimensions.FULL_LENGTH / 2.0;
-    double intakeDepth = 0.4; // 吸入口向外延伸 20cm
-    double intakeWidth = Dimensions.FULL_WIDTH * 1.8; // 覆盖 80% 的车宽
-
     fuelSim.registerIntake(
-        frontEdge, // xMin: 刚好从前保险杠开始
-        frontEdge + intakeDepth, // xMax: 向前延伸出保险杠
-        -intakeWidth / 2.0, // yMin: 中心对称
-        intakeWidth / 2.0, // yMax: 中心对称
-        () -> intake.getGoal() == Intake.IntakeGoal.INTAKE, // 调试用：先强制设为 true 看看能不能吸到
-        intakeCallback);
+        frontEdge,
+        frontEdge + 0.4,
+        -Dimensions.FULL_WIDTH,
+        Dimensions.FULL_WIDTH,
+        () -> flywheel.getGoal() == Flywheel.FlywheelGoal.INTAKE,
+        () -> {});
+
+    fuelSim.setSubticks(1);
+    fuelSim.enableAirResistance();
+    fuelSim.start();
   }
 
-  /** 供 Robot.java 在仿真模式下周期性调用 */
-
-  /** Update dashboard outputs. */
-  public void updateDashboardOutputs() {
-    // Publish match time
-    SmartDashboard.putNumber("Match Time", DriverStation.getMatchTime());
-
-    SmartDashboard.putNumber("Batter Voltage", RobotController.getBatteryVoltage());
-    // Controller disconnected alerts
-    controllerDisconnected.set(!DriverStation.isJoystickConnected(controller.getHID().getPort()));
-
-    // secondaryDisconnected.set(!DriverStation.isJoystickConnected(secondary.getHID().getPort()));
-    // overrideDisconnected.set(!overrides.isConnected());
-  }
-
-  private void handleSimulationShooting() {
-    // 只有在模拟环境下才执行后续计算，节省真实机器人的 CPU 资源
-    if (!Robot.isSimulation()) {
-      return;
-    }
-
-    // 检查所有射击机构是否到位
-    boolean isReadyToShoot = flywheel.atGoal() && hood.atGoal() && turret.atGoal();
-
-    // 记录状态供 Dashboard/AdvantageScope 查看
-    Logger.recordOutput("Superstructure/ReadyToShoot", isReadyToShoot);
-
-    // 执行发射判定 - 当所有机构就位时发射
-    if (isReadyToShoot) {
-
-      // 严格控制射频：每 0.25 秒最多只能发射一颗球
-      if (simShootTimer.hasElapsed(0.25)) {
-        simShootTimer.restart();
-
-        // 计算出球线速度 (v = ω * r)
-        double linearVelMetersPerSec = flywheel.getVelocity() * FlywheelConstants.kFlywheelRadius;
-
-        // 调用模拟器发射
-        fuelSim.launchFuel(
-            MetersPerSecond.of(linearVelMetersPerSec),
-            Radians.of(hood.getMeasuredAngleRad()),
-            // 这里使用炮塔相对于底盘的角度
-            Radians.of(turret.getRobotToTurret().getAngle().getRadians()),
-            Meters.of(0.6) // 假设射出口高度为 0.6 米
-            );
-
-        Logger.recordOutput("Superstructure/SimLastShotTime", Timer.getFPGATimestamp());
-      }
-    }
+  public Drive getDrive() {
+    return drive;
   }
 
   /** Returns the current AprilTag layout type. */

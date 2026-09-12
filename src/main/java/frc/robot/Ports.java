@@ -7,23 +7,14 @@ public final class Ports {
   public static final CANBus kRoboRioCANBus = new CANBus("rio");
   public static final CANBus kCANivoreCANBus = new CANBus("main");
 
-  // Talon FX IDs
-  public static final int kIntake = 13;
-  public static final int kExtension = 14;
+  // Talon FX IDs (offseason robot)
+  public static final int kIndexer = 17; // roller indexer (1 motor)
+  public static final int kTrigger = 19; // trigger motor (1 motor)
 
-  public static final int kIndexerLeft = 15;
-  public static final int kIndexerRight = 16;
+  public static final int kArm = 13; // arm: deploys intake + controls shooting angle
+  public static final int kFlywheel0 = 14;
+  public static final int kFlywheel1 = 15;
+  public static final int kFlywheel2 = 16;
 
-  public static final int kTestLeftTriggers = 25; // TODO
-  public static final int kTestRightTriggers = 26;
-
-  public static final int kTestLeftLimitSwitch = 23; // TODO
-  public static final int kTestRightLimitSwitch = 24;
-
-  public static final int kTurret = 17;
-  public static final int kHood = 18;
-  public static final int kFlywheel = 19;
-  public static final int kSecondFlywheel = 20;
-
-  public static final int kHanger = 21;
+  public static final int kBlocker = 18; // blocker: angle control (1 motor)
 }

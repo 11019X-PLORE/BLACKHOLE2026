@@ -29,7 +29,7 @@ public class LED extends FullSubsystem {
     AUTO // 自动阶段（金光闪烁）
   }
 
-  @Getter @Setter @AutoLogOutput private LEDState goal = LEDState.INITIAL;
+  @Getter @Setter @AutoLogOutput private LEDState goal = LEDState.TRENCH;
 
   public LED() {
     leds.setLength(buffer.getLength());

@@ -29,6 +29,12 @@ public class DriveCommands {
   private static final double ANGLE_KD = 0.4;
   private static final double ANGLE_MAX_VELOCITY = 8.0;
   private static final double ANGLE_MAX_ACCELERATION = 20.0;
+  // Non-profiled heading controller used by aimAtTarget (feedforward supplies the velocity term).
+  private static final double AIM_ANGLE_KP = 8.0;
+  private static final double AIM_ANGLE_KD = 0.1;
+  // Motion constraints for the profiled aim heading controller (rad/s, rad/s^2).
+  private static final double AIM_ANGLE_MAX_VELOCITY = 8.0;
+  private static final double AIM_ANGLE_MAX_ACCELERATION = 20.0;
   private static final double FF_START_DELAY = 2.0; // Secs
   private static final double FF_RAMP_RATE = 0.1; // Volts/Sec
   private static final double WHEEL_RADIUS_MAX_VELOCITY = 0.25; // Rad/Sec
@@ -133,6 +139,78 @@ public class DriveCommands {
               double currentWrappedAngle = MathUtil.angleModulus(drive.getRotation().getRadians());
               angleController.reset(currentWrappedAngle);
             });
+  }
+
+  /**
+   * Aim-at-target drive command with a profiled heading PID <b>and</b> a yaw-velocity feedforward.
+   *
+   * <p>The driver keeps full translational control (field relative), while the chassis yaw is
+   * servoed to a supplied field-relative heading. The heading controller is a {@link
+   * ProfiledPIDController} so its slew is bounded by {@link #AIM_ANGLE_MAX_VELOCITY} and {@link
+   * #AIM_ANGLE_MAX_ACCELERATION}. A feedforward angular velocity (e.g. the {@code
+   * yawVelocityRadsPerSec} from a {@link frc.robot.util.Geoffrey.ShooterSetpoint}) is added on top
+   * of the PID output so the robot leads a moving-shot instead of always lagging behind it.
+   *
+   * @param drive the drivetrain
+   * @param xSupplier driver forward/back joystick (field relative, driver perspective)
+   * @param ySupplier driver left/right joystick (field relative, driver perspective)
+   * @param headingSupplier desired absolute field heading to face
+   * @param feedforwardOmegaSupplier feedforward yaw rate (rad/s) added to the PID output
+   */
+  public static Command aimAtTarget(
+      Drive drive,
+      DoubleSupplier xSupplier,
+      DoubleSupplier ySupplier,
+      Supplier<Rotation2d> headingSupplier,
+      DoubleSupplier feedforwardOmegaSupplier) {
+
+    ProfiledPIDController headingController =
+        new ProfiledPIDController(
+            AIM_ANGLE_KP,
+            0.001,
+            AIM_ANGLE_KD,
+            new TrapezoidProfile.Constraints(AIM_ANGLE_MAX_VELOCITY, AIM_ANGLE_MAX_ACCELERATION));
+    headingController.enableContinuousInput(-Math.PI, Math.PI);
+
+    return Commands.run(
+            () -> {
+              Translation2d linearVelocity =
+                  getLinearVelocityFromJoysticks(xSupplier.getAsDouble(), ySupplier.getAsDouble());
+
+              double measured = MathUtil.angleModulus(drive.getRotation().getRadians());
+              double target = MathUtil.angleModulus(headingSupplier.get().getRadians());
+
+              double pidOmega = headingController.calculate(measured, target);
+              double ffOmega = feedforwardOmegaSupplier.getAsDouble();
+              double omega = pidOmega + ffOmega;
+
+              Logger.recordOutput("Drive/Aim/TargetHeadingRad", target);
+              Logger.recordOutput("Drive/Aim/MeasuredHeadingRad", measured);
+              Logger.recordOutput(
+                  "Drive/Aim/SetpointHeadingRad", headingController.getSetpoint().position);
+              Logger.recordOutput(
+                  "Drive/Aim/SetpointVelocity", headingController.getSetpoint().velocity);
+              Logger.recordOutput("Drive/Aim/FeedforwardOmega", ffOmega);
+              Logger.recordOutput("Drive/Aim/CommandedOmega", omega);
+
+              ChassisSpeeds speeds =
+                  new ChassisSpeeds(
+                      linearVelocity.getX() * drive.getMaxLinearSpeedMetersPerSec(),
+                      linearVelocity.getY() * drive.getMaxLinearSpeedMetersPerSec(),
+                      omega);
+              drive.runVelocity(
+                  ChassisSpeeds.fromFieldRelativeSpeeds(
+                      speeds,
+                      AllianceFlipUtil.shouldFlip()
+                          ? AllianceFlipUtil.apply(drive.getRotation())
+                          : drive.getRotation()));
+            },
+            drive)
+        .beforeStarting(
+            () ->
+                headingController.reset(
+                    MathUtil.angleModulus(drive.getRotation().getRadians()),
+                    drive.getChassisSpeeds().omegaRadiansPerSecond));
   }
 
   /**

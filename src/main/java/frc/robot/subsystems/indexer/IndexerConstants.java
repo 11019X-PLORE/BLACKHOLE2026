@@ -3,60 +3,39 @@ package frc.robot.subsystems.indexer;
 import frc.robot.Ports;
 
 public class IndexerConstants {
-  // === Indexer Motor ===
-  public static final int kIndexerLeftId = Ports.kIndexerLeft;
-  public static final int kIndexerRightId = Ports.kIndexerRight;
+  public static final int kIndexerId = Ports.kIndexer;
+  public static boolean kIndexerInverted = false;
 
-  public static boolean kIndexerLeftInverted = false;
-  public static boolean kIndexerRightInverted = !kIndexerLeftInverted;
+  public static final int kTriggerId = Ports.kTrigger;
+  public static boolean kTriggerInverted = true;
 
-  public static final double kIndexerRadius = 0.05; // TODO
-  public static final double kIndexerGearRatio = 3.0;
+  public static final double kIndexerRadius = 0.018; // TODO
+  public static final double kIndexerGearRatio = 1.0;
 
-  public static final double kIndexerStatorCurrentLimit = 50;
+  public static final double kIndexerSupplyCurrentLimit = 40.0;
 
-  public static final double kP = 100.0; // 10.0
+  public static final double kP = 0.50;
   public static final double kI = 0.0;
-  public static final double kD = 0.0; // 0.0;
-  public static final double kG = 0.0; // 重力补偿
-  public static final double kS = 0.1; // 静态前馈
-  public static final double kV = 0.2; // 轨迹规划得到的目标速度
-  public static final double kA = 0.0; // 轨迹规划得到的目标加速度
+  public static final double kD = 0.0;
+  public static final double kS = 0.1;
+  public static final double kV = 0.2;
+  public static final double kA = 0.0;
 
-  public static final double kVelocityTolerance = 5.0;
+  public static final double triggerKP = 0.2;
+  public static final double triggerKI = 0.0;
+  public static final double triggerKD = 0.0;
+  public static final double triggerKS = 0.1;
+  public static final double triggerKV = 0.2;
+  public static final double triggerKA = 0.0;
 
-  public static final double kIntakeVelocity = 80.0;
-  public static final double kOuttakeVelocity = -125.0;
-  public static final double kActiveVelocity = 80.0;
-  public static final double kShootVelocity = 200.0;
+  public static final double kVelocityTolerance = 5.0; // rad/s
 
-  // === Triggers Motors (merged from TriggersConstants) ===
-  public static final int kTriggersLeftId = Ports.kTestLeftTriggers;
-  public static final int kTriggersRightId = Ports.kTestRightTriggers;
-  public static final int kTriggersLeftLimitSwitchId = Ports.kTestLeftLimitSwitch;
-  public static final int kTriggersRightLimitSwitchId = Ports.kTestRightLimitSwitch;
+  // --- Setpoints (rad/s) ---
+  public static final double kIntakeVelocity = 30.0; // pull the ball in
+  public static final double kShootVelocity = -400.0; // feed the ball to the flywheel
+  public static final double kOuttakeVelocity = -125.0; // reverse the ball out
 
-  public static boolean kTriggersLeftInverted = false;
-  public static boolean kTriggersRightInverted = true;
-
-  public static double kTriggersMinSwitchPeriod = 0.2;
-
-  public static final double kTriggersRadius = 0.05; // TODO
-  public static final double kTriggersGearRatio = 5.0; // 1.125
-
-  public static final double kTriggers_kP = 50.0;
-  public static final double kTriggers_kI = 0.0;
-  public static final double kTriggers_kD = 0.0;
-  public static final double kTriggers_kG = 0.0;
-  public static final double kTriggers_kS = 0.1;
-  public static final double kTriggers_kV = 0.0;
-  public static final double kTriggers_kA = 0.0;
-
-  public static final double kTriggersVelocityTolerance = 5.0;
-
-  public static final double kTriggersIntakeVelocity = 150.0;
-  public static final double kTriggersOuttakeVelocity = -150.0;
-  public static final double kTriggersShootVelocity = 150.0;
-
-  public static final double feedingBPS = 7.5; // balls per second
+  public static final double kIntakeTriggerVelocity = 250.0;
+  public static final double kShootTriggerVelocity = -500.0; // feed the ball to the flywheel
+  public static final double kOuttakeTriggerVelocity = -300.0; // reverse the ball out
 }

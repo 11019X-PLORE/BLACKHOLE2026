@@ -4,312 +4,177 @@
 
 package frc.robot.util.Geoffrey;
 
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.geometry.Translation3d;
 import org.ejml.simple.SimpleMatrix;
+import org.littletonrobotics.junction.Logger;
 
-/** shout out to 254 */
-public class ShooterSetpoint {
-  public double shooterVelocityMetersPerSec;
-  public double shooterAccelerationMetersPerSecSquared;
-  public double turretPositionRadians;
-  public double turretVelocityRadsPerSec;
-  public double turretAccelerationRadsPerSecSquared;
-  public double hoodPositionRadians;
-  public double hoodVelocityRadsPerSec;
-  public double hoodAccelerationRadsPerSecSquared;
+/**
+ * A complete, immutable description of everything the robot needs to make a shot at a fixed field
+ * target.
+ *
+ * <p>This offseason robot has <b>no turret and a fixed shooting arm angle</b>. Aiming is therefore
+ * only about the <b>chassis yaw</b> (rotated by the swerve) and the <b>flywheel velocity</b>. Both
+ * are looked up purely as a function of the horizontal distance to the hub, using two functions fit
+ * from real robot data ({@link #shooterVelocityFromDistance} and {@link
+ * #timeOfFlightFromDistance}).
+ *
+ * <p><b>Shoot on the move.</b> Because the ball inherits the robot's velocity at launch, a moving
+ * robot must aim "upstream". We solve this with a fixed-point iteration: estimate the time of
+ * flight, shift the aim point by {@code robotVelocity * timeOfFlight}, recompute the distance/time,
+ * and repeat until it converges.
+ *
+ * <p><b>Turning feedforward.</b> The yaw-rate feedforward is derived from the target's velocity
+ * <i>relative to the robot</i> (for a stationary hub, that is simply {@code -robotVelocity})
+ * projected perpendicular to the line of sight.
+ *
+ * @param shooterVelocityRadsPerSec required flywheel velocity (rad/s), from real data
+ * @param yawPositionRadians field-relative heading the chassis should hold (rad)
+ * @param yawVelocityRadsPerSec feedforward yaw rate to keep tracking while translating (rad/s)
+ * @param distanceMeters horizontal distance from the shooter to the (virtual) aim point (m)
+ * @param timeOfFlightSeconds estimated ball time of flight for this shot (s)
+ * @param valid whether a usable shot was found
+ */
+public record ShooterSetpoint(
+    double shooterVelocityRadsPerSec,
+    double pitchAngleRads,
+    double yawPositionRadians,
+    double yawVelocityRadsPerSec,
+    double distanceMeters,
+    double timeOfFlightSeconds,
+    boolean valid) {
 
-  public ShooterSetpoint(
-      double shooterVelocityMetersPerSec,
-      double shooterAccelerationMetersPerSecSquared,
-      double turretPositionRadians,
-      double turretVelocityRadsPerSec,
-      double turretAccelerationRadsPerSecSquared,
-      double hoodPositionRadians,
-      double hoodVelocityRadsPerSec,
-      double hoodAccelerationRadsPerSecSquared) {
-    this.shooterVelocityMetersPerSec = shooterVelocityMetersPerSec;
-    this.shooterAccelerationMetersPerSecSquared = shooterAccelerationMetersPerSecSquared;
-    this.turretPositionRadians = turretPositionRadians;
-    this.turretVelocityRadsPerSec = turretVelocityRadsPerSec;
-    this.turretAccelerationRadsPerSecSquared = turretAccelerationRadsPerSecSquared;
-    this.hoodPositionRadians = hoodPositionRadians;
-    this.hoodVelocityRadsPerSec = hoodVelocityRadsPerSec;
-    this.hoodAccelerationRadsPerSecSquared = hoodAccelerationRadsPerSecSquared;
+  /** Number of fixed-point iterations used to converge the shoot-on-the-move aim point. */
+  private static final int kMovingShotIterations = 5;
+
+  private static final double[] distances = {2.43, 2.8, 3.4, 3.658, 4.021};
+  private static final double[] speeds = {-270, -280, -300, -300, -350};
+  private static final double[] angleDegs = {75, 75, 75, 70, 70};
+
+  /** An empty, invalid setpoint. Handy as a default before the first solve. */
+  public static final ShooterSetpoint kEmpty = new ShooterSetpoint(0, 0, 0, 0, 0, 0, false);
+
+  /** Convenience accessor for the yaw as a {@link Rotation2d}. */
+  public Rotation2d yaw() {
+    return new Rotation2d(yawPositionRadians);
   }
 
-  public static ShooterSetpoint makeSetpoint(
-      PhysicalJoint muzzleJoint,
-      Translation2d targetPos2d,
-      double hMax,
-      double minHoodAngleRads,
-      double maxHoodAngleRads,
-      TrajectoryConfig trajConfig,
-      boolean use3dRotation) {
+  // ==================== REAL-DATA LOOKUPS (fill these in) ====================
 
-    // 1. Get current Muzzle State (Pose, Vel, Accel)
-    Translation3d muzzlePos = muzzleJoint.getGlobalPose().getTranslation();
-    SimpleMatrix muzzleV6 = muzzleJoint.getGlobalVelocity();
-    SimpleMatrix muzzleA6 = muzzleJoint.getGlobalAcceleration();
-
-    Translation3d vMuzzle = new Translation3d(muzzleV6.get(0), muzzleV6.get(1), muzzleV6.get(2));
-    Translation3d aMuzzle = new Translation3d(muzzleA6.get(0), muzzleA6.get(1), muzzleA6.get(2));
-    double robotOmega = muzzleV6.get(5);
-    double robotAlpha = muzzleA6.get(5);
-
-    // 2. Geometry & Ballistics
-    Translation2d deltaPos = targetPos2d.minus(muzzlePos.toTranslation2d());
-    double dx = deltaPos.getNorm();
-    Rotation2d angleToTarget = deltaPos.getAngle();
-
-    double validHmax = hMax;
-    double tempHmax = hMax;
-
-    Translation3d vLaunch = new Translation3d();
-    double vH_req = 0;
-    double vZ_req = 0;
-    double z = 0;
-    double h = 0;
-    double hoodPos = 0;
-    Translation3d vBallField = new Translation3d();
-    double high = trajConfig.max_hMax;
-    double low = trajConfig.min_hMax;
-
-    for (int i = 0; i < 10; i++) {
-      double[] ballistics = TrajectoryCalculator.solve(dx, validHmax, trajConfig);
-      vH_req = ballistics[0];
-      vZ_req = ballistics[1];
-
-      // 3. Launch Vector (V_l = V_ball - V_muzzle)
-      vBallField =
-          new Translation3d(
-              vH_req * angleToTarget.getCos(), vH_req * angleToTarget.getSin(), vZ_req);
-      vLaunch = vBallField.minus(vMuzzle);
-
-      z = vLaunch.getZ();
-      h = vLaunch.toTranslation2d().getNorm(); // Horizontal magnitude of vLaunch
-      hoodPos = Math.atan2(z, h);
-
-      if (i == 0) {
-        if (hoodPos >= minHoodAngleRads && hoodPos <= maxHoodAngleRads) {
-          break; // If the initial solution is valid, no need to iterate
-        }
-        if (hoodPos < minHoodAngleRads) {
-          low = tempHmax;
-        } else {
-          high = tempHmax;
-        }
-      } else {
-        if (tempHmax > hMax) {
-          if (hoodPos < minHoodAngleRads) {
-            low = tempHmax;
-          } else {
-            high = tempHmax;
-            validHmax = tempHmax;
-          }
-        } else {
-          if (hoodPos < maxHoodAngleRads) {
-            low = tempHmax;
-            validHmax = tempHmax;
-          } else {
-            high = tempHmax;
-          }
-        }
+  /**
+   * Required flywheel velocity (rad/s) to make the shot at a given horizontal hub distance.
+   *
+   * <p>TODO: fit this from real robot data (distance in metres -> flywheel velocity in rad/s).
+   *
+   * @param distanceMeters horizontal distance to the hub (m)
+   * @return flywheel velocity setpoint (rad/s)
+   */
+  public static double shooterVelocityFromDistance(double distanceMeters) {
+    // TODO: fill in with the empirical distance -> flywheel velocity fit.
+    // return -300;
+    if (distanceMeters <= distances[0]) return speeds[0];
+    if (distanceMeters >= distances[distances.length - 1]) return speeds[speeds.length - 1];
+    for (int i = 0; i < distances.length - 1; i++) {
+      if (distanceMeters >= distances[i] && distanceMeters < distances[i + 1]) {
+        return speeds[i]
+            + (speeds[i + 1] - speeds[i])
+                * (distanceMeters - distances[i])
+                / (distances[i + 1] - distances[i]);
       }
-      tempHmax = (high + low) / 2.0;
     }
+    return speeds[speeds.length - 1];
+  }
 
-    // 4. Calculate Derivatives for aLaunch
-    Translation2d vRel = vMuzzle.toTranslation2d().times(-1.0);
-    double d_dx = (deltaPos.getX() * vRel.getX() + deltaPos.getY() * vRel.getY()) / dx;
-    double d_theta_dt = (deltaPos.getX() * vRel.getY() - deltaPos.getY() * vRel.getX()) / (dx * dx);
+  public static double shooterPitchFromDistance(double distanceMeters) {
+    // double angle = 0;
+    // if (distanceMeters > 4.073) {
+    //   angle = 70;
+    // } else if (distanceMeters > 3.5) {
+    //   angle = 105.541 - (8.726 * distanceMeters);
+    // } else {
+    //   angle = 75;
+    // }
+    // return Math.toRadians(angle);
 
-    // Calculate d[vx, vy]/dx
-    double[] ballisticsDeriv = TrajectoryCalculator.solveDerivative(dx, validHmax, trajConfig);
-
-    double dvH_dt = ballisticsDeriv[0] * d_dx;
-    double dvZ_dt = ballisticsDeriv[1] * d_dx;
-
-    // aBallField is the derivative of the required field-space ball velocity
-    Translation3d aBallField =
-        new Translation3d(
-            dvH_dt * angleToTarget.getCos() - vH_req * angleToTarget.getSin() * d_theta_dt,
-            dvH_dt * angleToTarget.getSin() + vH_req * angleToTarget.getCos() * d_theta_dt,
-            dvZ_dt);
-    // aLaunch = d/dt vLaunch = aBallField - aMuzzle
-    Translation3d aLaunch = aBallField.minus(aMuzzle);
-
-    // 5. TURRET FF (Azimuth)
-    double x = vLaunch.getX();
-    double y = vLaunch.getY();
-    double vx = aLaunch.getX();
-    double vy = aLaunch.getY();
-    double denT = x * x + y * y;
-
-    // Position & Velocity
-    double turretPos =
-        MathUtil.angleModulus(
-            vLaunch
-                .toTranslation2d()
-                .getAngle()
-                .minus(muzzleJoint.getGlobalPose().getRotation().toRotation2d())
-                .getRadians());
-    double omegaField = (x * vy - y * vx) / denT;
-    double turretVel = omegaField - robotOmega;
-
-    // Acceleration (Derivative of omegaField - robotAlpha)
-    // Assume jerk (ax_dot, ay_dot) is 0, but the geometric acceleration is non-zero
-    double alphaField =
-        ((0 - 0) * denT - (x * vy - y * vx) * (2 * x * vx + 2 * y * vy)) / (denT * denT);
-    double turretAccel = alphaField - robotAlpha;
-
-    // 6. HOOD FF (Elevation)
-    double vz = aLaunch.getZ();
-    double vh = (x * vx + y * vy) / h; // d/dt horizontal magnitude
-    double denH = h * h + z * z;
-
-    // Position & Velocity
-    double hoodVel = (h * vz - z * vh) / denH;
-
-    // Acceleration (Derivative of hoodVel)
-    // Assuming z_double_dot, x_double_dot, y_double_dot are 0 (no Jerk in field frame)
-    // Note: h_double_dot (vh_dot) is NOT 0 due to centrifugal acceleration!
-    double vh_dot = (vx * vx + vy * vy - vh * vh) / h;
-    double u_prime = -z * vh_dot;
-    double alphaHood =
-        (u_prime * denH - (h * vz - z * vh) * (2 * h * vh + 2 * z * vz)) / (denH * denH);
-    double hoodAccel = alphaHood; // Hood is relative to the turret plate, usually
-
-    // 7. SHOOTER FF
-    double shooterVel = vLaunch.getNorm();
-    // Acceleration of the flywheel magnitude: d/dt sqrt(x^2 + y^2 + z^2)
-    double shooterAccel = (x * vx + y * vy + z * vz) / shooterVel;
-
-    // 8. (Optional) 3D Rotation Correction for tilted chassis
-    // When use3dRotation=true, the full 3D orientation of the muzzle joint is used to remap
-    // vLaunch into the robot-body frame, compensating for chassis pitch and roll.
-    // Velocity/acceleration FFs are kept from the flat calculation — negligible error when
-    // stationary.
-    if (use3dRotation) {
-      Rotation3d muzzleRot3d = muzzleJoint.getGlobalPose().getRotation();
-
-      // Express vLaunch in the muzzle's local (robot-body) frame
-      Translation3d vLaunchLocal = vLaunch.rotateBy(muzzleRot3d.unaryMinus());
-      double xL = vLaunchLocal.getX();
-      double yL = vLaunchLocal.getY();
-      double zL = vLaunchLocal.getZ();
-      double hL = Math.sqrt(xL * xL + yL * yL);
-
-      // Recalculate position setpoints only
-      turretPos = MathUtil.angleModulus(Math.atan2(yL, xL));
-      hoodPos = Math.atan2(zL, hL);
-      // turretVel, turretAccel, hoodVel, hoodAccel, shooterAccel are unchanged (robot is stationary
-      // when tilted)
+    if (distanceMeters <= distances[0]) return angleDegs[0];
+    if (distanceMeters >= distances[distances.length - 1]) return angleDegs[angleDegs.length - 1];
+    for (int i = 0; i < distances.length - 1; i++) {
+      if (distanceMeters >= distances[i] && distanceMeters < distances[i + 1]) {
+        return angleDegs[i]
+            + (angleDegs[i + 1] - angleDegs[i])
+                * (distanceMeters - distances[i])
+                / (distances[i + 1] - distances[i]);
+      }
     }
-
-    return new ShooterSetpoint(
-        shooterVel, shooterAccel, turretPos, turretVel, turretAccel, hoodPos, hoodVel, hoodAccel);
+    return angleDegs[angleDegs.length - 1];
   }
 
   /**
-   * Creates a simple setpoint that locks the turret to point at the target (hub) with a fixed hood
-   * angle and shooter speed. This is useful for vision tracking where the turret needs to
-   * continuously face the hub so the camera can always see the AprilTags.
+   * Ball time of flight (s) for a shot at a given horizontal hub distance.
    *
-   * @param muzzleJoint The physical joint representing the muzzle position
-   * @param targetPos2d The 2D position of the target (hub) on the field
-   * @param hoodAngleRads The fixed hood angle in radians
-   * @param shooterSpeed The fixed shooter speed (0 if not shooting, just tracking)
-   * @return A ShooterSetpoint with turret tracking and fixed hood/shooter values
+   * <p>TODO: fit this from real robot data (distance in metres -> time of flight in seconds).
+   *
+   * @param distanceMeters horizontal distance to the hub (m)
+   * @return time of flight (s)
    */
-  public static ShooterSetpoint makeSetpoint(
-      PhysicalJoint muzzleJoint,
-      Translation2d targetPos2d,
-      double hoodAngleRads,
-      double shooterSpeed) {
-
-    // 1. Get current Muzzle State (Pose, Vel, Accel)
-    Translation3d muzzlePos = muzzleJoint.getGlobalPose().getTranslation();
-    SimpleMatrix muzzleV6 = muzzleJoint.getGlobalVelocity();
-    SimpleMatrix muzzleA6 = muzzleJoint.getGlobalAcceleration();
-
-    Translation3d vMuzzle = new Translation3d(muzzleV6.get(0), muzzleV6.get(1), muzzleV6.get(2));
-    double robotOmega = muzzleV6.get(5);
-    double robotAlpha = muzzleA6.get(5);
-
-    // 2. Calculate vector from muzzle to target
-    Translation2d deltaPos = targetPos2d.minus(muzzlePos.toTranslation2d());
-    Rotation2d angleToTarget = deltaPos.getAngle();
-
-    // 3. Calculate turret position (angle to target relative to robot heading)
-    double turretPos =
-        MathUtil.angleModulus(
-            angleToTarget
-                .minus(muzzleJoint.getGlobalPose().getRotation().toRotation2d())
-                .getRadians());
-
-    // 4. Calculate turret velocity feedforward
-    // d_theta_dt is the rate of change of the angle to target in field frame
-    Translation2d vRel =
-        vMuzzle.toTranslation2d().times(-1.0); // Relative velocity of target w.r.t. muzzle
-    double dx = deltaPos.getNorm();
-    double d_theta_dt = (deltaPos.getX() * vRel.getY() - deltaPos.getY() * vRel.getX()) / (dx * dx);
-    double turretVel = d_theta_dt - robotOmega;
-
-    // 5. Calculate turret acceleration feedforward
-    // Using the derivative of the angular velocity
-    double x = deltaPos.getX();
-    double y = deltaPos.getY();
-    double vx = vRel.getX();
-    double vy = vRel.getY();
-    double denT = x * x + y * y;
-
-    // alphaField = d/dt(d_theta_dt), assuming no acceleration of muzzle in XY plane for simplicity
-    double alphaField = -(x * vy - y * vx) * (2 * x * vx + 2 * y * vy) / (denT * denT);
-    double turretAccel = alphaField - robotAlpha;
-
-    // Return setpoint with turret tracking, fixed hood angle, and fixed shooter speed
-    // Hood velocity and acceleration are 0 since we're holding a fixed angle
-    // Shooter acceleration is 0 since we're holding a fixed speed
-    return new ShooterSetpoint(
-        shooterSpeed, 0, turretPos, turretVel, turretAccel, hoodAngleRads, 0, 0);
+  public static double timeOfFlightFromDistance(double distanceMeters) {
+    // TODO: fill in with the empirical distance -> time-of-flight fit.
+    return 1;
   }
 
-  @Override
-  public String toString() {
-    return "ShooterSetpoint:{"
-        + "shooterVelocityMetersPerSec = "
-        + shooterVelocityMetersPerSec
-        + "\n shooterAccelerationMetersPerSecSquared = "
-        + shooterAccelerationMetersPerSecSquared
-        + "\n turretPositionRadians = "
-        + turretPositionRadians
-        + "\n turretVelocityRadsPerSec = "
-        + turretVelocityRadsPerSec
-        + "\n turretAccelerationRadsPerSecSquared = "
-        + turretAccelerationRadsPerSecSquared
-        + "\n hoodPositionRadians = "
-        + hoodPositionRadians
-        + "\n hoodVelocityRadsPerSec = "
-        + hoodVelocityRadsPerSec
-        + "\n hoodAccelerationRadsPerSecSquared = "
-        + hoodAccelerationRadsPerSecSquared
-        + "}";
-  }
+  // ==================== SETPOINT BUILDER ====================
 
-  public static void main(String[] args) {
-    ShooterSetpoint setpoint =
-        makeSetpoint(
-            PhysicalJoint.ground,
-            new Translation2d(6, 0),
-            2.2,
-            Math.toRadians(13),
-            Math.toRadians(38),
-            TrajectoryConfig.getHubConfig(),
-            false);
-    System.out.println(setpoint);
+  /**
+   * Build a full shooting setpoint aimed at a fixed field target, compensating for robot motion.
+   *
+   * @param base the Geoffrey joint the shot is referenced from (normally the drive/chassis). Its
+   *     global pose gives the shooter position and its global velocity gives the robot's
+   *     field-relative motion used for the shoot-on-the-move compensation and yaw feedforward.
+   * @param target the field-relative point to shoot at (alliance flipping already applied).
+   * @return a populated {@link ShooterSetpoint}.
+   */
+  public static ShooterSetpoint makeSetpoint(PhysicalJoint base, Translation2d target) {
+    Translation2d robot = base.getGlobalPose().getTranslation().toTranslation2d();
+    SimpleMatrix v = base.getGlobalVelocity();
+    Translation2d robotVelocity = new Translation2d(v.get(0), v.get(1));
+
+    // --- Shoot-on-the-move: iterate to find the virtual aim point ---
+    // The ball inherits the robot's velocity at launch, so a moving robot must aim upstream. Shift
+    // the aim point by robotVelocity * timeOfFlight; since the time of flight depends on the
+    // distance (which depends on the aim point) we converge it with a fixed-point iteration.
+    Translation2d aimPoint = target;
+    double timeOfFlight = 0.0;
+    for (int i = 0; i < kMovingShotIterations; i++) {
+      double d = robot.getDistance(aimPoint);
+      timeOfFlight = timeOfFlightFromDistance(d);
+      aimPoint = target.minus(robotVelocity.times(timeOfFlight));
+    }
+
+    double dx = aimPoint.getX() - robot.getX();
+    double dy = aimPoint.getY() - robot.getY();
+    double distance = Math.hypot(dx, dy);
+    double yaw = Math.atan2(dy, dx);
+
+    // Guard against a degenerate aim point right on top of the robot.
+    if (distance < 1e-4) {
+      return new ShooterSetpoint(0, 0, yaw, 0, distance, timeOfFlight, false);
+    }
+
+    double speed = shooterVelocityFromDistance(distance);
+
+    double pitch = Math.toRadians(shooterPitchFromDistance(distance));
+    Logger.recordOutput("ShooterSetpoint", Math.toDegrees(pitch));
+
+    // --- Turning feedforward ---
+    // The aiming bearing changes at a rate set by the target's velocity *relative to the robot*.
+    // For a stationary hub that relative velocity is just -robotVelocity. Projecting it onto the
+    // direction perpendicular to the line of sight and dividing by distance gives the yaw rate:
+    //   d(yaw)/dt = (dx * relVy - dy * relVx) / distance^2
+    double relVx = -robotVelocity.getX();
+    double relVy = -robotVelocity.getY();
+    double yawVelocity = (dx * relVy - dy * relVx) / (distance * distance);
+
+    boolean valid = speed > 1e-6;
+    return new ShooterSetpoint(speed, pitch, yaw, yawVelocity, distance, timeOfFlight, valid);
   }
 }

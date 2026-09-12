@@ -279,9 +279,13 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
           modules[i].getDriveCurrentAmps(),
           modules[i].getSteerCurrentAmps());
     }
+
+    Logger.recordOutput("Drive/ChassisSpeeds", getChassisSpeeds());
   }
   // --- 控制方法 ---
   public void runVelocity(ChassisSpeeds speeds) {
+    Logger.recordOutput("Drive/TargetSpeeds", speeds);
+
     ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
     SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);
     SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, TunerConstants.kSpeedAt12Volts);
@@ -398,10 +402,10 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
    *       / ω_free). Starts at τ_stall at v=0, linearly to 2×τ_stall at free speed.
    * </ul>
    *
-   * Both are clamped by the stator current limit × kT. The velocity PID (kP=80 in TorqueCurrentFOC
-   * mode) is aggressive enough that when a velocity error exists, the motor will command the
-   * maximum available torque to close the gap. Per-module forces are summed to get robot-frame
-   * acceleration (F/m, τ/I), then converted to field-relative.
+   * Both are clamped by the slip current × kT. The velocity PID is aggressive enough that when a
+   * velocity error exists, the motor will command close to the maximum available torque to close
+   * the gap. Per-module forces are summed to get robot-frame acceleration (F/m, τ/I), then
+   * converted to field-relative.
    *
    * <p>This estimation is valid during normal driving with gradual acceleration profiles. It may be
    * inaccurate during sudden large steering changes.

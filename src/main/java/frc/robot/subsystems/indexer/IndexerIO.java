@@ -2,53 +2,33 @@ package frc.robot.subsystems.indexer;
 
 import org.littletonrobotics.junction.AutoLog;
 
+/**
+ * Hardware abstraction layer for the Indexer.
+ *
+ * <p>The offseason indexer is a single roller motor that indexes the ball, so it is a single
+ * velocity-controlled motor.
+ */
 public interface IndexerIO {
   @AutoLog
   public static class IndexerIOInputs {
-    public boolean connected;
-    public double positionRads;
-    public double velocityRadsPerSec;
-    public double appliedVoltage;
-    public double supplyCurrentAmps;
-    public double torqueCurrentAmps;
-    public double tempCelsius;
-
-    public boolean indexRightconnected;
-    public double indexRightvelocityRadsPerSec;
-
-    // Triggers inputs (merged from TriggersIO)
-    public boolean triggersConnected;
-    public double triggersVelocityRadsPerSec;
-
-    public boolean triggersRightconnected;
-    public double triggersRightVelocityRadsPerSec;
-
-    public boolean feedingLeft;
-    public boolean leftLimitSwitchconnected;
-    public boolean rightLimitSwitchconnected;
-    public boolean leftLimitSwitch;
-    public boolean rightLimitSwitch;
-    public double triggerDistance;
+    public boolean connected = false;
+    public double positionRads = 0.0;
+    public double velocityRadsPerSec = 0.0;
+    public double appliedVoltage = 0.0;
+    public double supplyCurrentAmps = 0.0;
+    public double torqueCurrentAmps = 0.0;
+    public double tempCelsius = 0.0;
   }
 
   public static enum IndexerIOOutputMode {
     COAST,
-    VELOCITY,
-    FEEDING,
+    VELOCITY
   }
 
   public static class IndexerIOOutputs {
-    public IndexerIOOutputMode mode = IndexerIOOutputMode.VELOCITY;
-    public double velocityRadsPerSec = 0.0;
-    public double maxVelocityRadsPerSec = 0.0;
-    public double maxCurrent = 0.0;
-
-    // Triggers outputs (merged from TriggersIO)
-    public IndexerIOOutputMode triggersMode = IndexerIOOutputMode.VELOCITY;
-    public double triggersVelocityRadsPerSec = 0.0;
-
-    public boolean forceFeedLeft = false;
-    public boolean forceFeedRight = false;
+    public IndexerIOOutputMode mode = IndexerIOOutputMode.COAST;
+    public double indexerVelocityRadsPerSec = 0.0;
+    public double triggerVelocityRadsPerSec = 0.0;
   }
 
   default void updateInputs(IndexerIOInputs inputs) {}
@@ -56,10 +36,9 @@ public interface IndexerIO {
   default void applyOutputs(IndexerIOOutputs outputs) {}
 
   /** Configure indexer PID */
-  public default void setPID(
+  public default void setIndexerPID(
       double kP, double kI, double kD, double kS, double kV, double kA, double kG) {}
 
-  /** Configure triggers PID */
-  public default void setTriggersPID(
+  public default void setTriggerPID(
       double kP, double kI, double kD, double kS, double kV, double kA, double kG) {}
 }

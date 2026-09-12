@@ -4,7 +4,6 @@ import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
-import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
@@ -18,24 +17,27 @@ public class VisionConstants {
       AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded);
 
   // Camera names, must match names configured on coprocessor
-  public static String camera0Name = "limelight-fix";
-  public static String camera1Name = "limelight-turret";
+  public static String camera0Name = "limelight-left";
+  public static String camera1Name = "limelight-right";
 
   // Robot to camera transforms(sim)
   // (Not used by Limelight, configure in web UI instead)
   public static Transform3d robotToCamera0 =
-      new Transform3d(0.0, 0.0, 0.616, new Rotation3d(0.0, -0.4, 0.0));
+      new Transform3d(
+          0.288, 0.315, 0.225, new Rotation3d(0.0, Math.toRadians(-25), Math.toRadians(15)));
   public static Transform3d robotToCamera1 =
-      new Transform3d(-0.0, 0.0, 0.2, new Rotation3d(0.0, -0.4, Math.PI));
+      new Transform3d(
+          0.288, -0.315, 0.225, new Rotation3d(0.0, Math.toRadians(-25), Math.toRadians(-15)));
 
   // camera to Robot transforms(Real)
-  public static Pose3d cameraToRobot1 =
-      new Pose3d( // 常量，与 WebUI 一致
-          -0.04371,
-          -0.39998,
-          0.3661,
-          new Rotation3d(
-              Units.degreesToRadians(0), Units.degreesToRadians(30), Units.degreesToRadians(90)));
+  //   public static Pose3d cameraToRobot1 =
+  //       new Pose3d( // 常量，与 WebUI 一致
+  //           -0.04371,
+  //           -0.39998,
+  //           0.3661,
+  //           new Rotation3d(
+  //               Units.degreesToRadians(0), Units.degreesToRadians(30),
+  // Units.degreesToRadians(90)));
   public static double visionCutoffSpeed = Units.degreesToRadians(45);
 
   // Basic filtering thresholds
