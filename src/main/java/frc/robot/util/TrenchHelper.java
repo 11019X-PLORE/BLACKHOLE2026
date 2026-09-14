@@ -106,7 +106,7 @@ public class TrenchHelper {
 
     Pose2d absoluteTargetPose = new Pose2d(targetX, closestTrench.center().getY(), targetHeading);
 
-    // 5. 将计算出的绝对目标点，翻转回当前联盟的相对坐标系（喂给 PathPlanner）
+    // 5. 将计算出的绝对目标点，翻转回当前联盟的相对坐标系
     return AllianceFlipUtil.shouldFlip()
         ? AllianceFlipUtil.apply(absoluteTargetPose)
         : absoluteTargetPose;

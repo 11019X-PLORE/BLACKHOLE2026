@@ -10,7 +10,9 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.Preferences;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.subsystems.drive.Drive;
@@ -40,7 +42,38 @@ public class DriveCommands {
   private static final double WHEEL_RADIUS_MAX_VELOCITY = 0.25; // Rad/Sec
   private static final double WHEEL_RADIUS_RAMP_RATE = 0.05; // Rad/Sec^2
 
+  // Manual (teleop) speed percent limits for the demo dashboard. Preferences persist on the
+  // roboRIO across reboots.
+  private static final String DRIVE_SPEED_PERCENT_KEY = "Drive Speed Percent";
+  private static final String TURN_SPEED_PERCENT_KEY = "Turn Speed Percent";
+
+  static {
+    // initDouble only writes the default when the key has never been saved.
+    Preferences.initDouble(DRIVE_SPEED_PERCENT_KEY, 100.0);
+    Preferences.initDouble(TURN_SPEED_PERCENT_KEY, 100.0);
+    SmartDashboard.putData(
+        "Speed Reset 100%",
+        Commands.runOnce(
+                () -> {
+                  Preferences.setDouble(DRIVE_SPEED_PERCENT_KEY, 100.0);
+                  Preferences.setDouble(TURN_SPEED_PERCENT_KEY, 100.0);
+                })
+            .ignoringDisable(true)
+            .withName("SpeedReset100"));
+  }
+
   private DriveCommands() {}
+
+  /** Scale (0..1) for manual translational speed, read live from Preferences. */
+  private static double getManualSpeedScale() {
+    return MathUtil.clamp(Preferences.getDouble(DRIVE_SPEED_PERCENT_KEY, 100.0), 0.0, 100.0)
+        / 100.0;
+  }
+
+  /** Scale (0..1) for manual turning speed, read live from Preferences. */
+  private static double getTurnSpeedScale() {
+    return MathUtil.clamp(Preferences.getDouble(TURN_SPEED_PERCENT_KEY, 100.0), 0.0, 100.0) / 100.0;
+  }
 
   private static Translation2d getLinearVelocityFromJoysticks(double x, double y) {
     // Apply deadband
@@ -76,12 +109,19 @@ public class DriveCommands {
           // Square rotation value for more precise control
           // omega = Math.copySign(omega * omega, omega);
           Logger.recordOutput("Drive/Joystick/OmegaInput", omega);
+
+          // Manual speed scaling from Preferences (demo limit)
+          double driveScale = getManualSpeedScale();
+          double turnScale = getTurnSpeedScale();
+          Logger.recordOutput("Drive/SpeedScale", driveScale);
+          Logger.recordOutput("Drive/TurnSpeedScale", turnScale);
+
           // Convert to field relative speeds & send command
           ChassisSpeeds speeds =
               new ChassisSpeeds(
-                  linearVelocity.getX() * drive.getMaxLinearSpeedMetersPerSec(),
-                  linearVelocity.getY() * drive.getMaxLinearSpeedMetersPerSec(),
-                  omega * drive.getMaxAngularSpeedRadPerSec());
+                  linearVelocity.getX() * drive.getMaxLinearSpeedMetersPerSec() * driveScale,
+                  linearVelocity.getY() * drive.getMaxLinearSpeedMetersPerSec() * driveScale,
+                  omega * drive.getMaxAngularSpeedRadPerSec() * turnScale);
           drive.runVelocity(
               ChassisSpeeds.fromFieldRelativeSpeeds(
                   speeds,
@@ -120,12 +160,16 @@ public class DriveCommands {
               // Calculate angular speed using the wrapped angles
               double omega = angleController.calculate(currentWrappedAngle, targetWrappedAngle);
 
+              // Manual speed scaling from Preferences (demo limit)
+              double driveScale = getManualSpeedScale();
+              double turnScale = getTurnSpeedScale();
+
               // Convert to field relative speeds & send command
               ChassisSpeeds speeds =
                   new ChassisSpeeds(
-                      linearVelocity.getX() * drive.getMaxLinearSpeedMetersPerSec(),
-                      linearVelocity.getY() * drive.getMaxLinearSpeedMetersPerSec(),
-                      omega);
+                      linearVelocity.getX() * drive.getMaxLinearSpeedMetersPerSec() * driveScale,
+                      linearVelocity.getY() * drive.getMaxLinearSpeedMetersPerSec() * driveScale,
+                      omega * turnScale);
               drive.runVelocity(
                   ChassisSpeeds.fromFieldRelativeSpeeds(
                       speeds,
@@ -362,12 +406,18 @@ public class DriveCommands {
           double omega = MathUtil.applyDeadband(omegaSupplier.getAsDouble(), DEADBAND);
           omega = Math.copySign(omega * omega, omega); // 平滑旋转
 
+          // Manual speed scaling from Preferences (demo limit)
+          double driveScale = getManualSpeedScale();
+          double turnScale = getTurnSpeedScale();
+          Logger.recordOutput("Drive/SpeedScale", driveScale);
+          Logger.recordOutput("Drive/TurnSpeedScale", turnScale);
+
           // 转换为机体速度
           ChassisSpeeds speeds =
               new ChassisSpeeds(
-                  linearVelocity.getX() * drive.getMaxLinearSpeedMetersPerSec(),
-                  linearVelocity.getY() * drive.getMaxLinearSpeedMetersPerSec(),
-                  omega * drive.getMaxAngularSpeedRadPerSec());
+                  linearVelocity.getX() * drive.getMaxLinearSpeedMetersPerSec() * driveScale,
+                  linearVelocity.getY() * drive.getMaxLinearSpeedMetersPerSec() * driveScale,
+                  omega * drive.getMaxAngularSpeedRadPerSec() * turnScale);
 
           drive.runVelocity(speeds);
         },
@@ -400,16 +450,18 @@ public class DriveCommands {
 
           Rotation2d targetAngle = targetPoint.minus(robotPos).getAngle();
 
-          // Apply rotation deadband
+          // Manual speed scaling from Preferences (demo limit)
+          double driveScale = getManualSpeedScale();
           double omega =
               headingController.calculate(
-                  drive.getRotation().getRadians(), targetAngle.getRadians());
+                      drive.getRotation().getRadians(), targetAngle.getRadians())
+                  * getTurnSpeedScale();
 
           // Convert to field relative speeds & send command
           ChassisSpeeds speeds =
               new ChassisSpeeds(
-                  linearVelocity.getX() * drive.getMaxLinearSpeedMetersPerSec(),
-                  linearVelocity.getY() * drive.getMaxLinearSpeedMetersPerSec(),
+                  linearVelocity.getX() * drive.getMaxLinearSpeedMetersPerSec() * driveScale,
+                  linearVelocity.getY() * drive.getMaxLinearSpeedMetersPerSec() * driveScale,
                   omega * drive.getMaxAngularSpeedRadPerSec());
           drive.runVelocity(
               ChassisSpeeds.fromFieldRelativeSpeeds(
@@ -419,10 +471,6 @@ public class DriveCommands {
                       : drive.getRotation()));
         },
         drive);
-  }
-
-  public static Command autoPathfindToPose(Drive drive, Pose2d targetPose) {
-    return Commands.sequence(drive.pathfindToTargetPose(targetPose));
   }
 
   private static class WheelRadiusCharacterizationState {

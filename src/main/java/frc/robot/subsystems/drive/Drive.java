@@ -2,15 +2,6 @@ package frc.robot.subsystems.drive;
 
 import static edu.wpi.first.units.Units.*;
 
-import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.config.ModuleConfig;
-import com.pathplanner.lib.config.PIDConstants;
-import com.pathplanner.lib.config.RobotConfig;
-import com.pathplanner.lib.controllers.PPHolonomicDriveController;
-import com.pathplanner.lib.path.PathConstraints;
-import com.pathplanner.lib.path.PathPlannerPath;
-import com.pathplanner.lib.pathfinding.Pathfinding;
-import com.pathplanner.lib.util.PathPlannerLogging;
 import edu.wpi.first.hal.FRCNetComm.tInstances;
 import edu.wpi.first.hal.FRCNetComm.tResourceType;
 import edu.wpi.first.hal.HAL;
@@ -33,31 +24,25 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
 import frc.robot.Constants.Mode;
-import frc.robot.FieldConstants;
 import frc.robot.Robot;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.vision.VisionConstants;
 import frc.robot.util.FullSubsystem;
 import frc.robot.util.Geoffrey.PhysicalJoint;
-import frc.robot.util.LocalADStarAK;
 import frc.robot.util.TrenchHelper;
 import frc.robot.util.geometry.AllianceFlipUtil;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Supplier;
 import org.ejml.simple.SimpleMatrix;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
@@ -74,29 +59,14 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
               Math.hypot(TunerConstants.BackLeft.LocationX, TunerConstants.BackLeft.LocationY),
               Math.hypot(TunerConstants.BackRight.LocationX, TunerConstants.BackRight.LocationY)));
 
-  // PathPlanner 配置
+  // Robot dynamics constants
   private static final double ROBOT_MASS_KG = 75.0;
   private static final double ROBOT_MOI = 8;
-  private static final double WHEEL_COF = 1.2;
 
   // Motor model constants for acceleration estimation
   private static final DCMotor DRIVE_MOTOR = DCMotor.getKrakenX60Foc(1);
   private static final double STALL_TORQUE_NM = DRIVE_MOTOR.stallTorqueNewtonMeters;
   private static final double FREE_SPEED_RAD_PER_SEC = DRIVE_MOTOR.freeSpeedRadPerSec;
-
-  private static final RobotConfig PP_CONFIG =
-      new RobotConfig(
-          ROBOT_MASS_KG,
-          ROBOT_MOI,
-          new ModuleConfig(
-              TunerConstants.FrontLeft.WheelRadius,
-              TunerConstants.kSpeedAt12Volts.in(MetersPerSecond),
-              WHEEL_COF,
-              DCMotor.getKrakenX60Foc(1)
-                  .withReduction(TunerConstants.FrontLeft.DriveMotorGearRatio),
-              TunerConstants.FrontLeft.SlipCurrent,
-              1),
-          getModuleTranslations());
 
   static final Lock odometryLock = new ReentrantLock();
   private final GyroIO gyroIO;
@@ -142,10 +112,6 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
           VisionConstants.stateStdDevs,
           VisionConstants.visionStdDevs);
 
-  // Auto
-  private static final double FIELD_WIDTH = FieldConstants.fieldWidth;
-  private Supplier<Boolean> isYFlipped = () -> false;
-
   public Drive(
       GyroIO gyroIO,
       ModuleIO flModuleIO,
@@ -162,38 +128,6 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
 
     HAL.report(tResourceType.kResourceType_RobotDrive, tInstances.kRobotDriveSwerve_AdvantageKit);
     PhoenixOdometryThread.getInstance().start();
-
-    // PathPlanner 配置
-    // AutoBuilder.configure(
-    //     this::getPose,
-    //     this::setPose,
-    //     this::getChassisSpeeds,
-    //     this::runVelocity,
-    //     new PPHolonomicDriveController(
-    //         new PIDConstants(5.0, 0.0, 0.0), new PIDConstants(5.0, 0.0, 0.0)),
-    //     PP_CONFIG,
-    //     () -> DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red,
-    //     this);
-
-    AutoBuilder.configure(
-        this::getAutoPose,
-        this::setAutoPose,
-        this::getAutoChassisSpeeds,
-        this::runAutoVelocity,
-        new PPHolonomicDriveController(
-            new PIDConstants(5.0, 0.0, 0.0), new PIDConstants(10, 0.0, 0.0)),
-        PP_CONFIG,
-        () -> DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red,
-        this);
-
-    Pathfinding.setPathfinder(new LocalADStarAK());
-
-    PathPlannerLogging.setLogActivePathCallback(
-        (activePath) ->
-            Logger.recordOutput("Odometry/Trajectory", activePath.toArray(new Pose2d[0])));
-
-    PathPlannerLogging.setLogTargetPoseCallback(
-        (targetPose) -> Logger.recordOutput("Odometry/TrajectorySetpoint", targetPose));
 
     headingPID.enableContinuousInput(-Math.PI, Math.PI);
     headingPID.setTolerance(Math.toRadians(1.5));
@@ -327,13 +261,6 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
 
   public Command sysIdDynamic(SysIdRoutine.Direction direction) {
     return run(() -> runCharacterization(0.0)).withTimeout(1.0).andThen(sysId.dynamic(direction));
-  }
-
-  // --- 路径规划 ---
-  public Command pathfindToTargetPose(Pose2d targetPose) {
-    PathConstraints constraints =
-        new PathConstraints(3.0, 4.0, Units.degreesToRadians(540), Units.degreesToRadians(1080));
-    return AutoBuilder.pathfindToPose(targetPose, constraints, 0.0);
   }
 
   // --- 状态获取 ---
@@ -634,85 +561,5 @@ public class Drive extends FullSubsystem implements PhysicalJoint {
   @Override
   public SimpleMatrix getLocalAcceleration() {
     return kinematicsData.localAcceleration;
-  }
-
-  // AutoBuilder 需要这个方法来反转路径上的 Y 坐标
-  public void setYFlipped(Supplier<Boolean> flipped) {
-    this.isYFlipped = flipped;
-  }
-
-  // 3. 欺骗 PathPlanner 的姿态获取
-  public Pose2d getAutoPose() {
-    Pose2d realPose = getPose();
-    if (isYFlipped.get()) {
-      return new Pose2d(
-          realPose.getX(),
-          FIELD_WIDTH - realPose.getY(),
-          realPose.getRotation().times(-1.0)); // Y翻转，角度取反
-    }
-    return realPose;
-  }
-
-  // 4. 欺骗 PathPlanner 的姿态设置
-  public void setAutoPose(Pose2d pose) {
-    if (isYFlipped.get()) {
-      setPose(new Pose2d(pose.getX(), FIELD_WIDTH - pose.getY(), pose.getRotation().times(-1.0)));
-    } else {
-      setPose(pose);
-    }
-  }
-
-  // 5. 欺骗 PathPlanner 的当前速度获取
-  public ChassisSpeeds getAutoChassisSpeeds() {
-    ChassisSpeeds realSpeeds = getChassisSpeeds();
-    if (isYFlipped.get()) {
-      return new ChassisSpeeds(
-          realSpeeds.vxMetersPerSecond,
-          -realSpeeds.vyMetersPerSecond, // Y速度取反
-          -realSpeeds.omegaRadiansPerSecond); // 角速度取反
-    }
-    return realSpeeds;
-  }
-
-  // 6. 拦截 PathPlanner 的速度指令输出
-  public void runAutoVelocity(ChassisSpeeds speeds) {
-    if (isYFlipped.get()) {
-      ChassisSpeeds flippedSpeeds =
-          new ChassisSpeeds(
-              speeds.vxMetersPerSecond,
-              -speeds.vyMetersPerSecond, // Y速度指令取反
-              -speeds.omegaRadiansPerSecond); // 角速度指令取反
-      runVelocity(flippedSpeeds);
-    } else {
-      runVelocity(speeds);
-    }
-  }
-
-  public Command resetOdomToPath(String pathName) {
-    return Commands.runOnce(
-        () -> {
-          try {
-            PathPlannerPath path = PathPlannerPath.fromChoreoTrajectory(pathName);
-            // 获取起点并从 Optional 中取出，然后应用红蓝翻转
-            Pose2d startPose = path.getStartingHolonomicPose().orElse(new Pose2d());
-            setAutoPose(AllianceFlipUtil.apply(startPose));
-          } catch (Exception e) {
-            DriverStation.reportError(
-                "Failed to reset odom for path: " + pathName, e.getStackTrace());
-          }
-        },
-        this);
-  }
-
-  public Command generatePath(String pathName) {
-    PathPlannerPath path;
-    try {
-      path = PathPlannerPath.fromChoreoTrajectory(pathName);
-    } catch (Exception e) {
-      DriverStation.reportError("Failed to load path: " + pathName, e.getStackTrace());
-      return Commands.none();
-    }
-
-    return AutoBuilder.followPath(path);
   }
 }

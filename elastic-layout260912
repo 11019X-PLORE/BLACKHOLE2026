@@ -8,19 +8,6 @@
         "layouts": [],
         "containers": [
           {
-            "title": "Auto Choices",
-            "x": 256.0,
-            "y": 0.0,
-            "width": 256.0,
-            "height": 128.0,
-            "type": "ComboBox Chooser",
-            "properties": {
-              "topic": "/SmartDashboard/Auto Choices",
-              "period": 0.06,
-              "sort_options": false
-            }
-          },
-          {
             "title": "TurretTarget",
             "x": 256.0,
             "y": 128.0,
@@ -202,16 +189,31 @@
             }
           },
           {
-            "title": "Side Chooser",
-            "x": 512.0,
-            "y": 0.0,
+            "title": "Drive Speed %",
+            "x": 256.0,
+            "y": 640.0,
             "width": 256.0,
             "height": 128.0,
-            "type": "ComboBox Chooser",
+            "type": "Text Display",
             "properties": {
-              "topic": "/SmartDashboard/Side Chooser",
+              "topic": "/Preferences/Drive Speed Percent",
               "period": 0.06,
-              "sort_options": false
+              "data_type": "double",
+              "show_submit_button": true
+            }
+          },
+          {
+            "title": "Turn Speed %",
+            "x": 512.0,
+            "y": 640.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/Preferences/Turn Speed Percent",
+              "period": 0.06,
+              "data_type": "double",
+              "show_submit_button": true
             }
           }
         ]
@@ -252,19 +254,6 @@
             }
           },
           {
-            "title": "Auto Choices",
-            "x": 256.0,
-            "y": 0.0,
-            "width": 256.0,
-            "height": 128.0,
-            "type": "ComboBox Chooser",
-            "properties": {
-              "topic": "/SmartDashboard/Auto Choices",
-              "period": 0.06,
-              "sort_options": false
-            }
-          },
-          {
             "title": "Alerts",
             "x": 768.0,
             "y": 0.0,
@@ -295,19 +284,6 @@
               "robot_color": 4294198070,
               "trajectory_color": 4294967295,
               "show_robot_outside_widget": true
-            }
-          },
-          {
-            "title": "Side Chooser",
-            "x": 512.0,
-            "y": 0.0,
-            "width": 256.0,
-            "height": 128.0,
-            "type": "ComboBox Chooser",
-            "properties": {
-              "topic": "/SmartDashboard/Side Chooser",
-              "period": 0.06,
-              "sort_options": false
             }
           }
         ]
@@ -628,19 +604,6 @@
             }
           },
           {
-            "title": "Auto Choices",
-            "x": 384.0,
-            "y": 0.0,
-            "width": 384.0,
-            "height": 128.0,
-            "type": "ComboBox Chooser",
-            "properties": {
-              "topic": "/SmartDashboard/Auto Choices",
-              "period": 0.06,
-              "sort_options": false
-            }
-          },
-          {
             "title": "Field",
             "x": 0.0,
             "y": 0.0,
@@ -671,19 +634,6 @@
             "properties": {
               "topic": "/SmartDashboard/Alerts",
               "period": 0.06
-            }
-          },
-          {
-            "title": "Side Chooser",
-            "x": 768.0,
-            "y": 0.0,
-            "width": 384.0,
-            "height": 128.0,
-            "type": "ComboBox Chooser",
-            "properties": {
-              "topic": "/SmartDashboard/Side Chooser",
-              "period": 0.06,
-              "sort_options": false
             }
           }
         ]

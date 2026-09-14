@@ -1,6 +1,6 @@
 # Shoot_template_2026
 
-Team 11019 FRC 2026 robot code.
+Team 11019 FRC 2026 robot code (demo branch).
 
 ## Branches
 
@@ -8,8 +8,8 @@ Team 11019 FRC 2026 robot code.
 - **demo** — exhibition build for manual driving only. All autonomous code has been
   removed, and manual drive/turn speed is limited by two percentages adjustable from
   the Elastic dashboard ("Drive Speed %" / "Turn Speed %"), persisted on the roboRIO
-  so the last-used values survive a reboot. Import the `elastic-layout*` file on that
-  branch into Elastic to get the dashboard widgets.
+  so the last-used values survive a reboot. Import `elastic-layout260912` into
+  Elastic to get the dashboard widgets.
 
 ## Build
 
