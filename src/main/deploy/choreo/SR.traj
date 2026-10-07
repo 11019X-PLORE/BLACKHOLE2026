@@ -136,7 +136,7 @@
    "event":null
   },
   {
-   "name":"blocker_close",
+   "name":"close_blocker",
    "from":{
     "target":0,
     "targetTimestamp":0.0,

@@ -371,7 +371,7 @@
    "event":null
   },
   {
-   "name":"blocker_close",
+   "name":"close_blocker",
    "from":{
     "target":0,
     "targetTimestamp":0.0,
@@ -380,7 +380,7 @@
    "event":null
   },
   {
-   "name":"blocker_halfopen",
+   "name":"half_open_blocker",
    "from":{
     "target":1,
     "targetTimestamp":0.61542,
@@ -389,7 +389,7 @@
    "event":null
   },
   {
-   "name":"passing",
+   "name":"pass",
    "from":{
     "target":10,
     "targetTimestamp":6.83009,
