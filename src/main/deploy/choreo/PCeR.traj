@@ -266,5 +266,23 @@
     {"t":4.93349, "x":8.75552, "y":6.36989, "heading":0.79838, "vx":0.0, "vy":0.0, "omega":0.0, "ax":0.0, "ay":0.0, "alpha":0.0, "fx":[0.0,0.0,0.0,0.0], "fy":[0.0,0.0,0.0,0.0]}],
   "splits":[0]
  },
- "events":[]
+ "events":[
+  {
+   "name":"intake",
+   "from":{
+    "target":0,
+    "targetTimestamp":0.0,
+    "offset":{"exp":"0 s", "val":0.0}
+   },
+   "event":null
+  },
+  {
+   "name":"blocker_open",
+   "from":{
+    "target":0,
+    "targetTimestamp":0.0,
+    "offset":{"exp":"0 s", "val":0.0}
+   },
+   "event":null
+  }]
 }
